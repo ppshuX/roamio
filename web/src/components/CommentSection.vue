@@ -23,8 +23,6 @@
       <CommentForm
         v-if="isAuthor && showForm"
         :submitting="submitting"
-        :upload-progress="uploadProgress"
-        :upload-message="uploadMessage"
         @submit="handleSubmit"
       />
       
@@ -180,8 +178,6 @@ export default {
     const showForm = ref(false)
     const editingComments = ref({})
     const isManageMode = ref(false)
-    const uploadProgress = ref(0)
-    const uploadMessage = ref('')
     const showModal = ref(false)
     const modalImageUrl = ref('')
     
@@ -199,33 +195,10 @@ export default {
     
     
     // 提交评论
-    const handleSubmit = async (commentData) => {
+    const handleSubmit = async (commentData, onProgress) => {
       submitting.value = true
-      uploadProgress.value = 0
-      uploadMessage.value = ''
-      
       try {
-        // 传递进度回调
-        await emit('submit-comment', commentData, (progress) => {
-          uploadProgress.value = progress
-          if (progress < 30) {
-            uploadMessage.value = '准备上传...'
-          } else if (progress < 70) {
-            uploadMessage.value = '上传中...'
-          } else if (progress < 100) {
-            uploadMessage.value = '即将完成...'
-          }
-        })
-        
-        // 上传完成，重置进度
-        uploadProgress.value = 100
-        uploadMessage.value = '上传完成！'
-        
-        // 延迟隐藏进度条
-        setTimeout(() => {
-          uploadProgress.value = 0
-          uploadMessage.value = ''
-        }, 1000)
+        await emit('submit-comment', { data: commentData, onProgress })
       } finally {
         submitting.value = false
       }

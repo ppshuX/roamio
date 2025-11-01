@@ -1,7 +1,11 @@
 /**
  * 基于fetch的Ajax请求封装
+ * 支持文件上传进度回调（使用 XMLHttpRequest）
  */
 const baseURL = process.env.VUE_APP_API_BASE_URL || '/api/v1'
+
+// 默认超时时间（毫秒）
+const DEFAULT_TIMEOUT = 300000 // 5 分钟（支持大文件上传）
 
 // 创建request函数，模拟axios接口
 const request = {
@@ -20,8 +24,13 @@ const request = {
         })
     },
 
-    // POST请求
+    // POST请求（支持上传进度）
     async post(url, data, config = {}) {
+        // 如果有进度回调且是 FormData，使用 XMLHttpRequest
+        if (config.onUploadProgress && data instanceof FormData) {
+            return this.uploadWithProgress(url, data, 'POST', config)
+        }
+        
         return this.request(url, {
             method: 'POST',
             body: data instanceof FormData ? data : JSON.stringify(data),
@@ -52,6 +61,73 @@ const request = {
         return this.request(url, {
             method: 'DELETE',
             ...config
+        })
+    },
+
+    // 使用 XMLHttpRequest 上传文件（支持进度）
+    uploadWithProgress(url, formData, method = 'POST', config = {}) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest()
+            const fullUrl = url.startsWith('http') ? url : `${baseURL}${url}`
+            
+            // 打开请求
+            xhr.open(method, fullUrl)
+            
+            // 设置超时（5 分钟）
+            xhr.timeout = config.timeout || DEFAULT_TIMEOUT
+            
+            // 设置请求头
+            const token = localStorage.getItem('access_token')
+            if (token) {
+                xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+            }
+            
+            // 上传进度
+            if (xhr.upload && config.onUploadProgress) {
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percentComplete = Math.round((e.loaded / e.total) * 100)
+                        config.onUploadProgress({ loaded: e.loaded, total: e.total, percent: percentComplete })
+                    }
+                })
+            }
+            
+            // 请求完成
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const data = JSON.parse(xhr.responseText)
+                        resolve(data)
+                    } catch (e) {
+                        resolve(xhr.responseText)
+                    }
+                } else {
+                    try {
+                        const errorData = JSON.parse(xhr.responseText)
+                        const error = new Error(errorData.detail || errorData.message || `Request failed with status ${xhr.status}`)
+                        error.response = { data: errorData }
+                        error.status = xhr.status
+                        reject(error)
+                    } catch (e) {
+                        const error = new Error(`Request failed with status ${xhr.status}`)
+                        error.status = xhr.status
+                        reject(error)
+                    }
+                }
+            }
+            
+            // 请求错误
+            xhr.onerror = function() {
+                reject(new Error('Network error'))
+            }
+            
+            // 超时
+            xhr.ontimeout = function() {
+                reject(new Error('上传超时，请检查网络或文件大小'))
+            }
+            
+            // 发送请求
+            xhr.send(formData)
         })
     },
 

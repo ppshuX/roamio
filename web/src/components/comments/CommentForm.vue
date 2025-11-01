@@ -72,18 +72,10 @@ export default {
     submitting: {
       type: Boolean,
       default: false
-    },
-    uploadProgress: {
-      type: Number,
-      default: 0
-    },
-    uploadMessage: {
-      type: String,
-      default: ''
     }
   },
   
-  emits: ['submit'],
+  emits: ['submit', 'upload-progress'],
   
   setup(props, { emit }) {
     const formData = ref({
@@ -91,6 +83,9 @@ export default {
       image: null,
       video: null
     })
+    
+    const uploadProgress = ref(0)
+    const uploadMessage = ref('')
     
     const handleImageChange = (event) => {
       formData.value.image = event.target.files[0]
@@ -105,6 +100,23 @@ export default {
         content: formData.value.content,
         image: formData.value.image,
         video: formData.value.video
+      }, (progress) => {
+        // 进度回调
+        uploadProgress.value = progress
+        if (progress < 30) {
+          uploadMessage.value = '准备上传...'
+        } else if (progress < 70) {
+          uploadMessage.value = '上传中...'
+        } else if (progress < 100) {
+          uploadMessage.value = '即将完成...'
+        } else {
+          uploadMessage.value = '上传完成！'
+          // 1秒后隐藏进度条
+          setTimeout(() => {
+            uploadProgress.value = 0
+            uploadMessage.value = ''
+          }, 1000)
+        }
       })
       
       // 重置表单
@@ -117,6 +129,8 @@ export default {
     
     return {
       formData,
+      uploadProgress,
+      uploadMessage,
       handleImageChange,
       handleVideoChange,
       handleSubmit

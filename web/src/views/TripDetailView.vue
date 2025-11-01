@@ -332,8 +332,11 @@ export default {
     }
     
     // 提交评论（接收组件传来的数据）
-    const handleSubmitComment = async (commentData, onProgress) => {
+    const handleSubmitComment = async (payload) => {
       if (!ensureLoggedIn()) return
+      
+      const { data: commentData, onProgress } = payload
+      
       try {
         const formData = new FormData()
         formData.append('page', route.params.slug)

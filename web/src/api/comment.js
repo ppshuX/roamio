@@ -24,10 +24,8 @@ export const createComment = (data, onUploadProgress) => {
         headers: {
             'Content-Type': 'multipart/form-data'
         },
-        onUploadProgress: onUploadProgress ? (progressEvent) => {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-            onUploadProgress(percentCompleted)
-        } : undefined
+        timeout: 300000, // 5分钟超时
+        onUploadProgress: onUploadProgress
     })
 }
 
@@ -58,10 +56,8 @@ export const addCommentImage = (id, data, onUploadProgress) => {
         headers: {
             'Content-Type': 'multipart/form-data'
         },
-        onUploadProgress: onUploadProgress ? (progressEvent) => {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-            onUploadProgress(percentCompleted)
-        } : undefined
+        timeout: 300000, // 5分钟超时
+        onUploadProgress: onUploadProgress
     })
 }
 
@@ -72,16 +68,15 @@ export const addCommentImage = (id, data, onUploadProgress) => {
  * @param {Function} onUploadProgress - 上传进度回调函数（如果包含文件）
  */
 export const updateComment = (id, data, onUploadProgress) => {
-    const config = {}
-    
+    const config = {
+        timeout: 300000 // 5分钟超时
+    }
+
     // 如果是 FormData，添加进度回调
     if (data instanceof FormData && onUploadProgress) {
-        config.onUploadProgress = (progressEvent) => {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-            onUploadProgress(percentCompleted)
-        }
+        config.onUploadProgress = onUploadProgress
     }
-    
+
     return request.patch(`/comments/${id}/`, data, config)
 }
 
