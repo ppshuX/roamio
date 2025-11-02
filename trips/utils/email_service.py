@@ -26,6 +26,9 @@ def send_verification_email(email, code, verification_type='register', user=None
     Returns:
         bool: 发送是否成功
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
         # 根据验证类型选择邮件主题
         subject_map = {
