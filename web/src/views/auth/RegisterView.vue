@@ -161,7 +161,7 @@
                     :disabled="qqLoginLoading"
                     @click="handleQQLogin"
                   >
-                    <img src="@/assets/qq_logo.png" alt="QQ登录" class="qq-login-icon" width="20" height="20">
+                    <img src="/static/images/qq_login.png" alt="QQ登录" class="qq-login-icon" width="20" height="20">
                     <span v-if="qqLoginLoading">跳转中...</span>
                     <span v-else>使用QQ登录</span>
                   </button>
