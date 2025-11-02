@@ -1,26 +1,9 @@
 """
 API相关视图（统计、点赞、打卡等）
 """
-import requests
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from ..models import SiteStat
-
-
-def get_quote(request):
-    """获取励志语录API"""
-    try:
-        response = requests.get("https://zenquotes.io/api/random", timeout=5)
-        data = response.json()[0]  # 它返回的是数组
-        return JsonResponse({
-            "content": data.get("q", "No content."),
-            "author": data.get("a", "Anonymous"),
-        })
-    except Exception as e:
-        return JsonResponse({
-            "content": "We travel not to escape life, but for life not to escape us.",
-            "author": "Anonymous",
-        })
 
 
 @csrf_exempt

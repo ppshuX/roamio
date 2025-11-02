@@ -42,7 +42,6 @@ from .user import (
 
 # API视图
 from .api_views import (
-    get_quote,
     like_view,
     checkin_view,
     trip_views_likes,
@@ -81,7 +80,6 @@ __all__ = [
     'user_center',
     'upload_avatar',
     # API
-    'get_quote',
     'like_view',
     'checkin_view',
     'trip_views_likes',
