@@ -263,35 +263,28 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 CORS_ALLOW_CREDENTIALS = True  # 允许携带Cookie
 
 # ==================== 邮件配置 ====================
-# 是否使用真实邮件发送（如果USE_REAL_EMAIL=1，即使是开发环境也会真实发送邮件）
-USE_REAL_EMAIL = os.getenv('USE_REAL_EMAIL', '0') == '1'
+# 强制使用真实SMTP发送邮件(避免环境变量读取问题)
+USE_REAL_EMAIL = True  # 强制启用
 
-# 开发环境默认使用控制台后端（验证码会打印到控制台）
-# 如果设置了 USE_REAL_EMAIL=1，则使用真实SMTP发送
-# 生产环境始终使用SMTP后端
-if DEBUG and not USE_REAL_EMAIL:
-    # 使用file后端代替console后端,避免UTF-8编码问题
-    EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-    EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
-    print("=" * 50)
-    print("[DEV] File-based email backend enabled")
-    print(f"[INFO] Emails will be saved to: {EMAIL_FILE_PATH}")
-    print("[TIP] Set USE_REAL_EMAIL=1 to use real SMTP")
-    print("=" * 50)
+# 统一使用SMTP后端
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.exmail.qq.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+
+# 启动时显示邮件配置状态
+print("=" * 50)
+print("[EMAIL] SMTP backend enabled (FORCED)")
+print(f"[INFO] SMTP Server: {EMAIL_HOST}:{EMAIL_PORT}")
+print(f"[INFO] SMTP User: {EMAIL_HOST_USER}")
+if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+    print("[WARNING] EMAIL credentials not configured!")
 else:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.exmail.qq.com')
-    EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
-    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
-    EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
-    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-    if USE_REAL_EMAIL and DEBUG:
-        print("=" * 50)
-        print("[DEV] Real SMTP email enabled")
-        if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
-            print("[WARNING] EMAIL credentials not configured")
-        print("=" * 50)
+    print("[OK] EMAIL credentials configured")
+print("=" * 50)
 
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Roamio <noreply@roamio.com>')
 
