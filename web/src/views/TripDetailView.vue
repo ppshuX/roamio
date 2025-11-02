@@ -173,6 +173,7 @@
           @submit-reply="handleSubmitReply"
           @submit-nested-reply="handleSubmitNestedReply"
           @load-replies="handleLoadReplies"
+          @like-reply="handleLikeReply"
         />
       </div>
     </div>
@@ -184,7 +185,7 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
 import { getTripDetail, likeTrip, getTripStats, getTripPlanStats, likeTripPlan, viewTripPlan } from '@/api/trip'
-import { getCommentList, createComment, deleteComment, addCommentImage, updateComment, getCommentReplies } from '@/api/comment'
+import { getCommentList, createComment, deleteComment, addCommentImage, updateComment, getCommentReplies, likeComment } from '@/api/comment'
 import { getAvatarUrl } from '@/config/api'
 import { getTripConfig } from '@/config/tripConfig'
 import NavBar from '@/components/NavBar.vue'
@@ -476,6 +477,21 @@ export default {
       }
     }
     
+    // 处理回复点赞
+    const handleLikeReply = async (replyId) => {
+      if (!ensureLoggedIn()) return
+      try {
+        const result = await likeComment(replyId)
+        console.log('点赞结果:', result)
+        
+        // 刷新评论列表以更新点赞状态
+        await fetchComments()
+      } catch (error) {
+        console.error('点赞失败:', error)
+        alert('点赞失败：' + (error.response?.data?.detail || error.message))
+      }
+    }
+    
     // 保存commentSectionRef用于直接访问子组件
     const commentSectionRef = ref(null)
     
@@ -610,6 +626,7 @@ export default {
       handleUpdateComment,
       handleSubmitReply,
       handleSubmitNestedReply,
+      handleLikeReply,
       handleLoadReplies,
       goBack,
       toggleMusic,

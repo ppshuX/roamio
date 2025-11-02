@@ -320,6 +320,34 @@ class CommentViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def like(self, request, pk=None):
+        """点赞/取消点赞"""
+        comment = self.get_object()
+        user = request.user
+        
+        # 检查用户是否已经点赞
+        if user in comment.liked_by.all():
+            # 取消点赞
+            comment.liked_by.remove(user)
+            comment.likes = max(0, comment.likes - 1)  # 防止负数
+            comment.save()
+            return Response({
+                'liked': False,
+                'likes': comment.likes,
+                'message': '已取消点赞'
+            })
+        else:
+            # 点赞
+            comment.liked_by.add(user)
+            comment.likes += 1
+            comment.save()
+            return Response({
+                'liked': True,
+                'likes': comment.likes,
+                'message': '点赞成功'
+            })
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def add_image(self, request, pk=None):
         """为评论添加或替换图片（上传到COS）"""
         comment = self.get_object()

@@ -15,15 +15,17 @@ class CommentSerializer(serializers.ModelSerializer):
     is_top_level = serializers.SerializerMethodField()
     parent_id = serializers.SerializerMethodField()
     replies_count = serializers.SerializerMethodField()
-    replies = serializers.SerializerMethodField()  # 新增：递归回复
+    replies = serializers.SerializerMethodField()  # 递归回复
+    user_liked = serializers.SerializerMethodField()  # 新增：当前用户是否已点赞
     
     class Meta:
         model = Comment
         fields = [
             'id', 'user', 'parent_id', 'content', 'image', 'video', 
-            'page', 'timestamp', 'can_delete', 'is_top_level', 'replies_count', 'replies'
+            'page', 'timestamp', 'can_delete', 'is_top_level', 'replies_count', 'replies',
+            'likes', 'user_liked'  # 新增：点赞数和点赞状态
         ]
-        read_only_fields = ['id', 'user', 'timestamp']
+        read_only_fields = ['id', 'user', 'timestamp', 'likes']
     
     def get_image(self, obj):
         """返回图片URL（COS完整URL或本地路径）"""
@@ -110,6 +112,15 @@ class CommentSerializer(serializers.ModelSerializer):
         """获取回复数量"""
         return obj.replies.count()
     
+    def get_user_liked(self, obj):
+        """判断当前用户是否已点赞"""
+        request = self.context.get('request')
+        if not request or not hasattr(request, 'user'):
+            return False
+        if not request.user.is_authenticated:
+            return False
+        return request.user in obj.liked_by.all()
+    
     def get_replies(self, obj):
         """递归获取所有嵌套回复（限制深度避免性能问题）"""
         # 检查当前递归深度
@@ -121,7 +132,8 @@ class CommentSerializer(serializers.ModelSerializer):
             return []
         
         # 获取当前评论的所有直接回复
-        replies = obj.replies.all().order_by('timestamp')
+        # 排序规则：按点赞数降序，相同点赞数按时间升序（早的在前）
+        replies = obj.replies.all().order_by('-likes', 'timestamp')
         
         # 如果没有回复，直接返回空数组
         if not replies.exists():

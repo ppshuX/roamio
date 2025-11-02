@@ -151,6 +151,7 @@
                   @toggle-reply="handleToggleNestedReply"
                   @submit-reply="handleSubmitNestedReply"
                   @delete-reply="handleDeleteReply"
+                  @like-reply="(replyId) => $emit('like-reply', replyId)"
                 />
               </div>
             </div>
@@ -203,7 +204,7 @@ export default {
     }
   },
   
-  emits: ['submit-comment', 'delete-comment', 'add-image', 'update-comment', 'submit-reply', 'load-replies', 'submit-nested-reply'],
+  emits: ['submit-comment', 'delete-comment', 'add-image', 'update-comment', 'submit-reply', 'load-replies', 'submit-nested-reply', 'like-reply'],
   
   setup(props, { emit }) {
     const submitting = ref(false)

@@ -29,6 +29,17 @@
           
           <!-- 操作按钮 -->
           <div class="reply-actions d-flex gap-2 align-items-center">
+            <!-- 点赞按钮 -->
+            <button 
+              class="action-btn like-btn"
+              :class="{ 'liked': reply.user_liked }"
+              @click="$emit('like-reply', reply.id)"
+              title="点赞"
+            >
+              <span class="action-icon">{{ reply.user_liked ? '❤️' : '🤍' }}</span>
+              <span class="action-text">{{ reply.likes || 0 }}</span>
+            </button>
+            
             <button 
               class="action-btn"
               @click="$emit('toggle-reply', reply.id)"
@@ -89,6 +100,7 @@
         @toggle-reply="$emit('toggle-reply', $event)"
         @submit-reply="$emit('submit-reply', $event)"
         @delete-reply="$emit('delete-reply', $event)"
+        @like-reply="$emit('like-reply', $event)"
       />
     </div>
     
@@ -105,6 +117,7 @@
         @toggle-reply="$emit('toggle-reply', $event)"
         @submit-reply="$emit('submit-reply', $event)"
         @delete-reply="$emit('delete-reply', $event)"
+        @like-reply="$emit('like-reply', $event)"
       />
     </div>
   </div>
@@ -139,7 +152,7 @@ export default {
     }
   },
   
-  emits: ['toggle-reply', 'submit-reply', 'delete-reply'],
+  emits: ['toggle-reply', 'submit-reply', 'delete-reply', 'like-reply'],
   
   setup(props, { emit }) {
     const replyContent = ref('')
@@ -261,12 +274,33 @@ export default {
   color: #dc3545;
 }
 
+/* 点赞按钮特殊样式 */
+.like-btn {
+  transition: all 0.3s ease;
+}
+
+.like-btn:hover {
+  background: #fff5f8;
+  color: #e74c3c;
+  transform: scale(1.1);
+}
+
+.like-btn.liked {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.like-btn.liked:hover {
+  background: #ffe5e5;
+}
+
 .action-icon {
   font-size: 0.9rem;
 }
 
 .action-text {
   font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .reply-form {

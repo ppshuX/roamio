@@ -15,6 +15,8 @@ class Comment(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     page = models.CharField(max_length=16, default='trip')  # 区分不同页面
     is_pinned = models.BooleanField(default=False)  # 是否置顶
+    likes = models.IntegerField(default=0, help_text='点赞数')  # 新增：点赞数
+    liked_by = models.ManyToManyField(User, related_name='liked_comments', blank=True, help_text='点赞用户列表')  # 新增：点赞用户
 
     class Meta:
         ordering = ['-is_pinned', '-timestamp']

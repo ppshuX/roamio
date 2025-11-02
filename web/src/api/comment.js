@@ -88,3 +88,11 @@ export const getCommentReplies = (id) => {
     return request.get(`/comments/${id}/replies/`)
 }
 
+/**
+ * 点赞/取消点赞评论
+ * @param {number} id - 评论ID
+ */
+export const likeComment = (id) => {
+    return request.post(`/comments/${id}/like/`)
+}
+
