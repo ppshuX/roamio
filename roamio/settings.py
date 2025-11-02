@@ -272,22 +272,22 @@ USE_REAL_EMAIL = os.getenv('USE_REAL_EMAIL', '0') == '1'
 if DEBUG and not USE_REAL_EMAIL:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     print("=" * 50)
-    print("[DEV] 开发环境：邮件将输出到控制台")
-    print("[提示] 要发送真实邮件，请设置环境变量: USE_REAL_EMAIL=1")
+    print("[DEV] Console email backend enabled")
+    print("[TIP] Set USE_REAL_EMAIL=1 to use real SMTP")
     print("=" * 50)
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.exmail.qq.com')  # 腾讯企业邮箱SMTP
+    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.exmail.qq.com')
     EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
     EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
     EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
-    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')  # 从环境变量读取
-    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')  # 从环境变量读取
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
     if USE_REAL_EMAIL and DEBUG:
         print("=" * 50)
-        print("[DEV] 使用真实SMTP发送邮件")
+        print("[DEV] Real SMTP email enabled")
         if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
-            print("[警告] EMAIL_HOST_USER 或 EMAIL_HOST_PASSWORD 未配置，邮件发送可能失败")
+            print("[WARNING] EMAIL credentials not configured")
         print("=" * 50)
 
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Roamio <noreply@roamio.com>')
