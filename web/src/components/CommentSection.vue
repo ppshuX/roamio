@@ -146,13 +146,13 @@
                   v-for="reply in comment.replies"
                   :key="reply.id"
                   :reply="reply"
-                  :get-avatar-url="getAvatarUrl"
+              :get-avatar-url="getAvatarUrl"
                   :active-reply-id="activeReplyId"
                   @toggle-reply="handleToggleNestedReply"
                   @submit-reply="handleSubmitNestedReply"
-                  @delete-reply="handleDeleteReply"
+              @delete-reply="handleDeleteReply"
                   @like-reply="(replyId) => $emit('like-reply', replyId)"
-                />
+            />
               </div>
             </div>
           </template>
@@ -249,7 +249,7 @@ export default {
         onProgress: wrappedProgress,
         onComplete: () => {
           // 提交完成后的回调
-          submitting.value = false
+        submitting.value = false
           // 延迟重置进度条
           if (commentFormRef.value && commentFormRef.value.resetProgress) {
             setTimeout(() => {
