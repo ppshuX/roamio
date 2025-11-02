@@ -70,7 +70,14 @@
                     :disabled="qqLoginLoading"
                     @click="handleQQLogin"
                   >
-                    <img src="/static/images/qq_logo.png" alt="QQ登录" class="qq-login-icon" width="20" height="20">
+                    <svg class="qq-login-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="12" r="10" fill="#12B7F5"/>
+                      <path d="M16 11C16 11 15.5 13 12 13C8.5 13 8 11 8 11C8 11 7 12 7 14C7 16 8.5 17 12 17C15.5 17 17 16 17 14C17 12 16 11 16 11Z" fill="white"/>
+                      <circle cx="9" cy="9" r="1.5" fill="white"/>
+                      <circle cx="15" cy="9" r="1.5" fill="white"/>
+                      <path d="M6 10C6 10 5 11 5 12C5 13 6 13.5 6 13.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                      <path d="M18 10C18 10 19 11 19 12C19 13 18 13.5 18 13.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
                     <span v-if="qqLoginLoading">跳转中...</span>
                     <span v-else>使用QQ登录</span>
                   </button>
