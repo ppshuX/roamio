@@ -299,7 +299,7 @@ EMAIL_TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates', 'emails')
 # 优先使用Redis缓存（推荐用于生产环境）
 # 如果Redis不可用，自动回退到数据库缓存
 
-USE_REDIS_CACHE = os.getenv('USE_REDIS_CACHE', '1') == '1'  # 默认使用Redis
+USE_REDIS_CACHE = True  # 强制使用Redis（环境变量在uWSGI中不可靠）
 
 if USE_REDIS_CACHE:
     # Redis配置（从环境变量读取，如果没有配置则使用默认值）
