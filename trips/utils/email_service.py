@@ -67,36 +67,45 @@ def send_verification_email(email, code, verification_type='register', user=None
         # 文本格式（备用）
         message = f"您的 Roamio 验证码是：{code}，有效期10分钟。如果这不是您的操作，请忽略此邮件。"
         
-        # 发送邮件(每次创建新连接,避免uWSGI环境下的连接池问题)
+        # 发送邮件(使用底层smtplib直接发送,避免Django连接池问题)
         try:
-            from django.core.mail import EmailMultiAlternatives
-            from django.core.mail import get_connection
+            import smtplib
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
             
-            # 创建新的SMTP连接
-            connection = get_connection(
-                backend='django.core.mail.backends.smtp.EmailBackend',
-                host=settings.EMAIL_HOST,
-                port=settings.EMAIL_PORT,
-                username=settings.EMAIL_HOST_USER,
-                password=settings.EMAIL_HOST_PASSWORD,
-                use_tls=settings.EMAIL_USE_TLS,
-                use_ssl=settings.EMAIL_USE_SSL,
-                timeout=30,
-                fail_silently=False,
-            )
+            logger.info(f"准备发送邮件到: {email}")
+            logger.info(f"SMTP: {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
             
             # 创建邮件
-            email_msg = EmailMultiAlternatives(
-                subject=subject,
-                body=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[email],
-                connection=connection
-            )
-            email_msg.attach_alternative(html_message, "text/html")
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = settings.DEFAULT_FROM_EMAIL
+            msg['To'] = email
             
-            # 发送
-            email_msg.send()
+            # 添加文本和HTML部分
+            part1 = MIMEText(message, 'plain', 'utf-8')
+            part2 = MIMEText(html_message, 'html', 'utf-8')
+            msg.attach(part1)
+            msg.attach(part2)
+            
+            # 使用smtplib直接发送
+            logger.info("创建SMTP连接...")
+            server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT, timeout=30)
+            
+            logger.info("启动TLS...")
+            if settings.EMAIL_USE_TLS:
+                server.starttls()
+            
+            logger.info("登录SMTP服务器...")
+            server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+            
+            logger.info("发送邮件...")
+            server.send_message(msg)
+            
+            logger.info("关闭连接...")
+            server.quit()
+            
+            logger.info(f"✅ 邮件发送成功: {email}")
             
             # 开发环境额外提示
             if settings.DEBUG:
