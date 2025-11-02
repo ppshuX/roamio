@@ -271,33 +271,45 @@ class CommentViewSet(viewsets.ModelViewSet):
             )
     
     def perform_destroy(self, instance):
-        """删除评论时同时删除 COS 上的文件"""
-        # 保存文件 URL
-        image_url = instance.image if instance.image else None
-        video_url = instance.video if instance.video else None
+        """删除评论时同时删除 COS 上的文件（包括所有回复的文件）"""
+        # 收集当前评论的文件 URL
+        files_to_delete = []
         
-        # 删除评论对象
+        if instance.image:
+            files_to_delete.append(('image', instance.image))
+        if instance.video:
+            files_to_delete.append(('video', instance.video))
+        
+        # 如果这是父评论，收集所有回复的文件 URL（递归）
+        if instance.is_top_level:
+            def collect_reply_files(comment):
+                """递归收集回复的文件"""
+                for reply in comment.replies.all():
+                    if reply.image:
+                        files_to_delete.append(('image', reply.image))
+                    if reply.video:
+                        files_to_delete.append(('video', reply.video))
+                    # 递归处理回复的回复
+                    collect_reply_files(reply)
+            
+            collect_reply_files(instance)
+            print(f"准备删除评论及其 {len(files_to_delete)} 个关联文件")
+        
+        # 删除评论对象（Django 自动级联删除所有回复）
         try:
             instance.delete()
+            print(f"评论 {instance.id} 及其所有回复已从数据库删除")
         except Exception as e:
             print(f"删除评论对象失败: {e}")
             raise
         
-        # 从 COS 删除关联的图片文件
-        if image_url:
+        # 从 COS 删除所有收集到的文件
+        for file_type, file_url in files_to_delete:
             try:
-                FileUploadHandler.delete_file(image_url)
-                print(f"成功删除图片文件: {image_url}")
+                FileUploadHandler.delete_file(file_url)
+                print(f"成功删除{file_type}文件: {file_url}")
             except Exception as e:
-                print(f"删除图片文件失败: {e}")
-        
-        # 从 COS 删除关联的视频文件
-        if video_url:
-            try:
-                FileUploadHandler.delete_file(video_url)
-                print(f"成功删除视频文件: {video_url}")
-            except Exception as e:
-                print(f"删除视频文件失败: {e}")
+                print(f"删除{file_type}文件失败: {e} - {file_url}")
     
     @action(detail=True, methods=['get'], permission_classes=[AllowAny])
     def replies(self, request, pk=None):
