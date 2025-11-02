@@ -263,11 +263,15 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 CORS_ALLOW_CREDENTIALS = True  # 允许携带Cookie
 
 # ==================== 邮件配置 ====================
-# 强制使用真实SMTP发送邮件(避免环境变量读取问题)
-USE_REAL_EMAIL = True  # 强制启用
+# 从环境变量读取邮件配置
+USE_REAL_EMAIL = os.getenv('USE_REAL_EMAIL', '0') == '1'
 
-# 统一使用SMTP后端
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# 根据配置选择邮件后端
+if USE_REAL_EMAIL:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+    EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.exmail.qq.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
