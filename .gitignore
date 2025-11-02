@@ -90,6 +90,7 @@ backups/
 # 🖼️ 静态资源（服务器上手动维护）
 # =========================================
 static/images/qq_login.png
+static/images/logo_Roamio.png
 
 # =========================================
 # 📝 文档文件（除README.md外都忽略）
