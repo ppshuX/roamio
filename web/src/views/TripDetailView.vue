@@ -406,25 +406,9 @@ export default {
         return
       }
       
-      const isReply = !!deletedComment.parent_id
-      const parentId = deletedComment.parent_id
-      let parentComment = null
-      
-      if (isReply) {
-        // 这是回复的删除
-        parentComment = comments.value.find(c => c.id === parentId)
-        if (parentComment && parentComment.replies) {
-          // 立即从UI中移除
-          parentComment.replies = parentComment.replies.filter(r => r.id !== commentId)
-          // 更新CommentSection的replyLists
-          if (commentSectionRef.value && commentSectionRef.value.updateReplyList) {
-            commentSectionRef.value.updateReplyList(parentId, parentComment.replies)
-          }
-        }
-      } else {
-        // 这是顶层评论的删除，从列表中立即移除
-        comments.value = comments.value.filter(c => c.id !== commentId)
-      }
+      // 删除成功后，重新加载整个评论列表（包含所有嵌套回复）
+      alert('删除成功！')
+      await fetchComments()
     }
     
     // 添加图片
