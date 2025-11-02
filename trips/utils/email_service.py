@@ -67,16 +67,36 @@ def send_verification_email(email, code, verification_type='register', user=None
         # 文本格式（备用）
         message = f"您的 Roamio 验证码是：{code}，有效期10分钟。如果这不是您的操作，请忽略此邮件。"
         
-        # 发送邮件
+        # 发送邮件(每次创建新连接,避免uWSGI环境下的连接池问题)
         try:
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-                html_message=html_message,
+            from django.core.mail import EmailMultiAlternatives
+            from django.core.mail import get_connection
+            
+            # 创建新的SMTP连接
+            connection = get_connection(
+                backend='django.core.mail.backends.smtp.EmailBackend',
+                host=settings.EMAIL_HOST,
+                port=settings.EMAIL_PORT,
+                username=settings.EMAIL_HOST_USER,
+                password=settings.EMAIL_HOST_PASSWORD,
+                use_tls=settings.EMAIL_USE_TLS,
+                use_ssl=settings.EMAIL_USE_SSL,
+                timeout=30,
                 fail_silently=False,
             )
+            
+            # 创建邮件
+            email_msg = EmailMultiAlternatives(
+                subject=subject,
+                body=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[email],
+                connection=connection
+            )
+            email_msg.attach_alternative(html_message, "text/html")
+            
+            # 发送
+            email_msg.send()
             
             # 开发环境额外提示
             if settings.DEBUG:
