@@ -354,10 +354,7 @@ export default {
         }
         
         // 传递进度回调
-        const result = await createComment(formData, onProgress)
-        
-        // 上传+后端处理都完成后，才显示成功提示
-        console.log('评论发表成功！', result)
+        await createComment(formData, onProgress)
         
         // 刷新评论列表
         await fetchComments()
@@ -376,7 +373,6 @@ export default {
     const handleDeleteComment = async (commentId) => {
       // 防止重复点击
       if (deletingIds.value.has(commentId)) {
-        console.log('该评论正在删除中，请勿重复点击')
         return
       }
       
@@ -385,7 +381,6 @@ export default {
         return
       }
       
-      console.log('准备删除评论 ID:', commentId)
       deletingIds.value.add(commentId)
       
       // 递归查找并移除评论（乐观更新：先从 UI 移除，再调用 API）
@@ -406,15 +401,11 @@ export default {
       }
       
       // 立即从 UI 移除（乐观更新）
-      const removed = removeCommentFromTree(comments.value)
-      console.log('从 UI 移除评论:', removed ? '成功' : '未找到')
+      removeCommentFromTree(comments.value)
       
       // 向后端发送删除请求
       try {
         await deleteComment(commentId)
-        console.log('后端删除成功')
-        // 成功提示（可选，因为用户已经看到 UI 更新了）
-        // alert('删除成功！')
       } catch (error) {
         console.error('删除评论失败:', error)
         
@@ -423,8 +414,6 @@ export default {
           // 404 说明已经被删除了，不需要恢复
           alert('删除失败：' + (error.response?.data?.detail || error.message))
           await fetchComments()  // 恢复数据
-        } else {
-          console.log('评论已不存在（可能已被删除），忽略 404 错误')
         }
       } finally {
         deletingIds.value.delete(commentId)
@@ -500,8 +489,7 @@ export default {
     const handleLikeReply = async (replyId) => {
       if (!ensureLoggedIn()) return
       try {
-        const result = await likeComment(replyId)
-        console.log('点赞结果:', result)
+        await likeComment(replyId)
         
         // 刷新评论列表以更新点赞状态
         await fetchComments()
