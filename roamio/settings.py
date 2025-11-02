@@ -383,22 +383,34 @@ if DEBUG and not (TENCENT_COS_SECRET_ID and TENCENT_COS_SECRET_KEY and TENCENT_C
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'file': {
-            'level': 'ERROR',
+            'level': 'INFO',  # 改为INFO级别,记录详细日志
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'django_errors.log'),
             'encoding': 'utf-8',
+            'formatter': 'verbose',
         },
     },
     'root': {
         'handlers': ['file'],
-        'level': 'ERROR',
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
             'handlers': ['file'],
             'level': 'ERROR',
+            'propagate': False,
+        },
+        'trips': {
+            'handlers': ['file'],
+            'level': 'INFO',  # trips应用的日志记录INFO级别
             'propagate': False,
         },
     },
