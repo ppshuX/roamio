@@ -370,46 +370,65 @@ export default {
       }
     }
     
-    // 删除评论
+    // 删除评论（使用乐观更新策略）
+    const deletingIds = ref(new Set())  // 正在删除的 ID 集合
+    
     const handleDeleteComment = async (commentId) => {
+      // 防止重复点击
+      if (deletingIds.value.has(commentId)) {
+        console.log('该评论正在删除中，请勿重复点击')
+        return
+      }
+      
       // 删除前提示确认
       if (!confirm('确定要删除这条内容吗？删除后无法恢复。')) {
         return
       }
       
-      // 先向后端发送删除请求
-      try {
-        await deleteComment(commentId)
-      } catch (error) {
-        console.error('删除评论失败:', error)
-        const errorMsg = error.response?.data?.detail || error.message || '删除失败，请稍后重试'
-        alert(errorMsg)
-        return
-      }
+      console.log('准备删除评论 ID:', commentId)
+      deletingIds.value.add(commentId)
       
-      // 删除成功后，从UI中移除
-      const deletedComment = comments.value.find(c => c.id === commentId)
-      
-      if (!deletedComment) {
-        // 如果是回复，从replyLists中删除
-        for (const comment of comments.value) {
-          if (commentSectionRef.value && commentSectionRef.value.replyLists) {
-            const replyList = commentSectionRef.value.replyLists[comment.id]
-            if (replyList && replyList.some(r => r.id === commentId)) {
-              const filteredReplies = replyList.filter(r => r.id !== commentId)
-              if (commentSectionRef.value.updateReplyList) {
-                commentSectionRef.value.updateReplyList(comment.id, filteredReplies)
-              }
-              return
+      // 递归查找并移除评论（乐观更新：先从 UI 移除，再调用 API）
+      const removeCommentFromTree = (commentList) => {
+        for (let i = 0; i < commentList.length; i++) {
+          if (commentList[i].id === commentId) {
+            commentList.splice(i, 1)
+            return true
+          }
+          // 递归查找嵌套回复
+          if (commentList[i].replies && commentList[i].replies.length > 0) {
+            if (removeCommentFromTree(commentList[i].replies)) {
+              return true
             }
           }
         }
-        return
+        return false
       }
       
-      // 删除成功后，重新加载整个评论列表（包含所有嵌套回复）
-      alert('删除成功！')
-      await fetchComments()
+      // 立即从 UI 移除（乐观更新）
+      const removed = removeCommentFromTree(comments.value)
+      console.log('从 UI 移除评论:', removed ? '成功' : '未找到')
+      
+      // 向后端发送删除请求
+      try {
+        await deleteComment(commentId)
+        console.log('后端删除成功')
+        // 成功提示（可选，因为用户已经看到 UI 更新了）
+        // alert('删除成功！')
+      } catch (error) {
+        console.error('删除评论失败:', error)
+        
+        // 如果后端删除失败，重新加载以恢复数据
+        if (error.response?.status !== 404) {
+          // 404 说明已经被删除了，不需要恢复
+          alert('删除失败：' + (error.response?.data?.detail || error.message))
+          await fetchComments()  // 恢复数据
+        } else {
+          console.log('评论已不存在（可能已被删除），忽略 404 错误')
+        }
+      } finally {
+        deletingIds.value.delete(commentId)
+      }
     }
     
     // 添加图片
