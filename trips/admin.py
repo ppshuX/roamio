@@ -39,7 +39,49 @@ class UserProfileAdmin(admin.ModelAdmin):
         }),
     )
 
-admin.site.register(Comment)
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'content_preview', 'page', 'parent_id', 'likes', 'timestamp', 'has_image', 'has_video')
+    list_filter = ('page', 'timestamp', 'is_pinned')
+    search_fields = ('user__username', 'content', 'page')
+    readonly_fields = ('id', 'timestamp', 'likes')
+    list_per_page = 50
+    ordering = ('-timestamp',)
+    
+    fieldsets = (
+        ('基本信息', {
+            'fields': ('id', 'user', 'page', 'parent', 'is_pinned')
+        }),
+        ('内容', {
+            'fields': ('content', 'image', 'video')
+        }),
+        ('互动数据', {
+            'fields': ('likes', 'liked_by', 'timestamp')
+        }),
+    )
+    
+    def content_preview(self, obj):
+        """内容预览（前30个字符）"""
+        if obj.content:
+            return obj.content[:30] + ('...' if len(obj.content) > 30 else '')
+        return '（无文字内容）'
+    content_preview.short_description = '内容预览'
+    
+    def parent_id(self, obj):
+        """父评论ID"""
+        return obj.parent_id if obj.parent else '-'
+    parent_id.short_description = '父评论ID'
+    
+    def has_image(self, obj):
+        """是否有图片"""
+        return '✅' if obj.image else '❌'
+    has_image.short_description = '图片'
+    
+    def has_video(self, obj):
+        """是否有视频"""
+        return '✅' if obj.video else '❌'
+    has_video.short_description = '视频'
+
 admin.site.register(SiteStat)
 
 # 注册 Token Blacklist 模型（覆盖默认注册，以自定义显示）
