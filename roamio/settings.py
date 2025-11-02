@@ -269,30 +269,29 @@ USE_REAL_EMAIL = os.getenv('USE_REAL_EMAIL', '0') == '1'
 # 根据配置选择邮件后端
 if USE_REAL_EMAIL:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.qq.com')
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+    EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+    EMAIL_TIMEOUT = 30
+    
+    print("=" * 50)
+    print("[EMAIL] SMTP backend enabled")
+    print(f"[INFO] SMTP Server: {EMAIL_HOST}:{EMAIL_PORT}")
+    print(f"[INFO] SMTP User: {EMAIL_HOST_USER}")
+    print("[OK] Real email sending enabled")
+    print("=" * 50)
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
     EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.exmail.qq.com')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-
-# SMTP 连接配置(避免频繁连接被QQ邮箱拒绝)
-EMAIL_TIMEOUT = 30  # 超时时间(秒)
-
-# 启动时显示邮件配置状态
-print("=" * 50)
-print("[EMAIL] SMTP backend enabled (FORCED)")
-print(f"[INFO] SMTP Server: {EMAIL_HOST}:{EMAIL_PORT}")
-print(f"[INFO] SMTP User: {EMAIL_HOST_USER}")
-print(f"[INFO] SMTP Timeout: {EMAIL_TIMEOUT}s")
-if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
-    print("[WARNING] EMAIL credentials not configured!")
-else:
-    print("[OK] EMAIL credentials configured")
-print("=" * 50)
+    
+    print("=" * 50)
+    print("[EMAIL] File-based backend enabled")
+    print(f"[INFO] Emails will be saved to: {EMAIL_FILE_PATH}")
+    print("[TIP] Set USE_REAL_EMAIL=1 in .env to enable real SMTP")
+    print("=" * 50)
 
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Roamio <noreply@roamio.com>')
 
