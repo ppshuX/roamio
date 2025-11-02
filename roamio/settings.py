@@ -275,11 +275,15 @@ EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 
+# SMTP 连接配置(避免频繁连接被QQ邮箱拒绝)
+EMAIL_TIMEOUT = 30  # 超时时间(秒)
+
 # 启动时显示邮件配置状态
 print("=" * 50)
 print("[EMAIL] SMTP backend enabled (FORCED)")
 print(f"[INFO] SMTP Server: {EMAIL_HOST}:{EMAIL_PORT}")
 print(f"[INFO] SMTP User: {EMAIL_HOST_USER}")
+print(f"[INFO] SMTP Timeout: {EMAIL_TIMEOUT}s")
 if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
     print("[WARNING] EMAIL credentials not configured!")
 else:
