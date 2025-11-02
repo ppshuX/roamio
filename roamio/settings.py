@@ -348,8 +348,8 @@ else:
     }
     if DEBUG:
         print("=" * 50)
-        print("[CACHE] 使用数据库缓存")
-        print("[提示] 运行 python manage.py createcachetable 创建缓存表")
+        print("[CACHE] Database cache enabled")
+        print("[TIP] Run: python manage.py createcachetable")
         print("=" * 50)
 
 # ==================== QQ OAuth 配置 ====================
@@ -371,10 +371,10 @@ TENCENT_COS_BUCKET = os.getenv('TENCENT_COS_BUCKET', '')  # 存储桶名称，�
 # COS 配置检查（DEBUG模式下显示提示）
 if DEBUG and not (TENCENT_COS_SECRET_ID and TENCENT_COS_SECRET_KEY and TENCENT_COS_BUCKET):
     print("=" * 50)
-    print("[警告] 腾讯云 COS 配置不完整")
-    print("[提示] 请在 .env 文件中配置以下环境变量：")
+    print("[WARNING] Tencent Cloud COS configuration incomplete")
+    print("[TIP] Configure these in .env file:")
     print("  - TENCENT_COS_SECRET_ID")
     print("  - TENCENT_COS_SECRET_KEY")
     print("  - TENCENT_COS_BUCKET")
-    print("  - TENCENT_COS_REGION (可选，默认 ap-guangzhou)")
+    print("  - TENCENT_COS_REGION (optional, default: ap-guangzhou)")
     print("=" * 50)
