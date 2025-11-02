@@ -230,21 +230,34 @@ export default {
     
     
     // 提交评论
-    const handleSubmit = async (commentData, onProgress) => {
+    const handleSubmit = (commentData, onProgress) => {
       submitting.value = true
-      try {
-        // 直接传递 payload 对象，包含 data 和 onProgress
-        await emit('submit-comment', { data: commentData, onProgress })
+      
+      // 创建一个包装的进度回调，在完成后重置进度条
+      const wrappedProgress = (progressEvent) => {
+        onProgress(progressEvent)
         
-        // 提交成功后，重置进度条
-        if (commentFormRef.value && commentFormRef.value.resetProgress) {
-          setTimeout(() => {
-            commentFormRef.value.resetProgress()
-          }, 1500) // 1.5秒后隐藏进度条
+        // 当进度到 100% 时，标记为处理中
+        if (progressEvent.percent >= 100) {
+          // 等待父组件处理完成后再重置（由父组件控制）
         }
-      } finally {
-        submitting.value = false
       }
+      
+      // 传递 payload 对象，包含 data 和包装后的进度回调
+      emit('submit-comment', { 
+        data: commentData, 
+        onProgress: wrappedProgress,
+        onComplete: () => {
+          // 提交完成后的回调
+          submitting.value = false
+          // 延迟重置进度条
+          if (commentFormRef.value && commentFormRef.value.resetProgress) {
+            setTimeout(() => {
+              commentFormRef.value.resetProgress()
+            }, 1500)
+          }
+        }
+      })
     }
     
     // 删除评论

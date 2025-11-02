@@ -337,7 +337,7 @@ export default {
     const handleSubmitComment = async (payload) => {
       if (!ensureLoggedIn()) return
       
-      const { data: commentData, onProgress } = payload
+      const { data: commentData, onProgress, onComplete } = payload
       
       try {
         const formData = new FormData()
@@ -361,9 +361,19 @@ export default {
         
         // 显示成功提示
         alert('✅ 发表成功！')
+        
+        // 调用完成回调
+        if (onComplete) {
+          onComplete()
+        }
       } catch (error) {
         console.error('发表评论失败:', error)
         alert('❌ 发表失败：' + error.message)
+        
+        // 失败时也要调用完成回调
+        if (onComplete) {
+          onComplete()
+        }
       }
     }
     
