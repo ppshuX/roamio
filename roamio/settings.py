@@ -270,9 +270,12 @@ USE_REAL_EMAIL = os.getenv('USE_REAL_EMAIL', '0') == '1'
 # 如果设置了 USE_REAL_EMAIL=1，则使用真实SMTP发送
 # 生产环境始终使用SMTP后端
 if DEBUG and not USE_REAL_EMAIL:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    # 使用file后端代替console后端,避免UTF-8编码问题
+    EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+    EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
     print("=" * 50)
-    print("[DEV] Console email backend enabled")
+    print("[DEV] File-based email backend enabled")
+    print(f"[INFO] Emails will be saved to: {EMAIL_FILE_PATH}")
     print("[TIP] Set USE_REAL_EMAIL=1 to use real SMTP")
     print("=" * 50)
 else:
