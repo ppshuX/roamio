@@ -74,7 +74,13 @@ def send_verification_email(email, code, verification_type='register', user=None
             from email.mime.multipart import MIMEMultipart
             
             logger.info(f"准备发送邮件到: {email}")
-            logger.info(f"SMTP: {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
+            logger.info(f"SMTP配置:")
+            logger.info(f"  Host: {settings.EMAIL_HOST}")
+            logger.info(f"  Port: {settings.EMAIL_PORT}")
+            logger.info(f"  User: {settings.EMAIL_HOST_USER}")
+            logger.info(f"  Password: {'*' * len(settings.EMAIL_HOST_PASSWORD) if settings.EMAIL_HOST_PASSWORD else 'EMPTY'}")
+            logger.info(f"  TLS: {settings.EMAIL_USE_TLS}")
+            logger.info(f"  SSL: {settings.EMAIL_USE_SSL}")
             
             # 创建邮件
             msg = MIMEMultipart('alternative')
