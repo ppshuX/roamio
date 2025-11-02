@@ -95,15 +95,20 @@ def send_verification_email(email, code, verification_type='register', user=None
             msg.attach(part2)
             
             # 使用smtplib直接发送
+            import time
+            
             logger.info("创建SMTP连接...")
             server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT, timeout=30)
+            time.sleep(0.5)  # 短暂延迟
             
             logger.info("启动TLS...")
             if settings.EMAIL_USE_TLS:
                 server.starttls()
+            time.sleep(0.5)  # 短暂延迟
             
             logger.info("登录SMTP服务器...")
             server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+            time.sleep(0.2)  # 短暂延迟
             
             logger.info("发送邮件...")
             server.send_message(msg)
