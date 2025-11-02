@@ -378,3 +378,28 @@ if DEBUG and not (TENCENT_COS_SECRET_ID and TENCENT_COS_SECRET_KEY and TENCENT_C
     print("  - TENCENT_COS_BUCKET")
     print("  - TENCENT_COS_REGION (optional, default: ap-guangzhou)")
     print("=" * 50)
+
+# 日志配置 - 避免中文日志导致 uWSGI 崩溃
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'django_errors.log'),
+            'encoding': 'utf-8',
+        },
+    },
+    'root': {
+        'handlers': ['file'],
+        'level': 'ERROR',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
