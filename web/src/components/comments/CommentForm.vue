@@ -100,9 +100,11 @@ export default {
         content: formData.value.content,
         image: formData.value.image,
         video: formData.value.video
-      }, (progress) => {
-        // 进度回调
+      }, (progressEvent) => {
+        // 进度回调 - progressEvent 格式: { loaded, total, percent }
+        const progress = progressEvent.percent || 0
         uploadProgress.value = progress
+        
         if (progress < 30) {
           uploadMessage.value = '准备上传...'
         } else if (progress < 70) {

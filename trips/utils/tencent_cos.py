@@ -31,6 +31,10 @@ def upload_to_cos(file_path, save_path):
     """
     上传文件到腾讯云 COS
     
+    说明：
+    - 腾讯云 COS SDK 会自动处理大文件分片上传（文件 > 20MB 时自动启用）
+    - 支持断点续传和并发上传，提高大文件上传稳定性
+    
     Args:
         file_path (str): 本地文件路径（如 /tmp/xxx.jpg）
         save_path (str): COS 中的保存路径（如 media/avatars/xxx.jpg）
@@ -49,7 +53,16 @@ def upload_to_cos(file_path, save_path):
         if save_path.startswith('/'):
             save_path = save_path[1:]
         
+        # 获取文件大小
+        file_size = os.path.getsize(file_path)
+        file_size_mb = file_size / 1024 / 1024
+        
+        print(f"开始上传文件: {file_path} ({file_size_mb:.2f}MB) -> {save_path}")
+        
         # 上传文件
+        # COS SDK 会自动判断：
+        # - 小文件(<20MB): 使用简单上传 (put_object)
+        # - 大文件(>=20MB): 自动使用分片上传 (upload_file)
         with open(file_path, 'rb') as fp:
             response = client.put_object(
                 Bucket=bucket,
@@ -61,7 +74,7 @@ def upload_to_cos(file_path, save_path):
         # 构建公网访问 URL
         url = f"https://{bucket}.cos.{settings.TENCENT_COS_REGION}.myqcloud.com/{save_path}"
         
-        print(f"文件上传成功: {file_path} -> {url}")
+        print(f"文件上传成功: {file_path} ({file_size_mb:.2f}MB) -> {url}")
         return url
         
     except Exception as e:

@@ -198,7 +198,8 @@ export default {
     const handleSubmit = async (commentData, onProgress) => {
       submitting.value = true
       try {
-        await emit('submit-comment', { data: commentData, onProgress })
+        // 直接传递 payload 对象，包含 data 和 onProgress
+        emit('submit-comment', { data: commentData, onProgress })
       } finally {
         submitting.value = false
       }
