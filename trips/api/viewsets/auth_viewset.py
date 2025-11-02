@@ -254,14 +254,14 @@ class AuthViewSet(viewsets.GenericViewSet):
             # 验证是否成功存储
             stored_value = cache.get(cache_key)
             if not stored_value:
-                print(f"[WARNING] QQ state缓存存储失败 - cache_key: {cache_key}")
+                print(f"[WARNING] QQ state cache storage failed - cache_key: {cache_key}")
         except Exception as e:
-            print(f"[ERROR] QQ state缓存存储异常: {e}")
+            print(f"[ERROR] QQ state cache storage exception: {e}")
         
-        # 调试日志
+        # Debug logging
         import logging
         logger = logging.getLogger(__name__)
-        logger.info(f'QQ登录URL生成 - state: {state_generated[:20] if state_generated else None}..., cache_key: {cache_key}, timeout: 1800秒')
+        logger.info(f'QQ login URL generated - state: {state_generated[:20] if state_generated else None}..., cache_key: {cache_key}, timeout: 1800s')
         
         return Response({
             'authorize_url': authorize_url,
@@ -285,21 +285,21 @@ class AuthViewSet(viewsets.GenericViewSet):
         cache_key = f'qq_oauth_state:{state}'
         state_valid = cache.get(cache_key)
         
-        # 调试日志
+        # Debug logging
         import logging
         logger = logging.getLogger(__name__)
-        logger.info(f'QQ回调验证 - state: {state[:20] if state else None}..., state_valid: {state_valid}, cache_key: {cache_key}')
+        logger.info(f'QQ callback validation - state: {state[:20] if state else None}..., state_valid: {state_valid}, cache_key: {cache_key}')
         
         if not state_valid:
-            # 检查是否可能是过期或其他原因
-            logger.warning(f'QQ回调state验证失败 - state: {state[:20] if state else None}..., 可能原因：过期、已使用或缓存问题')
+            # Check if expired or other issues
+            logger.warning(f'QQ callback state validation failed - state: {state[:20] if state else None}..., possible reasons: expired, already used, or cache issue')
             return Response({
                 'error': '无效的state参数，请重新登录（可能已过期，请在10分钟内完成授权）'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # 删除state（一次性使用）
+        # Delete state (one-time use)
         cache.delete(cache_key)
-        logger.info(f'QQ回调state已验证并删除 - state: {state[:20] if state else None}...')
+        logger.info(f'QQ callback state verified and deleted - state: {state[:20] if state else None}...')
         
         # 获取QQ用户信息
         qq_info = get_qq_user_info_by_code(code)
@@ -384,15 +384,15 @@ class AuthViewSet(viewsets.GenericViewSet):
                 if qq_info.get('avatar_url'):
                     from ...utils.avatar_downloader import set_user_avatar_from_url
                     try:
-                        print(f"开始设置 QQ 头像，用户 ID: {user.id}, 头像 URL: {qq_info.get('avatar_url')}")
+                        print(f"Setting QQ avatar - user ID: {user.id}, avatar URL: {qq_info.get('avatar_url')}")
                         success, message = set_user_avatar_from_url(user, qq_info.get('avatar_url'))
                         if success:
-                            print(f"✅ QQ头像设置成功: {message}")
+                            print(f"[SUCCESS] QQ avatar set successfully: {message}")
                         else:
-                            print(f"❌ QQ头像设置失败: {message}")
+                            print(f"[FAILED] QQ avatar set failed: {message}")
                     except Exception as e:
-                        # 头像下载失败不影响登录，只记录错误
-                        print(f"⚠️  QQ头像下载异常: {e}")
+                        # Avatar download failure does not affect login
+                        print(f"[WARNING] QQ avatar download exception: {e}")
                         import traceback
                         traceback.print_exc()
                 
@@ -411,8 +411,8 @@ class AuthViewSet(viewsets.GenericViewSet):
             except Exception as e:
                 # 捕获并记录详细错误信息
                 error_detail = traceback.format_exc()
-                print(f"QQ登录创建账号失败: {e}")
-                print(f"错误详情: {error_detail}")
+                print(f"QQ login account creation failed: {e}")
+                print(f"Error details: {error_detail}")
                 return Response({
                     'error': f'创建账号失败: {str(e)}'
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -524,15 +524,15 @@ class AuthViewSet(viewsets.GenericViewSet):
         if qq_info.get('avatar_url') and not user.profile.avatar:
             from ...utils.avatar_downloader import set_user_avatar_from_url
             try:
-                print(f"开始设置 QQ 头像，用户 ID: {user.id}, 头像 URL: {qq_info.get('avatar_url')}")
+                print(f"Setting QQ avatar - user ID: {user.id}, avatar URL: {qq_info.get('avatar_url')}")
                 success, message = set_user_avatar_from_url(user, qq_info.get('avatar_url'))
                 if success:
-                    print(f"✅ QQ头像设置成功: {message}")
+                    print(f"[SUCCESS] QQ avatar set successfully: {message}")
                 else:
-                    print(f"❌ QQ头像设置失败: {message}")
+                    print(f"[FAILED] QQ avatar set failed: {message}")
             except Exception as e:
-                # 头像下载失败不影响绑定，只记录错误
-                print(f"⚠️  QQ头像下载异常: {e}")
+                # Avatar download failure does not affect binding
+                print(f"[WARNING] QQ avatar download exception: {e}")
                 import traceback
                 traceback.print_exc()
         
@@ -610,15 +610,15 @@ class AuthViewSet(viewsets.GenericViewSet):
         if qq_info.get('avatar_url') and not request.user.profile.avatar:
             from ...utils.avatar_downloader import set_user_avatar_from_url
             try:
-                print(f"开始设置 QQ 头像，用户 ID: {request.user.id}, 头像 URL: {qq_info.get('avatar_url')}")
+                print(f"Setting QQ avatar - user ID: {request.user.id}, avatar URL: {qq_info.get('avatar_url')}")
                 success, message = set_user_avatar_from_url(request.user, qq_info.get('avatar_url'))
                 if success:
-                    print(f"✅ QQ头像设置成功: {message}")
+                    print(f"[SUCCESS] QQ avatar set successfully: {message}")
                 else:
-                    print(f"❌ QQ头像设置失败: {message}")
+                    print(f"[FAILED] QQ avatar set failed: {message}")
             except Exception as e:
-                # 头像下载失败不影响绑定，只记录错误
-                print(f"⚠️  QQ头像下载异常: {e}")
+                # Avatar download failure does not affect binding
+                print(f"[WARNING] QQ avatar download exception: {e}")
                 import traceback
                 traceback.print_exc()
         
