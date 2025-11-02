@@ -118,7 +118,7 @@ class FileUploadHandler:
             return cos_url
             
         except Exception as e:
-            print(f"File upload failed: {e}")
+            print(f"文件上传失败: {e}")
             raise
             
         finally:

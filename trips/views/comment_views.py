@@ -31,7 +31,7 @@ def add_comment(request):
             if video:
                 video_url = FileUploadHandler.upload_comment_video(video, request.user.id)
         except Exception as e:
-            return JsonResponse({'status': 'fail', 'message': f'File upload failed: {str(e)}'}, status=500)
+            return JsonResponse({'status': 'fail', 'message': f'文件上传失败: {str(e)}'}, status=500)
         
         if content or image_url or video_url:
             Comment.objects.create(
@@ -84,7 +84,7 @@ def trip1_add_comment(request):
             if video:
                 video_url = FileUploadHandler.upload_comment_video(video, request.user.id)
         except Exception as e:
-            return JsonResponse({'status': 'fail', 'message': f'File upload failed: {str(e)}'}, status=500)
+            return JsonResponse({'status': 'fail', 'message': f'文件上传失败: {str(e)}'}, status=500)
         
         if content or image_url or video_url:
             Comment.objects.create(
