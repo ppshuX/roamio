@@ -113,16 +113,47 @@
           
           <!-- 回复区域插槽 -->
           <template #replies>
-            <ReplySection
-              v-if="expandedReplies[comment.id]"
-              :expanded="expandedReplies[comment.id]"
-              :replies="replyLists[comment.id] || []"
-              :submitting="submittingReply[comment.id] || false"
-              :get-avatar-url="getAvatarUrl"
-              @submit="(content) => handleSubmitReply(comment.id, content)"
-              @cancel="() => cancelReply(comment.id)"
-              @delete-reply="handleDeleteReply"
-            />
+            <div v-if="expandedReplies[comment.id]" class="reply-section-wrapper mt-3">
+              <!-- 回复表单 -->
+              <div class="reply-form mb-3">
+                <textarea
+                  v-model="replyForms[comment.id].content"
+                  class="form-control form-control-sm"
+                  rows="2"
+                  placeholder="写下你的回复..."
+                ></textarea>
+                <div class="mt-2 d-flex gap-2">
+                  <button
+                    class="btn btn-sm btn-primary"
+                    @click="handleSubmitReply(comment.id, replyForms[comment.id].content)"
+                    :disabled="submittingReply[comment.id] || !replyForms[comment.id].content.trim()"
+                  >
+                    <span v-if="submittingReply[comment.id]" class="spinner-border spinner-border-sm me-1"></span>
+                    {{ submittingReply[comment.id] ? '提交中...' : '提交回复' }}
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-secondary"
+                    @click="cancelReply(comment.id)"
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+              
+              <!-- 递归渲染嵌套回复 -->
+              <div v-if="comment.replies && comment.replies.length > 0" class="replies-list">
+                <ReplyItem
+                  v-for="reply in comment.replies"
+                  :key="reply.id"
+                  :reply="reply"
+                  :get-avatar-url="getAvatarUrl"
+                  :active-reply-id="activeReplyId"
+                  @toggle-reply="handleToggleNestedReply"
+                  @submit-reply="handleSubmitNestedReply"
+                  @delete-reply="handleDeleteReply"
+                />
+              </div>
+            </div>
           </template>
         </CommentItem>
       </div>
@@ -142,7 +173,7 @@
 import { ref, computed } from 'vue'
 import CommentForm from './comments/CommentForm.vue'
 import CommentItem from './comments/CommentItem.vue'
-import ReplySection from './comments/ReplySection.vue'
+import ReplyItem from './comments/ReplyItem.vue'
 
 export default {
   name: 'CommentSection',
@@ -150,7 +181,7 @@ export default {
   components: {
     CommentForm,
     CommentItem,
-    ReplySection
+    ReplyItem
   },
   
   props: {
@@ -172,7 +203,7 @@ export default {
     }
   },
   
-  emits: ['submit-comment', 'delete-comment', 'add-image', 'update-comment', 'submit-reply', 'load-replies'],
+  emits: ['submit-comment', 'delete-comment', 'add-image', 'update-comment', 'submit-reply', 'load-replies', 'submit-nested-reply'],
   
   setup(props, { emit }) {
     const submitting = ref(false)
@@ -189,6 +220,7 @@ export default {
     const submittingReply = ref({})
     const replyLists = ref({})
     const replyCounts = ref({})
+    const activeReplyId = ref(null)  // 当前激活的回复表单ID
     
     // 计算属性
     const hasManageableComments = computed(() => {
@@ -299,12 +331,22 @@ export default {
         if (submittingReply.value[commentId] === undefined) {
           submittingReply.value[commentId] = false
         }
-        if (!replyLists.value[commentId]) {
-          replyLists.value[commentId] = []
-          // 立即加载回复列表
-          emit('load-replies', commentId)
-        }
+        // 注意：新版本中回复数据已经包含在 comment.replies 中，不需要单独加载
       }
+    }
+    
+    // 处理嵌套回复的回复按钮
+    const handleToggleNestedReply = (replyId) => {
+      activeReplyId.value = activeReplyId.value === replyId ? null : replyId
+    }
+    
+    // 处理嵌套回复的提交
+    const handleSubmitNestedReply = ({ parentId, content }) => {
+      emit('submit-nested-reply', {
+        parentId,
+        content
+      })
+      activeReplyId.value = null
     }
     
     const handleSubmitReply = async (commentId, content) => {
@@ -356,6 +398,7 @@ export default {
       showModal,
       modalImageUrl,
       commentFormRef,
+      activeReplyId,
       handleSubmit,
       handleDelete,
       showImageModal,
@@ -369,6 +412,8 @@ export default {
       handleAddImage,
       toggleReplySection,
       handleSubmitReply,
+      handleToggleNestedReply,
+      handleSubmitNestedReply,
       cancelReply,
       handleDeleteReply,
       updateReplyList
@@ -407,6 +452,30 @@ export default {
 
 .comment-list {
   margin-top: 2rem;
+}
+
+/* 回复区域样式 */
+.reply-section-wrapper {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.reply-form {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.reply-form textarea {
+  font-size: 0.9rem;
+  background: white;
+  border: 1px solid #dee2e6;
+}
+
+.replies-list {
+  margin-top: 1rem;
 }
 
 /* 模态框样式 */

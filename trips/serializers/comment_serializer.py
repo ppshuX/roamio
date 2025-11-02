@@ -7,7 +7,7 @@ from .user_serializer import UserSerializer
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """评论序列化器（列表/详情）"""
+    """评论序列化器（列表/详情）- 支持递归嵌套回复"""
     user = UserSerializer(read_only=True)
     can_delete = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
@@ -15,12 +15,13 @@ class CommentSerializer(serializers.ModelSerializer):
     is_top_level = serializers.SerializerMethodField()
     parent_id = serializers.SerializerMethodField()
     replies_count = serializers.SerializerMethodField()
+    replies = serializers.SerializerMethodField()  # 新增：递归回复
     
     class Meta:
         model = Comment
         fields = [
             'id', 'user', 'parent_id', 'content', 'image', 'video', 
-            'page', 'timestamp', 'can_delete', 'is_top_level', 'replies_count'
+            'page', 'timestamp', 'can_delete', 'is_top_level', 'replies_count', 'replies'
         ]
         read_only_fields = ['id', 'user', 'timestamp']
     
@@ -106,10 +107,33 @@ class CommentSerializer(serializers.ModelSerializer):
         return obj.parent_id if obj.parent else None
     
     def get_replies_count(self, obj):
-        """获取回复数量（仅对顶层评论有效）"""
-        if obj.parent:
-            return 0  # 回复本身没有回复数
-        return Comment.objects.filter(parent=obj).count()
+        """获取回复数量"""
+        return obj.replies.count()
+    
+    def get_replies(self, obj):
+        """递归获取所有嵌套回复（限制深度避免性能问题）"""
+        # 检查当前递归深度
+        depth = self.context.get('depth', 0)
+        max_depth = self.context.get('max_depth', 5)  # 最多5层嵌套
+        
+        # 超过最大深度，不再递归
+        if depth >= max_depth:
+            return []
+        
+        # 获取当前评论的所有直接回复
+        replies = obj.replies.all().order_by('timestamp')
+        
+        # 如果没有回复，直接返回空数组
+        if not replies.exists():
+            return []
+        
+        # 创建新的上下文，增加深度
+        context = self.context.copy()
+        context['depth'] = depth + 1
+        
+        # 递归序列化回复
+        serializer = CommentSerializer(replies, many=True, context=context)
+        return serializer.data
 
 
 class CommentCreateSerializer(serializers.ModelSerializer):

@@ -171,6 +171,7 @@
           @add-image="handleAddImage"
           @update-comment="handleUpdateComment"
           @submit-reply="handleSubmitReply"
+          @submit-nested-reply="handleSubmitNestedReply"
           @load-replies="handleLoadReplies"
         />
       </div>
@@ -464,8 +465,27 @@ export default {
         
         await createComment(formData)
         alert('回复成功！')
-        // 提交成功后重新加载该评论的回复列表
-        await handleLoadReplies(commentId)
+        // 刷新评论列表（新版本会自动包含所有嵌套回复）
+        await fetchComments()
+      } catch (error) {
+        console.error('提交回复失败:', error)
+        alert('提交回复失败：' + (error.response?.data?.detail || error.message))
+      }
+    }
+    
+    // 处理嵌套回复的提交
+    const handleSubmitNestedReply = async ({ parentId, content }) => {
+      if (!ensureLoggedIn()) return
+      try {
+        const formData = new FormData()
+        formData.append('content', content)
+        formData.append('page', route.params.slug)
+        formData.append('parent', parentId)  // 设置父评论ID（可能是回复的回复）
+        
+        await createComment(formData)
+        alert('回复成功！')
+        // 刷新评论列表（新版本会自动包含所有嵌套回复）
+        await fetchComments()
       } catch (error) {
         console.error('提交回复失败:', error)
         alert('提交回复失败：' + (error.response?.data?.detail || error.message))
@@ -605,6 +625,7 @@ export default {
       handleAddImage,
       handleUpdateComment,
       handleSubmitReply,
+      handleSubmitNestedReply,
       handleLoadReplies,
       goBack,
       toggleMusic,
