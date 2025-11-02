@@ -76,8 +76,8 @@
       </div>
     </div>
     
-    <!-- 递归渲染嵌套回复 -->
-    <div v-if="reply.replies && reply.replies.length > 0" class="nested-replies">
+    <!-- 递归渲染嵌套回复（AcWing 模式：最多 2 层视觉嵌套）-->
+    <div v-if="reply.replies && reply.replies.length > 0 && depth < 2" class="nested-replies">
       <ReplyItem
         v-for="nestedReply in reply.replies"
         :key="nestedReply.id"
@@ -85,6 +85,22 @@
         :get-avatar-url="getAvatarUrl"
         :parent-username="reply.user.username"
         :depth="depth + 1"
+        :active-reply-id="activeReplyId"
+        @toggle-reply="$emit('toggle-reply', $event)"
+        @submit-reply="$emit('submit-reply', $event)"
+        @delete-reply="$emit('delete-reply', $event)"
+      />
+    </div>
+    
+    <!-- 第 2 层及以后的回复：平铺显示，不再嵌套 -->
+    <div v-if="reply.replies && reply.replies.length > 0 && depth >= 2" class="flat-replies">
+      <ReplyItem
+        v-for="nestedReply in reply.replies"
+        :key="nestedReply.id"
+        :reply="nestedReply"
+        :get-avatar-url="getAvatarUrl"
+        :parent-username="reply.user.username"
+        :depth="2"
         :active-reply-id="activeReplyId"
         @toggle-reply="$emit('toggle-reply', $event)"
         @submit-reply="$emit('submit-reply', $event)"
@@ -266,7 +282,7 @@ export default {
   border: 1px solid #dee2e6;
 }
 
-/* 嵌套回复样式 */
+/* 嵌套回复样式（AcWing 模式：最多 2 层视觉嵌套）*/
 .nested-replies {
   margin-left: 2.5rem;
   margin-top: 0.5rem;
@@ -284,7 +300,16 @@ export default {
   background: linear-gradient(to bottom, #dee2e6 0%, #dee2e6 90%, transparent 100%);
 }
 
-/* 深度缩进限制（最多5层） */
+/* 平铺回复样式（第 2 层及以后，不再缩进）*/
+.flat-replies {
+  margin-top: 0.5rem;
+}
+
+.flat-replies .reply-item {
+  border-left-color: #a0aec0;
+}
+
+/* 深度限制 */
 .reply-item-wrapper {
   max-width: 100%;
 }
