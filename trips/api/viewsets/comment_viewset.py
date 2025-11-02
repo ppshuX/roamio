@@ -118,7 +118,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             if video:
                 video_url = FileUploadHandler.upload_comment_video(video, self.request.user.id)
         except Exception as e:
-            raise PermissionDenied(f'文件上传失败: {str(e)}')
+            raise PermissionDenied(f'File upload failed: {str(e)}')
         
         try:
             parent = serializer.validated_data.get('parent')
