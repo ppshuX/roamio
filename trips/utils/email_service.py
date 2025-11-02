@@ -121,6 +121,9 @@ def send_verification_code(email, verification_type='register', user=None, ip_ad
     Returns:
         tuple: (success: bool, code: EmailVerificationCode or None, error_message: str)
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
         # 创建验证码
         verification_code = EmailVerificationCode.create_code(
