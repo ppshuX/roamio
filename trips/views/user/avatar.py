@@ -1,10 +1,13 @@
 """
 用户头像上传视图 - 上传到腾讯云COS
 """
+import logging
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from ...utils.file_upload_handler import FileUploadHandler
+
+logger = logging.getLogger(__name__)
 
 
 @csrf_exempt
@@ -31,7 +34,7 @@ def upload_avatar(request):
                 try:
                     FileUploadHandler.delete_file(old_avatar_url)
                 except Exception as e:
-                    print(f"删除旧头像失败（已忽略）: {e}")
+                    logger.warning(f"删除旧头像失败（已忽略）: {e}")
             
             # 上传新头像到 COS
             avatar_url = FileUploadHandler.upload_avatar(avatar_file, request.user.id)

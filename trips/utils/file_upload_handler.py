@@ -5,9 +5,12 @@
 import os
 import uuid
 import tempfile
+import logging
 from django.utils import timezone
 from PIL import Image
 from .tencent_cos import upload_to_cos, delete_from_cos
+
+logger = logging.getLogger(__name__)
 
 
 class FileUploadHandler:
@@ -63,10 +66,10 @@ class FileUploadHandler:
             if os.path.getsize(temp_file_path) > 3 * 1024 * 1024:
                 img.save(temp_file_path, format='JPEG', quality=70)
             
-            print(f"图片压缩完成: {temp_file_path}, 大小: {os.path.getsize(temp_file_path) / 1024:.1f}KB")
+            logger.info(f"图片压缩完成: {temp_file_path}, 大小: {os.path.getsize(temp_file_path) / 1024:.1f}KB")
             
         except Exception as e:
-            print(f"图片压缩失败（将上传原图）: {e}")
+            logger.warning(f"图片压缩失败（将上传原图）: {e}")
     
     @staticmethod
     def upload_file(uploaded_file, save_dir='media', filename_prefix='', compress_image=True):
@@ -103,7 +106,7 @@ class FileUploadHandler:
                 for chunk in uploaded_file.chunks():
                     temp_file.write(chunk)
             
-            print(f"临时文件已保存: {temp_file_path}")
+            logger.info(f"临时文件已保存: {temp_file_path}")
             
             # 如果是图片且需要压缩
             if compress_image and uploaded_file.content_type.startswith('image/'):
@@ -118,7 +121,7 @@ class FileUploadHandler:
             return cos_url
             
         except Exception as e:
-            print(f"文件上传失败: {e}")
+            logger.error(f"文件上传失败: {e}")
             raise
             
         finally:
@@ -126,9 +129,9 @@ class FileUploadHandler:
             if temp_file_path and os.path.exists(temp_file_path):
                 try:
                     os.remove(temp_file_path)
-                    print(f"临时文件已删除: {temp_file_path}")
+                    logger.info(f"临时文件已删除: {temp_file_path}")
                 except Exception as e:
-                    print(f"删除临时文件失败: {e}")
+                    logger.warning(f"删除临时文件失败: {e}")
     
     @staticmethod
     def delete_file(cos_url):
@@ -195,9 +198,9 @@ class FileUploadHandler:
                 img = img.convert('RGB')
                 img.save(temp_file_path, format='JPEG', quality=90)
                 
-                print(f"头像处理完成: 300x300, {os.path.getsize(temp_file_path) / 1024:.1f}KB")
+                logger.info(f"头像处理完成: 300x300, {os.path.getsize(temp_file_path) / 1024:.1f}KB")
             except Exception as e:
-                print(f"头像处理失败（将上传原图）: {e}")
+                logger.warning(f"头像处理失败（将上传原图）: {e}")
             
             # 上传到 COS
             cos_save_path = f"media/avatars/{unique_filename}"

@@ -6,12 +6,15 @@ import os
 import requests
 import uuid
 import tempfile
+import logging
 from io import BytesIO
 from PIL import Image
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
 import sys
 from .file_upload_handler import FileUploadHandler
+
+logger = logging.getLogger(__name__)
 
 
 def download_avatar_from_url(avatar_url):
@@ -119,7 +122,7 @@ def set_user_avatar_from_url(user, avatar_url):
             try:
                 FileUploadHandler.delete_file(user.profile.avatar)
             except Exception as e:
-                print(f"删除旧头像失败（已忽略）: {e}")
+                logger.warning(f"删除旧头像失败（已忽略）: {e}")
         
         # 重置文件指针到开始位置
         result.seek(0)
@@ -138,8 +141,6 @@ def set_user_avatar_from_url(user, avatar_url):
         return True, f"头像设置成功: {cos_url}"
         
     except Exception as e:
-        print(f"上传头像到COS时发生错误: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"上传头像到COS时发生错误: {e}", exc_info=True)
         return False, f"上传头像到COS失败: {str(e)}"
 

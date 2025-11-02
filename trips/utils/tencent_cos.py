@@ -2,8 +2,11 @@
 腾讯云 COS 对象存储上传工具
 """
 import os
+import logging
 from qcloud_cos import CosConfig, CosS3Client
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 def get_cos_client():
@@ -57,7 +60,7 @@ def upload_to_cos(file_path, save_path):
         file_size = os.path.getsize(file_path)
         file_size_mb = file_size / 1024 / 1024
         
-        print(f"开始上传文件: {file_path} ({file_size_mb:.2f}MB) -> {save_path}")
+        logger.info(f"开始上传文件: {file_path} ({file_size_mb:.2f}MB) -> {save_path}")
         
         # 上传文件
         # COS SDK 会自动判断：
@@ -74,11 +77,11 @@ def upload_to_cos(file_path, save_path):
         # 构建公网访问 URL
         url = f"https://{bucket}.cos.{settings.TENCENT_COS_REGION}.myqcloud.com/{save_path}"
         
-        print(f"文件上传成功: {file_path} ({file_size_mb:.2f}MB) -> {url}")
+        logger.info(f"文件上传成功: {file_path} ({file_size_mb:.2f}MB) -> {url}")
         return url
         
     except Exception as e:
-        print(f"COS 上传失败: {e}")
+        logger.error(f"COS 上传失败: {e}")
         raise Exception(f"文件上传到 COS 失败: {str(e)}")
 
 
@@ -101,7 +104,7 @@ def delete_from_cos(cos_url):
         # 需要提取 path/to/file.jpg 部分
         parts = cos_url.split(f"{bucket}.cos.{settings.TENCENT_COS_REGION}.myqcloud.com/")
         if len(parts) < 2:
-            print(f"无效的 COS URL: {cos_url}")
+            logger.warning(f"无效的 COS URL: {cos_url}")
             return False
         
         file_key = parts[1]
@@ -112,10 +115,10 @@ def delete_from_cos(cos_url):
             Key=file_key
         )
         
-        print(f"文件删除成功: {cos_url}")
+        logger.info(f"文件删除成功: {cos_url}")
         return True
         
     except Exception as e:
-        print(f"COS 删除失败: {e}")
+        logger.error(f"COS 删除失败: {e}")
         return False
 

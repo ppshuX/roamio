@@ -2,6 +2,7 @@
 用户相关 ViewSet
 处理用户信息的查询、更新、头像上传等功能
 """
+import logging
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -17,6 +18,8 @@ from ...serializers import (
     AvatarUploadSerializer,
 )
 from ...utils.file_upload_handler import FileUploadHandler
+
+logger = logging.getLogger(__name__)
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet,
@@ -83,7 +86,7 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet,
                 try:
                     FileUploadHandler.delete_file(old_avatar_url)
                 except Exception as e:
-                    print(f"删除旧头像失败（已忽略）: {e}")
+                    logger.warning(f"删除旧头像失败（已忽略）: {e}")
             
             # 上传新头像到 COS
             avatar_url = FileUploadHandler.upload_avatar(avatar_file, user.id)

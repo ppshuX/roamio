@@ -2,6 +2,7 @@
 评论相关 ViewSet
 处理评论的 CRUD 操作、文件上传等功能
 """
+import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -11,6 +12,8 @@ from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import CharFilter
 from django_filters.rest_framework import FilterSet
+
+logger = logging.getLogger(__name__)
 
 from ...models import Comment, Trip
 from ...serializers import (
@@ -168,9 +171,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             
             serializer.save(user=self.request.user)
         except Exception as e:
-            print(f"创建评论时发生错误: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"创建评论时发生错误: {e}", exc_info=True)
             raise
     
     def perform_update(self, serializer):
@@ -262,9 +263,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
             
         except Exception as e:
-            print(f"删除评论时发生错误: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"删除评论时发生错误: {e}", exc_info=True)
             return Response(
                 {'detail': f'删除失败: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -293,23 +292,23 @@ class CommentViewSet(viewsets.ModelViewSet):
                     collect_reply_files(reply)
             
             collect_reply_files(instance)
-            print(f"准备删除评论及其 {len(files_to_delete)} 个关联文件")
+            logger.info(f"准备删除评论及其 {len(files_to_delete)} 个关联文件")
         
         # 删除评论对象（Django 自动级联删除所有回复）
         try:
             instance.delete()
-            print(f"评论 {instance.id} 及其所有回复已从数据库删除")
+            logger.info(f"评论 {instance.id} 及其所有回复已从数据库删除")
         except Exception as e:
-            print(f"删除评论对象失败: {e}")
+            logger.error(f"删除评论对象失败: {e}")
             raise
         
         # 从 COS 删除所有收集到的文件
         for file_type, file_url in files_to_delete:
             try:
                 FileUploadHandler.delete_file(file_url)
-                print(f"成功删除{file_type}文件: {file_url}")
+                logger.info(f"成功删除{file_type}文件: {file_url}")
             except Exception as e:
-                print(f"删除{file_type}文件失败: {e} - {file_url}")
+                logger.warning(f"删除{file_type}文件失败: {e} - {file_url}")
     
     @action(detail=True, methods=['get'], permission_classes=[AllowAny])
     def replies(self, request, pk=None):
@@ -380,9 +379,9 @@ class CommentViewSet(viewsets.ModelViewSet):
                 old_image_url = comment.image
                 try:
                     FileUploadHandler.delete_file(old_image_url)
-                    print(f"成功删除旧图片: {old_image_url}")
+                    logger.info(f"成功删除旧图片: {old_image_url}")
                 except Exception as e:
-                    print(f"删除旧图片失败（已忽略）: {e}")
+                    logger.warning(f"删除旧图片失败（已忽略）: {e}")
             
             # 上传新图片到 COS
             image_url = FileUploadHandler.upload_comment_image(image, request.user.id)
@@ -396,7 +395,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
             
         except Exception as e:
-            print(f"添加图片失败: {e}")
+            logger.error(f"添加图片失败: {e}", exc_info=True)
             return Response(
                 {'detail': f'添加图片失败: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

@@ -2,12 +2,15 @@
 邮件发送服务
 """
 import os
+import logging
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from ..models import EmailVerificationCode
+
+logger = logging.getLogger(__name__)
 
 
 def send_verification_email(email, code, verification_type='register', user=None):
@@ -74,32 +77,31 @@ def send_verification_email(email, code, verification_type='register', user=None
             
             # 开发环境额外提示
             if settings.DEBUG:
-                print("\n" + "=" * 50)
-                print(f"[DEV] 验证码已发送到: {email}")
-                print(f"验证码: {code}")
-                print(f"类型: {verification_type}")
-                print("=" * 50 + "\n")
+                logger.info("=" * 50)
+                logger.info(f"[DEV] 验证码已发送到: {email}")
+                logger.info(f"验证码: {code}")
+                logger.info(f"类型: {verification_type}")
+                logger.info("=" * 50)
             
             return True
         except Exception as send_error:
             # 更详细的错误信息
             error_msg = str(send_error)
-            print(f"[ERROR] 邮件发送异常: {error_msg}")
+            logger.error(f"[ERROR] 邮件发送异常: {error_msg}")
             
             # 检查是否是配置问题
             if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
                 if not settings.DEBUG:
-                    print("[WARNING] EMAIL_HOST_USER 或 EMAIL_HOST_PASSWORD 未配置")
+                    logger.warning("[WARNING] EMAIL_HOST_USER 或 EMAIL_HOST_PASSWORD 未配置")
             
             raise  # 重新抛出异常以便上层处理
         
     except Exception as e:
         import traceback
         error_detail = traceback.format_exc()
-        print(f"发送验证邮件失败: {e}")
-        print(f"详细错误: {error_detail}")
+        logger.error(f"发送验证邮件失败: {e}")
+        logger.error(f"详细错误: {error_detail}")
         # 记录到Django日志
-        import logging
         logger = logging.getLogger(__name__)
         logger.error(f"邮件发送失败: {e}\n{error_detail}")
         return False
@@ -146,6 +148,6 @@ def send_verification_code(email, verification_type='register', user=None, ip_ad
             
     except Exception as e:
         error_msg = f"生成验证码失败: {str(e)}"
-        print(error_msg)
+        logger.error(error_msg)
         return False, None, error_msg
 
