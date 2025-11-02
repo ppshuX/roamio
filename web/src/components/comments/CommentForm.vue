@@ -96,11 +96,22 @@ export default {
     }
     
     const handleSubmit = () => {
-      emit('submit', {
+      // 先保存表单数据引用（因为后面会重置）
+      const submitData = {
         content: formData.value.content,
         image: formData.value.image,
         video: formData.value.video
-      }, (progressEvent) => {
+      }
+      
+      // 重置表单（让用户可以继续输入）
+      formData.value = {
+        content: '',
+        image: null,
+        video: null
+      }
+      
+      // 提交数据
+      emit('submit', submitData, (progressEvent) => {
         // 进度回调 - progressEvent 格式: { loaded, total, percent }
         const progress = progressEvent.percent || 0
         uploadProgress.value = progress
@@ -112,21 +123,16 @@ export default {
         } else if (progress < 100) {
           uploadMessage.value = '即将完成...'
         } else {
-          uploadMessage.value = '上传完成！'
-          // 1秒后隐藏进度条
-          setTimeout(() => {
-            uploadProgress.value = 0
-            uploadMessage.value = ''
-          }, 1000)
+          // 上传完成，但后端还在处理
+          uploadMessage.value = '处理中，请稍候...'
         }
       })
-      
-      // 重置表单
-      formData.value = {
-        content: '',
-        image: null,
-        video: null
-      }
+    }
+    
+    // 暴露重置进度条的方法（供父组件调用）
+    const resetProgress = () => {
+      uploadProgress.value = 0
+      uploadMessage.value = ''
     }
     
     return {
@@ -135,7 +141,8 @@ export default {
       uploadMessage,
       handleImageChange,
       handleVideoChange,
-      handleSubmit
+      handleSubmit,
+      resetProgress
     }
   }
 }

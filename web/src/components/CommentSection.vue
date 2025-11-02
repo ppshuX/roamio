@@ -22,6 +22,7 @@
       </div>
       <CommentForm
         v-if="isAuthor && showForm"
+        ref="commentFormRef"
         :submitting="submitting"
         @submit="handleSubmit"
       />
@@ -180,6 +181,7 @@ export default {
     const isManageMode = ref(false)
     const showModal = ref(false)
     const modalImageUrl = ref('')
+    const commentFormRef = ref(null)
     
     // 回复功能相关
     const expandedReplies = ref({})
@@ -199,7 +201,14 @@ export default {
       submitting.value = true
       try {
         // 直接传递 payload 对象，包含 data 和 onProgress
-        emit('submit-comment', { data: commentData, onProgress })
+        await emit('submit-comment', { data: commentData, onProgress })
+        
+        // 提交成功后，重置进度条
+        if (commentFormRef.value && commentFormRef.value.resetProgress) {
+          setTimeout(() => {
+            commentFormRef.value.resetProgress()
+          }, 1500) // 1.5秒后隐藏进度条
+        }
       } finally {
         submitting.value = false
       }
@@ -346,6 +355,7 @@ export default {
       replyCounts,
       showModal,
       modalImageUrl,
+      commentFormRef,
       handleSubmit,
       handleDelete,
       showImageModal,

@@ -352,12 +352,19 @@ export default {
         }
         
         // 传递进度回调
-        await createComment(formData, onProgress)
-        alert('评论发表成功！')
+        const result = await createComment(formData, onProgress)
+        
+        // 上传+后端处理都完成后，才显示成功提示
+        console.log('评论发表成功！', result)
+        
+        // 刷新评论列表
         await fetchComments()
+        
+        // 显示成功提示
+        alert('✅ 发表成功！')
       } catch (error) {
         console.error('发表评论失败:', error)
-        alert('发表评论失败：' + error.message)
+        alert('❌ 发表失败：' + error.message)
       }
     }
     
