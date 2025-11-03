@@ -41,6 +41,7 @@
             height="32"
             loading="lazy"
             alt="avatar"
+            @error="handleAvatarError"
           />
           <div class="flex-grow-1">
             <div class="d-flex justify-content-between align-items-center mb-1">
@@ -69,6 +70,7 @@
 
 <script>
 import { ref, watch } from 'vue'
+import { DEFAULT_AVATAR_SVG } from '@/config/api'
 
 export default {
   name: 'ReplySection',
@@ -116,6 +118,14 @@ export default {
       emit('cancel')
     }
     
+    // 头像加载失败处理：降级到 SVG
+    const handleAvatarError = (e) => {
+      console.log('头像加载失败，使用 SVG 备用头像')
+      e.target.src = DEFAULT_AVATAR_SVG
+      // 防止无限循环：如果 SVG 也失败，移除 error 事件
+      e.target.onerror = null
+    }
+    
     const formatDate = (dateStr) => {
       const date = new Date(dateStr)
       const year = date.getFullYear()
@@ -131,6 +141,7 @@ export default {
       replyContent,
       handleSubmit,
       handleCancel,
+      handleAvatarError,
       formatDate
     }
   }

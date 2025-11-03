@@ -126,6 +126,7 @@
 
 <script>
 import { ref, computed } from 'vue'
+import { DEFAULT_AVATAR_SVG } from '@/config/api'
 
 export default {
   name: 'ReplyItem',
@@ -163,7 +164,10 @@ export default {
     })
     
     const handleAvatarError = (e) => {
-      e.target.src = '/static/images/default_avatar.png'
+      console.log('头像加载失败，使用 SVG 备用头像')
+      e.target.src = DEFAULT_AVATAR_SVG
+      // 防止无限循环：如果 SVG 也失败，移除 error 事件
+      e.target.onerror = null
     }
     
     const handleSubmitReply = () => {

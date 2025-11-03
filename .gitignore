@@ -89,8 +89,10 @@ backups/
 # =========================================
 # 🖼️ 静态资源（服务器上手动维护）
 # =========================================
-static/images/qq_login.png
-static/images/logo_Roamio.png
+# 所有静态图片文件（避免 Git 损坏二进制文件）
+static/images/
+# 但保留 .gitkeep 以确保目录存在
+!static/images/.gitkeep
 
 # =========================================
 # 📝 文档文件（除README.md外都忽略）
