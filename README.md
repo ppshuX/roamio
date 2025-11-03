@@ -4,11 +4,21 @@
 
 **让每个旅行都成为难忘的回忆** ✈️🏖️🌄
 
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11+-green.svg)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-5.0+-092E20.svg)](https://www.djangoproject.com/)
+[![Vue](https://img.shields.io/badge/Vue-3.0+-4FC08D.svg)](https://vuejs.org/)
+
+[在线演示](https://app7508.acapp.acwing.com.cn/) · [完整文档](PROJECT_OVERVIEW.md) · [问题反馈](https://github.com/ppshuX/roamio/issues)
+
 ---
 
 ## 📚 项目文档
 
-详细的开发计划请查看：**[阶段开发计划](docs/PHASE_PLAN.md)** ⭐
+- 📖 **[完整项目说明](PROJECT_OVERVIEW.md)** - 技术架构、部署指南、开发经验（推荐阅读）
+- 📊 **[项目价值与水平分析](docs/PROJECT_VALUE_AND_LEVELS.md)** - 技术评估、求职亮点
+- 🐳 **[Docker 重建完整指南](docs/DOCKER_REBUILD_COMPLETE_GUIDE.md)** - 生产环境部署经验
+- 📝 **[Docker 重建历程](docs/DOCKER_REBUILD_JOURNEY.md)** - 踩坑记录与解决方案
 
 ---
 
@@ -142,7 +152,19 @@ roamio/
 
 - **项目地址**: https://github.com/ppshuX/roamio
 - **在线演示**: https://app7508.acapp.acwing.com.cn/
-- **问题反馈**: [Issues](https://github.com/ppshuX/roamio/issues)
+- **问题反馈**: [GitHub Issues](https://github.com/ppshuX/roamio/issues)
+- **邮箱**: 2064747320@qq.com
+
+## 🎓 项目定位
+
+本项目是一个**真实部署在生产环境**的完整 Web 应用，具有以下特点：
+
+- ✅ **非玩具项目** - 真实用户使用，真实数据
+- ✅ **完整技术栈** - 前端 + 后端 + 数据库 + 部署
+- ✅ **工程化实践** - 代码规范、版本控制、文档体系
+- ✅ **产品化思维** - 用户体验、交互设计、品牌一致性
+
+**技术水平**: 在大三学生中处于 **TOP 10-15%**，已达到**初级工程师**水平。详见 [项目水平评估](docs/PROJECT_VALUE_AND_LEVELS.md)。
 
 ---
 
