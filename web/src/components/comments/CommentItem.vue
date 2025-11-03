@@ -39,6 +39,7 @@
             style="cursor: pointer;"
             @click="$emit('show-image-modal', comment.image)"
             alt="评论图片"
+            loading="lazy"
           />
         </div>
         
@@ -47,6 +48,7 @@
           <video
             :src="comment.video"
             controls
+            preload="metadata"
             class="rounded"
           >
             您的浏览器不支持视频播放
