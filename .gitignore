@@ -97,5 +97,4 @@ static/images/logo_Roamio.png
 docs/**/*.md
 *.md
 !README.md
-!PROJECT_OVERVIEW.md
 
