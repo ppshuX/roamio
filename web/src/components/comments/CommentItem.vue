@@ -7,6 +7,7 @@
         width="48"
         height="48"
         alt="avatar"
+        loading="lazy"
         @error="(e) => { console.log('头像加载失败:', comment.user); e.target.src='/static/images/default_avatar.png'; }"
       />
       <div class="flex-grow-1">

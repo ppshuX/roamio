@@ -39,6 +39,7 @@
             class="rounded-circle me-2"
             width="32"
             height="32"
+            loading="lazy"
             alt="avatar"
           />
           <div class="flex-grow-1">

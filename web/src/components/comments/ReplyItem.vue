@@ -8,6 +8,7 @@
           class="rounded-circle me-2 flex-shrink-0"
           width="32"
           height="32"
+          loading="lazy"
           alt="avatar"
           @error="handleAvatarError"
         />
