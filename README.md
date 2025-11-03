@@ -153,7 +153,7 @@ roamio/
 - **项目地址**: https://github.com/ppshuX/roamio
 - **在线演示**: https://app7508.acapp.acwing.com.cn/
 - **问题反馈**: [GitHub Issues](https://github.com/ppshuX/roamio/issues)
-- **邮箱**: 2064747320@qq.com
+- **邮箱**: 联系请通过 GitHub Issues
 
 ## 🎓 项目定位
 

@@ -830,9 +830,9 @@ def compress_image(image_file, max_size=(1920, 1080), quality=85):
 env = EMAIL_HOST=smtp.qq.com
 env = EMAIL_PORT=587
 env = EMAIL_USE_TLS=True
-env = EMAIL_HOST_USER=2064747320@qq.com
-env = EMAIL_HOST_PASSWORD=vnfmjisfmflqcdgf
-env = DEFAULT_FROM_EMAIL=Roamio <2064747320@qq.com>
+env = EMAIL_HOST_USER=your_email@qq.com
+env = EMAIL_HOST_PASSWORD=your_smtp_authorization_code
+env = DEFAULT_FROM_EMAIL=Roamio <your_email@qq.com>
 ```
 
 **教训**：
@@ -1287,7 +1287,7 @@ SOFTWARE.
 - **项目主页**: [https://github.com/ppshuX/roamio](https://github.com/ppshuX/roamio)
 - **在线演示**: [https://app7508.acapp.acwing.com.cn/](https://app7508.acapp.acwing.com.cn/)
 - **问题反馈**: [GitHub Issues](https://github.com/ppshuX/roamio/issues)
-- **邮箱**: 2064747320@qq.com
+- **邮箱**: 联系请通过 GitHub Issues
 
 ---
 
