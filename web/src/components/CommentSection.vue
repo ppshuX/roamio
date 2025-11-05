@@ -1,7 +1,17 @@
 <template>
   <div class="card">
     <div class="card-body">
-      <h3 class="mb-4">🌳 Roamio Stories.</h3>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">🌳 Roamio Stories.</h3>
+        <button
+          class="btn btn-sm btn-outline-secondary"
+          @click="toggleOrder"
+          :title="isReversed ? '恢复时间顺序' : '最新记录在前'"
+          style="font-size: 0.85rem;"
+        >
+          {{ isReversed ? '↓' : '↑' }}
+        </button>
+      </div>
       
       <!-- 发表评论入口（仅作者可见） -->
       <div v-if="isAuthor" class="mb-3">
@@ -48,7 +58,7 @@
         </div>
         
         <CommentItem
-          v-for="comment in comments"
+          v-for="comment in displayedComments"
           :key="comment.id"
           :comment="comment"
           :editing="editingComments[comment.id] !== undefined && editingComments[comment.id] !== false"
@@ -223,10 +233,26 @@ export default {
     const replyCounts = ref({})
     const activeReplyId = ref(null)  // 当前激活的回复表单ID
     
+    // 翻转记录功能
+    const isReversed = ref(false)
+    
     // 计算属性
     const hasManageableComments = computed(() => {
       return props.comments.some(comment => comment.can_delete)
     })
+    
+    // 根据翻转状态显示评论列表
+    const displayedComments = computed(() => {
+      if (isReversed.value) {
+        return [...props.comments].reverse()
+      }
+      return props.comments
+    })
+    
+    // 切换排序顺序
+    const toggleOrder = () => {
+      isReversed.value = !isReversed.value
+    }
     
     
     // 提交评论
@@ -413,6 +439,9 @@ export default {
       modalImageUrl,
       commentFormRef,
       activeReplyId,
+      isReversed,
+      displayedComments,
+      toggleOrder,
       handleSubmit,
       handleDelete,
       showImageModal,
