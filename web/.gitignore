@@ -1,6 +1,6 @@
 .DS_Store
 node_modules
-/dist
+# /dist  # 不要忽略 dist，需要提交到 Git
 **.swp
 **.pyc
 __pycache__/

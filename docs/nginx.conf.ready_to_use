@@ -60,6 +60,18 @@ http {
         client_body_timeout 300s;
 
         # ============================================================
+        # 旧路由重定向（向后兼容）
+        # ============================================================
+        # 旧的 Django 模板路由重定向到新的 Vue SPA
+        location /cetapp/ {
+            return 301 /;
+        }
+        
+        location /trips/ {
+            return 301 /;
+        }
+
+        # ============================================================
         # 后端 API（Django REST Framework）
         # ============================================================
         location /api {
@@ -128,37 +140,6 @@ http {
             alias /home/acs/roamio/staticfiles/;
             expires 7d;
             add_header Cache-Control "public, immutable";
-        }
-
-        # ============================================================
-        # 媒体文件（用户上传，已迁移到COS，保留配置用于向后兼容）
-        # ============================================================
-        location /media {
-            alias /home/acs/roamio/media/;
-            expires 7d;
-            add_header Cache-Control "public";
-
-            if ($request_method = 'OPTIONS') {
-                add_header 'Access-Control-Allow-Origin' 'https://www.acwing.com';
-                add_header 'Access-Control-Allow-Methods' 'GET, PUT, OPTIONS, POST, DELETE';
-                add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,X-Amz-Date';
-                add_header 'Access-Control-Max-Age' 86400;
-                add_header 'Content-Type' 'text/html; charset=utf-8';
-                add_header 'Content-Length' 0;
-                return 204;
-            }
-            if ($request_method = 'PUT') {
-                add_header 'Access-Control-Allow-Origin' 'https://www.acwing.com';
-                add_header 'Access-Control-Allow-Methods' 'GET, PUT, OPTIONS, POST, DELETE';
-                add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,X-Amz-Date';
-                add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
-            }
-            if ($request_method = 'GET') {
-                add_header 'Access-Control-Allow-Origin' 'https://www.acwing.com';
-                add_header 'Access-Control-Allow-Methods' 'GET, PUT, OPTIONS, POST, DELETE';
-                add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,X-Amz-Date';
-                add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
-            }
         }
 
         # ============================================================
