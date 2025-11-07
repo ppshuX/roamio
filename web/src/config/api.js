@@ -1,17 +1,34 @@
 /**
  * API配置
  * 
- * 开发环境：通过 vue.config.js 代理访问后端（/api, /static, /media）
- * 生产环境：
- *   - 如果前后端同域：直接使用相对路径
- *   - 如果前后端分离：配置 VUE_APP_API_BASE_URL 环境变量
+ * 前后端分离架构：
+ * - 开发环境：通过 vue.config.js 代理访问本地后端（http://localhost:8000）
+ * - 生产环境：通过环境变量配置独立 API 域名（https://api.roamio.com）
+ * 
+ * 环境变量配置：
+ * - VUE_APP_API_BASE_URL: API 基础地址
+ * - VUE_APP_API_VERSION: API 版本（默认 v1）
  */
+
+// API 版本
+export const API_VERSION = process.env.VUE_APP_API_VERSION || 'v1'
 
 // 根据环境获取API基础URL
 export const getApiBaseUrl = () => {
-    // 使用环境变量（生产环境配置）
-    // 如果未配置，返回空字符串（使用相对路径）
+    // 开发环境：使用代理，返回空字符串（相对路径）
+    if (process.env.NODE_ENV === 'development') {
+        return ''
+    }
+
+    // 生产环境：从环境变量读取 API 地址
+    // 如果未配置，默认使用当前域名（前后端同域部署）
     return process.env.VUE_APP_API_BASE_URL || ''
+}
+
+// 获取完整的 API 前缀（包含版本号）
+export const getApiPrefix = () => {
+    const baseUrl = getApiBaseUrl()
+    return baseUrl ? `${baseUrl}/api/${API_VERSION}` : `/api/${API_VERSION}`
 }
 
 // 获取完整URL（处理相对路径）

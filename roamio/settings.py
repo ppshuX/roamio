@@ -223,14 +223,22 @@ SPECTACULAR_SETTINGS = {
 }
 
 # ==================== CORS跨域配置 ====================
-# 允许所有来源（生产环境）
-CORS_ALLOW_ALL_ORIGINS = True
-
-# 更安全的配置（如果需要限制特定域名）
-CORS_ALLOWED_ORIGINS = [
-    "https://app7508.acapp.acwing.com.cn",
-    "http://47.121.137.60",
-]
+# 开发环境：允许所有来源（方便调试）
+# 生产环境：只允许指定域名（安全）
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+    print("=" * 50)
+    print("[CORS] Development mode - Allow all origins")
+    print("=" * 50)
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOWED_ORIGINS = [
+        "https://www.roamio.com",
+        "https://roamio.com",
+        "https://m.roamio.com",  # 移动端域名
+        "https://app7508.acapp.acwing.com.cn",
+        "http://47.121.137.60",
+    ]
 
 # 允许的请求方法
 CORS_ALLOW_METHODS = [
@@ -255,12 +263,13 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# 安全头部（微信需要）
+# 允许携带 Cookie（用于 Session 认证，如果使用 JWT 可以关闭）
+CORS_ALLOW_CREDENTIALS = True
+
+# 安全头部
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-
-# CORS相关配置
-CORS_ALLOW_CREDENTIALS = True  # 允许携带Cookie
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 # ==================== 邮件配置 ====================
 # 从环境变量读取邮件配置
