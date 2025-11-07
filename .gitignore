@@ -9,7 +9,7 @@ __pycache__/
 *.so
 .Python
 *.egg-info/
-dist/
+# dist/  # 不要忽略 web/dist/（前端构建产物）
 build/
 venv/
 env/
@@ -33,9 +33,19 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-# 如果是生产部署打包产物，可以忽略 dist/
-# （若使用 Django collectstatic 部署，则不忽略 Vue dist/）
-# dist/
+
+# 前端源代码（不提交到 Git）
+web/src/
+web/public/
+web/package.json
+web/package-lock.json
+web/babel.config.js
+web/jsconfig.json
+web/vue.config.js
+web/.env.*
+
+# 只保留构建产物 web/dist/（提交到 Git）
+# dist/ 不要忽略！
 
 # =========================================
 # 💻 IDE / 编辑器

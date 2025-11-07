@@ -62,7 +62,7 @@ module.exports = defineConfig({
       .rule('images')
       .use('url-loader')
       .loader('url-loader')
-      .tap((options) => Object.assign(options, { limit: 10240 }))  // 10KB 以下转 base64
+      .tap((options) => Object.assign(options || {}, { limit: 10240 }))  // 10KB 以下转 base64
 
     // 代码分割
     config.optimization.splitChunks({
