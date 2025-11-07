@@ -38,19 +38,16 @@ module.exports = defineConfig({
   // ============================================================
   // 生产构建配置
   // ============================================================
-  
+
   // 输出目录
   outputDir: 'dist',  // 输出到 web/dist/ 目录
-  
+
   // 静态资源目录
   assetsDir: 'assets',
-  
+
   // 公共路径
-  // 当前部署方式：前端构建后，通过 Nginx 直接访问 dist 目录
-  // 或者：将 dist 目录复制到 Django 的 static/vue/ 目录
-  publicPath: process.env.NODE_ENV === 'production' 
-    ? process.env.VUE_APP_PUBLIC_PATH || '/static/vue/'  // 支持环境变量配置
-    : '/',
+  // 前后端分离：前端独立部署，Nginx 直接访问 dist 目录
+  publicPath: '/',
 
   // 生产环境的 source map（建议关闭以减小体积）
   productionSourceMap: false,

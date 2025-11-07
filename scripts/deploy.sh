@@ -39,26 +39,17 @@ npm run build
 cd ..
 
 # ============================================================
-# 5. 部署前端静态文件
+# 5. 收集 Django 静态文件（仅 Admin）
 # ============================================================
 echo ""
-echo "📋 [5/6] 部署前端静态文件..."
+echo "📋 [5/6] 收集 Django Admin 静态文件..."
 
-# 方案 A：复制到 Django static 目录（当前方案）
-if [ -d "static/vue" ]; then
-    rm -rf static/vue
-fi
-mkdir -p static/vue
-cp -r web/dist/* static/vue/
-
-# 收集 Django 静态文件（Admin 等）
+# 只收集 Django Admin 的静态文件
+# 前端文件由 Nginx 直接访问 web/dist/，不需要复制
 python3 manage.py collectstatic --noinput
 
-echo "✅ 前端文件已部署到: static/vue/"
-
-# 方案 B：使用 Nginx 直接访问 dist 目录（未来可选）
-# 如果使用 Nginx 直接访问 web/dist/，则不需要复制
-# 只需要在 Nginx 配置中指向 web/dist/ 即可
+echo "✅ Django Admin 静态文件已收集"
+echo "✅ 前端文件位置: web/dist/ (由 Nginx 直接访问)"
 
 # ============================================================
 # 6. 重启 uWSGI
