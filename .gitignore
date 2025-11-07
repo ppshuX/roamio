@@ -54,6 +54,7 @@ Thumbs.db
 .env
 .env.local
 .env.production
+cloud_settings/
 
 # =========================================
 # 🧰 临时文件

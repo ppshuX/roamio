@@ -35,7 +35,7 @@ ALLOWED_HOSTS = ['47.121.137.60', 'app7508.acapp.acwing.com.cn', '127.0.0.1', 'l
 # Application definition
 
 INSTALLED_APPS = [
-    'trips',  # ⭐ 旅行应用（原cetapp）
+    'backend',  # ⭐ 后端业务模块（服务所有前端平台）
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
