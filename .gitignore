@@ -1,27 +1,19 @@
 # =========================================
 # 🐍 Python
 # =========================================
-**.swp
-**.pyc
 __pycache__/
 *.py[cod]
-*$py.class
 *.so
-.Python
 *.egg-info/
-# dist/  # 不要忽略 web/dist/（前端构建产物）
 build/
 venv/
 env/
-ENV/
 
 # =========================================
 # 🧱 Django
 # =========================================
 *.log
-uwsgi.log
-db.sqlite3-journal
-db.sqlite3
+db.sqlite3*
 /media/
 /staticfiles/
 
@@ -31,21 +23,15 @@ db.sqlite3
 node_modules/
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
 
-# 前端源代码（不提交到 Git）
+# 前端源代码（只提交 web/dist/）
 web/src/
 web/public/
-web/package.json
-web/package-lock.json
+web/package*.json
 web/babel.config.js
 web/jsconfig.json
 web/vue.config.js
 web/.env.*
-
-# 只保留构建产物 web/dist/（提交到 Git）
-# dist/ 不要忽略！
 
 # =========================================
 # 💻 IDE / 编辑器
@@ -55,57 +41,36 @@ web/.env.*
 *.swp
 *.swo
 *~
-.project
-.pydevproject
-.settings/
 
 # =========================================
-# 💾 操作系统杂项
+# 💾 操作系统
 # =========================================
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-Desktop.ini
 
 # =========================================
-# ⚙️ 配置文件（敏感或仅本地使用）
+# ⚙️ 敏感配置
 # =========================================
-nginx_full_config.conf
-nginx_roamio_config.conf
-server_deploy_commands.md
-DEPLOYMENT_NOTES.md
 .env
 .env.local
 .env.production
 
 # =========================================
-# 🧰 备份 / 临时文件
+# 🧰 临时文件
 # =========================================
-backups/
 *.bak
 *.tmp
 *.tar.gz
 
 # =========================================
-# 🗄️ 数据与用户上传
+# 🖼️ 静态资源
 # =========================================
-/media/
-/db.sqlite3
-
-# =========================================
-# 🖼️ 静态资源（服务器上手动维护）
-# =========================================
-# 所有静态图片文件（避免 Git 损坏二进制文件）
 static/images/
-# 但保留 .gitkeep 以确保目录存在
 !static/images/.gitkeep
 
 # =========================================
-# 📝 文档文件（除README.md外都忽略）
+# 📝 文档（除 README.md）
+# =========================================
 docs/**/*.md
 *.md
 !README.md
