@@ -15,9 +15,12 @@ urlpatterns = [
     # ==================== RESTful API路由 ⭐（必须在最前面） ====================
     path('api/v1/', include('backend.api.urls')),
     
-    # API文档
+    # ==================== API 文档 📚 ====================
+    # OpenAPI Schema (JSON格式)
     path('api/schema/', SpectacularAPIView.as_view(), name='api-schema'),
+    # Swagger UI (交互式文档)
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='api-schema'), name='api-docs'),
+    # ReDoc (美观的文档)
     path('api/redoc/', SpectacularRedocView.as_view(url_name='api-schema'), name='api-redoc'),
     
     # Django Admin

@@ -31,16 +31,30 @@ Roamio 是一个**真实部署在生产环境**的现代化旅行记录与分享
 
 ## 📚 项目文档
 
-**商业与规划**：
-- 💼 **[商业计划书 - 精简版](docs/BUSINESS_PLAN_EXECUTIVE_SUMMARY.md)** - 适合投资人/老师（推荐阅读）
-- 📋 **[商业计划书 - 完整版](docs/BUSINESS_PLAN.md)** - 完整思考和长期愿景
-- 🗺️ **[项目发展计划](docs/DEVELOPMENT_ROADMAP.md)** - 内部使用，校准方向和进度
+> **完整文档索引**: [docs/README.md](docs/README.md)
 
-**技术与运维**：
-- 🚀 **[性能优化指南](docs/PERFORMANCE_OPTIMIZATION.md)** - 流量优化、懒加载、图片压缩
-- 🐳 **[Docker 重建完整指南](docs/DOCKER_REBUILD_COMPLETE_GUIDE.md)** - 生产环境部署经验
-- 📊 **[项目价值与水平分析](docs/PROJECT_VALUE_AND_LEVELS.md)** - 技术评估、求职亮点
-- 📝 **[Docker 重建历程](docs/DOCKER_REBUILD_JOURNEY.md)** - 踩坑记录与解决方案
+### 🔌 API 文档
+- **[生态系统 API 文档](docs/api/ECOSYSTEM_API_DOCUMENTATION.md)** - ⭐ 完整的 API 参考（Roamio + Ralendar，2185行）
+- **[API 统一规范](docs/api/API_STANDARDS.md)** - Roamio 生态系统 API 标准
+- **[Ralendar API 配置](docs/api/RALENDAR_API_CONFIG.md)** - 日历助手 API 配置指南
+- **[在线 API 文档](https://app7508.acapp.acwing.com.cn/api/docs/)** - Swagger UI 交互式文档
+
+### 🏗️ 架构设计
+- **[架构分析报告](docs/architecture/ARCHITECTURE_ANALYSIS.md)** - 前后端分离架构详解
+- **[项目评价报告](docs/architecture/PROJECT_EVALUATION.md)** - 技术、产品、商业价值评估
+
+### 📖 开发指南
+- **[腾讯云 COS 配置](docs/guides/TENCENT_COS_SETUP.md)** - 对象存储配置指南
+- **[旅行分享功能](docs/guides/TRIP_SHARING_GUIDE.md)** - 分享功能使用说明
+
+### 🌍 生态系统
+- **[生态系统概览](docs/ecosystem/ECOSYSTEM_OVERVIEW.md)** - Roamio + Ralendar + Rote + Rapture
+- **[Ralendar 融合计划](docs/ecosystem/RALENDAR_INTEGRATION.md)** - 日历助手集成方案
+- **[商业计划摘要](docs/ecosystem/BUSINESS_PLAN.md)** - 商业价值与融资规划
+
+### 📝 工作总结
+- **[项目状态报告](docs/summaries/PROJECT_STATUS.md)** - 当前进展和待办事项
+- **[每日工作总结](docs/summaries/)** - 开发日志和问题记录
 
 ---
 
@@ -171,38 +185,75 @@ sudo systemctl restart nginx
 
 ```
 roamio/
-├── roamio/              # Django 配置
-│   ├── settings.py      # 项目设置
-│   ├── urls.py          # 主路由
-│   └── wsgi.py          # WSGI 入口
-├── trips/               # 主应用
-│   ├── models/          # 数据模型
-│   │   ├── trip.py      # 旅程模型
-│   │   ├── comment.py   # 评论模型
-│   │   └── user_profile.py  # 用户资料
-│   ├── api/             # RESTful API
-│   │   └── viewsets/    # API ViewSet
-│   ├── serializers/     # 序列化器
-│   ├── utils/           # 工具函数
-│   │   ├── email_service.py  # 邮件服务
-│   │   ├── qq_oauth.py       # QQ 登录
-│   │   └── rate_limit.py     # 限流
-│   └── views/           # 视图函数
-├── web/                 # Vue 3 前端
+├── roamio/                      # Django 配置
+│   ├── settings.py              # 项目设置
+│   ├── urls.py                  # 主路由
+│   ├── api_docs_config.py       # ⭐ API 文档配置
+│   └── wsgi.py                  # WSGI 入口
+│
+├── backend/                     # ⭐ 后端业务模块（重构后）
+│   ├── models/                  # 数据模型
+│   │   ├── trip.py              # 旅程模型
+│   │   ├── comment.py           # 评论模型
+│   │   └── user_profile.py      # 用户资料
+│   ├── api/                     # RESTful API
+│   │   └── viewsets/            # API ViewSet
+│   ├── serializers/             # 序列化器
+│   ├── utils/                   # 工具函数
+│   │   ├── email_service.py     # 邮件服务
+│   │   ├── qq_oauth.py          # QQ 登录
+│   │   └── rate_limit.py        # 限流
+│   └── views/                   # 视图函数
+│
+├── web/                         # Vue 3 前端
 │   ├── src/
-│   │   ├── views/       # 页面组件
-│   │   ├── components/  # 可复用组件
-│   │   ├── api/         # API 封装
-│   │   ├── stores/      # Pinia 状态管理
-│   │   └── router/      # 路由配置
+│   │   ├── views/               # 页面组件
+│   │   ├── components/          # 可复用组件
+│   │   │   ├── CommentSection.vue       # 评论区
+│   │   │   └── UserProfilePopover.vue   # ⭐ 用户资料卡片
+│   │   ├── api/                 # API 封装
+│   │   ├── stores/              # Pinia 状态管理
+│   │   └── router/              # 路由配置
+│   ├── public/
+│   │   └── images/              # ⭐ 图片资源（重构后）
+│   ├── dist/                    # ⭐ 构建产物（提交到 Git）
 │   └── package.json
-├── media/               # 用户上传文件（腾讯云 COS）
-├── static/              # 静态文件
-├── docs/                # 项目文档
-├── scripts/             # 部署脚本
-│   └── uwsgi.ini        # uWSGI 配置
-└── requirements.txt     # Python 依赖
+│
+├── docs/                        # ⭐ 项目文档（分类管理）
+│   ├── README.md                # 文档中心首页
+│   ├── api/                     # API 相关文档
+│   │   ├── API_STANDARDS.md     # 统一 API 规范
+│   │   └── RALENDAR_API_CONFIG.md  # Ralendar API 配置
+│   ├── architecture/            # 架构设计文档
+│   ├── guides/                  # 开发指南
+│   ├── summaries/               # 工作总结
+│   └── ecosystem/               # 生态系统文档
+│
+├── scripts/                     # 部署脚本
+│   └── uwsgi.ini                # uWSGI 配置
+│
+├── templates/                   # Django 模板
+│   └── emails/                  # 邮件模板
+│
+└── requirements.txt             # Python 依赖
 ```
+
+### 🎯 架构说明
+
+**前后端分离**：
+- 后端：Django REST Framework 提供 API
+- 前端：Vue 3 SPA，由 Nginx 直接服务
+- 通信：RESTful API + JWT 认证
+
+**多端支持**：
+- Web 端：`web/dist/` 构建产物
+- 小程序端：规划中
+- Android 端：Ralendar 项目
+
+**文档管理**：
+- 分类清晰：api / architecture / guides / summaries / ecosystem
+- 英文文件名 + 中文内容
+- 完整的文档索引：`docs/README.md`
 
 ---
 

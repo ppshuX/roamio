@@ -70,9 +70,10 @@ static/images/
 !static/images/.gitkeep
 
 # =========================================
-# 📝 文档（除 README.md）
+# 📝 文档
 # =========================================
-docs/**/*.md
-*.md
-!README.md
+# 提交所有文档到 Git（文档是项目的重要组成部分）
+# 只排除临时文档
+docs/temp/
+docs/drafts/
 
