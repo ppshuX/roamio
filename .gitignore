@@ -66,8 +66,12 @@ cloud_settings/
 # =========================================
 # 🖼️ 静态资源
 # =========================================
-static/images/
-!static/images/.gitkeep
+# 排除 collectstatic 收集的文件（Django Admin 静态文件）
+/staticfiles/
+
+# 但保留后端公共资源（提交到 Git）
+# backend/static/ 是公共资源，需要提交
+!backend/static/
 
 # =========================================
 # 📝 文档

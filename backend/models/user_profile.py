@@ -106,8 +106,8 @@ class UserProfile(models.Model):
             # avatar 现在是 URLField，直接返回 URL 字符串
             return self.avatar
         else:
-            # 返回默认头像路径
-            return '/images/default_avatar.png'
+            # 返回默认头像路径（后端公共资源）
+            return '/static/images/default_avatar.png'
 
 
 # 自动为新用户创建配置文件

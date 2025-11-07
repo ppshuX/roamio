@@ -133,10 +133,16 @@ USE_TZ = True
 # 前后端分离架构：
 # - 前端静态文件: web/dist/ (由 Nginx 直接访问)
 # - Django Admin 静态文件: staticfiles/ (由 collectstatic 收集)
+# - 公共资源: backend/static/ (跨项目共享，由 Nginx 直接访问)
 
 STATIC_URL = '/admin-static/'
-# STATICFILES_DIRS = []  # 不再需要，Django Admin 静态文件来自 Django 包本身
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# ⭐ 公共静态资源目录（跨项目共享）
+# 这些资源会被提交到 Git，供 Roamio、Ralendar 等所有生态产品使用
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'backend/static'),  # 公共资源：images, audios, videos
+]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
