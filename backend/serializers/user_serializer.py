@@ -13,7 +13,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = UserProfile
-        fields = ['avatar', 'avatar_url', 'bio', 'tags', 'level', 'visited_countries']
+        fields = ['avatar', 'avatar_url', 'bio', 'birthday', 'tags', 'level', 'visited_countries', 'email_verified', 'email_verified_at']
     
     def get_avatar_url(self, obj):
         """获取头像URL"""
@@ -188,7 +188,7 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = UserProfile
-        fields = ['bio', 'tags', 'visited_countries']
+        fields = ['bio', 'birthday', 'tags', 'visited_countries']
     
     def validate_bio(self, value):
         """验证个人简介长度"""

@@ -21,6 +21,9 @@ class UserProfile(models.Model):
     # 个人简介
     bio = models.TextField(blank=True, max_length=500, help_text='个人简介')
     
+    # 生日
+    birthday = models.DateField(blank=True, null=True, help_text='生日')
+    
     # 用户标签（如：摄影爱好者、美食达人等）
     tags = models.CharField(
         max_length=200, 
