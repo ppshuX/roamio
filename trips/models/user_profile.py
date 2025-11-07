@@ -104,7 +104,7 @@ class UserProfile(models.Model):
             return self.avatar
         else:
             # 返回默认头像路径
-            return '/static/images/default_avatar.png'
+            return '/default_avatar.png'
 
 
 # 自动为新用户创建配置文件
