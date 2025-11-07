@@ -208,3 +208,22 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet,
         return Response({
             'comments_count': comments_count,
         })
+    
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticatedOrReadOnly])
+    def profile(self, request, pk=None):
+        """获取用户公开资料（包含统计信息）"""
+        user = self.get_object()
+        
+        # 自动计算并更新等级
+        if hasattr(user, 'profile') and user.profile:
+            user.profile.calculate_level()
+            user.profile.save()
+        
+        # 序列化用户信息
+        serializer = UserSerializer(user)
+        data = serializer.data
+        
+        # 添加是否为管理员标识
+        data['is_admin'] = user.is_superuser or user.is_staff
+        
+        return Response(data)
