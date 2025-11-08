@@ -183,6 +183,7 @@ def get_qq_user_info(access_token, openid):
         'access_token': access_token,
         'oauth_consumer_key': settings.QQ_APP_ID,
         'openid': openid,
+        'unionid': 1,  # ⭐ 添加此参数以获取 UnionID
     }
     
     try:
