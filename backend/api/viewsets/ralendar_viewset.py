@@ -10,8 +10,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ViewSet
 from django.shortcuts import get_object_or_404
 
-from trips.models import Trip
-from trips.utils.ralendar_client import RalendarClient
+from backend.models import Trip
+from backend.utils.ralendar_client import RalendarClient
 import logging
 
 logger = logging.getLogger(__name__)
