@@ -1,83 +1,95 @@
-# =========================================
-# 🐍 Python
-# =========================================
+# Python
 __pycache__/
 *.py[cod]
+*$py.class
 *.so
-*.egg-info/
+.Python
 build/
-venv/
-env/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# =========================================
-# 🧱 Django
-# =========================================
+# Django
 *.log
-db.sqlite3*
-/media/
-/staticfiles/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
 
-# =========================================
-# 🪄 Node / Vue
-# =========================================
-node_modules/
-npm-debug.log*
-yarn-debug.log*
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
 
-# 前端源代码（只提交 web/dist/）
-web/src/
-web/public/
-web/package*.json
-web/babel.config.js
-web/jsconfig.json
-web/vue.config.js
-web/.env.*
-
-# =========================================
-# 💻 IDE / 编辑器
-# =========================================
-.idea/
+# IDE
 .vscode/
+.idea/
 *.swp
 *.swo
 *~
 
-# =========================================
-# 💾 操作系统
-# =========================================
+# OS
 .DS_Store
 Thumbs.db
 
-# =========================================
-# ⚙️ 敏感配置
-# =========================================
-.env
-.env.local
-.env.production
-cloud_settings/
-
-# =========================================
-# 🧰 临时文件
-# =========================================
+# Backup files
+*.backup
 *.bak
+*.original
+data_backup*.json
+data_final.json
+
+# Logs
+logs/
+*.log
+uwsgi.log
+nohup.out
+
+# Node.js (for Vue frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vue build output
+web/dist/
+static/vue/
+
+# Test coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Redis
+dump.rdb
+
+# Temporary files
 *.tmp
-*.tar.gz
-
-# =========================================
-# 🖼️ 静态资源
-# =========================================
-# 排除 collectstatic 收集的文件（Django Admin 静态文件）
-/staticfiles/
-
-# 但保留后端公共资源（提交到 Git）
-# backend/static/ 是公共资源，需要提交
-!backend/static/
-
-# =========================================
-# 📝 文档
-# =========================================
-# 提交所有文档到 Git（文档是项目的重要组成部分）
-# 只排除临时文档
-docs/temp/
-docs/drafts/
-
+*.temp
