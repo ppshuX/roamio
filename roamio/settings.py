@@ -24,7 +24,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-*il-h$$9=73a(2g5g_edot=!#$je=r@ey7(ov0s1uyitc@@o9m'
+# ⚠️ 重要：与 Ralendar 共享相同的 SECRET_KEY 以实现 JWT Token 互认
+SECRET_KEY = 'django-insecure-#6avwo7=$9vse4txxj!phdfx5-ql(bc5otpoiw@x)u0i+^1-5h'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True  # Keep enabled for better error messages with Chinese support

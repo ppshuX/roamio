@@ -14,6 +14,7 @@ class RalendarClient:
     """Ralendar API 客户端"""
     
     def __init__(self):
+        # Ralendar API 基础 URL（来自集成文档）
         self.base_url = getattr(settings, 'RALENDAR_API_URL', 'https://app7626.acapp.acwing.com.cn/api/v1')
         self.timeout = 10
     
