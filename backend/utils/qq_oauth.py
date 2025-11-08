@@ -172,6 +172,8 @@ def get_qq_user_info(access_token, openid):
             'figureurl': str,  # 头像URL
             'figureurl_1': str,  # 40x40头像
             'figureurl_2': str,  # 100x100头像
+            'figureurl_qq_1': str,  # 高清头像 (40x40)
+            'figureurl_qq_2': str,  # 高清头像 (100x100)
             'gender': str,
             'error': str,
             'error_description': str
@@ -187,6 +189,9 @@ def get_qq_user_info(access_token, openid):
         response = requests.get(settings.QQ_GET_USER_DETAIL_URL, params=params, timeout=10)
         data = response.json()
         
+        # 打印原始数据以便调试
+        print(f"[DEBUG] QQ user info raw data: {data}")
+        
         if 'ret' in data and data['ret'] == 0:  # ret=0表示成功
             return {
                 'success': True,
@@ -194,6 +199,8 @@ def get_qq_user_info(access_token, openid):
                 'figureurl': data.get('figureurl', ''),
                 'figureurl_1': data.get('figureurl_1', ''),
                 'figureurl_2': data.get('figureurl_2', ''),
+                'figureurl_qq_1': data.get('figureurl_qq_1', ''),
+                'figureurl_qq_2': data.get('figureurl_qq_2', ''),
                 'gender': data.get('gender', ''),
             }
         else:
@@ -258,13 +265,25 @@ def get_qq_user_info_by_code(code):
             'access_token': access_token,
         }
     
-    # 4. 返回完整信息
+    # 4. 选择最佳头像 URL（优先使用高清头像）
+    avatar_url = (
+        user_info_result.get('figureurl_qq_2') or  # 高清 100x100
+        user_info_result.get('figureurl_qq_1') or  # 高清 40x40
+        user_info_result.get('figureurl_2') or     # 普通 100x100
+        user_info_result.get('figureurl_1') or     # 普通 40x40
+        user_info_result.get('figureurl') or       # 最基础的头像
+        ''
+    )
+    
+    print(f"[DEBUG] Selected avatar URL: {avatar_url}")
+    
+    # 5. 返回完整信息
     return {
         'success': True,
         'openid': openid,
         'unionid': unionid,
         'nickname': user_info_result.get('nickname', ''),
-        'avatar_url': user_info_result.get('figureurl_2', user_info_result.get('figureurl_1', '')),
+        'avatar_url': avatar_url,
         'access_token': access_token,
     }
 
