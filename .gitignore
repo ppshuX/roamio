@@ -93,3 +93,6 @@ dump.rdb
 # Temporary files
 *.tmp
 *.temp
+
+# Cloud settings (local development only)
+cloud_settings/
