@@ -31,10 +31,14 @@ export default {
     const userStore = useUserStore()
     const floatingEnabled = ref(false)
     const showGlobalSidebar = ref(false)
+    const windowWidth = ref(window.innerWidth)
     
-    // 检查是否显示全局悬浮窗（移动端）
+    // 检查是否为移动端
+    const isMobile = computed(() => windowWidth.value <= 768)
+    
+    // 检查是否显示全局悬浮窗（仅移动端）
     const showGlobalFloating = computed(() => {
-      return userStore.isLoggedIn && floatingEnabled.value
+      return userStore.isLoggedIn && floatingEnabled.value && isMobile.value
     })
     
     // 切换右侧栏显示
@@ -49,6 +53,12 @@ export default {
     onMounted(() => {
       const saved = localStorage.getItem('ralendar_floating_enabled')
       floatingEnabled.value = saved === 'true'
+      
+      // 监听窗口大小变化
+      const handleResize = () => {
+        windowWidth.value = window.innerWidth
+      }
+      window.addEventListener('resize', handleResize)
       
       // 监听设置变化
       window.addEventListener('storage', (e) => {
