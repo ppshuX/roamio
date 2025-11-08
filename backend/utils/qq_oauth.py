@@ -38,6 +38,7 @@ def get_qq_authorize_url(state=None):
         'redirect_uri': settings.QQ_REDIRECT_URI,
         'state': state,
         'scope': 'get_user_info',  # 需要的权限
+        'unionid': 1,  # ⭐ 添加此参数以获取 UnionID
     }
     
     url = f"{settings.QQ_AUTHORIZE_URL}?{urllib.parse.urlencode(params)}"
