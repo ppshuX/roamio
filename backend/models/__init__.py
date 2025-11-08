@@ -8,6 +8,7 @@ from .site_stat import SiteStat
 from .trip import Trip
 from .social_auth import SocialAccount
 from .email_verification import EmailVerificationCode
+from .event import TripEvent
 
 __all__ = [
     'UserProfile',
@@ -16,5 +17,6 @@ __all__ = [
     'Trip',
     'SocialAccount',
     'EmailVerificationCode',
+    'TripEvent',
 ]
 

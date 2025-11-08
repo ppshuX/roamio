@@ -7,6 +7,7 @@ from .user_viewset import UserViewSet
 from .comment_viewset import CommentViewSet, CommentFilter
 from .trip_viewset import TripViewSet
 from .trip_plan_viewset import TripPlanViewSet
+from .event_viewset import TripEventViewSet
 
 __all__ = [
     'AuthViewSet',
@@ -15,4 +16,5 @@ __all__ = [
     'CommentFilter',
     'TripViewSet',
     'TripPlanViewSet',
+    'TripEventViewSet',
 ]

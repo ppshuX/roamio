@@ -27,6 +27,11 @@ from .auth_serializer import (
     QQBindSerializer,
     ResetPasswordSerializer,
 )
+from .event_serializer import (
+    TripEventSerializer,
+    TripEventCreateSerializer,
+    TripEventBatchCreateSerializer,
+)
 
 __all__ = [
     # 用户
@@ -48,6 +53,10 @@ __all__ = [
     'TripDetailSerializer',
     'TripListSerializer',
     'TripUpdateSerializer',
+    # 事件
+    'TripEventSerializer',
+    'TripEventCreateSerializer',
+    'TripEventBatchCreateSerializer',
     # 认证
     'LoginSerializer',
     'TokenObtainSerializer',
