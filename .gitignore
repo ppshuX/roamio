@@ -33,6 +33,7 @@ staticfiles/
 .env.local
 .env.*.local
 env.example  # 包含真实配置，不提交
+cloud_settings/env.example  # 包含真实配置，不提交
 *.env
 
 # IDE
