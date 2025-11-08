@@ -35,7 +35,16 @@
         <!-- 页面标题 -->
         <div class="card shadow-lg mb-4">
           <div class="card-body p-5">
-            <h1 class="mb-3">{{ trip.name || trip.title }}</h1>
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <h1 class="mb-0">{{ trip.name || trip.title }}</h1>
+              <!-- Ralendar 集成按钮 -->
+              <AddToCalendarButton
+                v-if="isAuthenticated && tripConfig && tripConfig.overview && tripConfig.overview.itinerary"
+                :trip-slug="trip.slug"
+                :trip-title="trip.name || trip.title"
+                :events="calendarEvents"
+              />
+            </div>
             <p class="text-muted mb-0">{{ trip.description }}</p>
           </div>
         </div>
@@ -197,6 +206,7 @@ import TripProgress from '@/components/TripProgress.vue'
 import TripStats from '@/components/TripStats.vue'
 import TripOverview from '@/components/TripOverview.vue'
 import CommentSection from '@/components/CommentSection.vue'
+import AddToCalendarButton from '@/components/AddToCalendarButton.vue'
 
 export default {
   name: 'TripDetailView',
@@ -206,7 +216,8 @@ export default {
     TripProgress,
     TripStats,
     TripOverview,
-    CommentSection
+    CommentSection,
+    AddToCalendarButton
   },
   
   setup() {
@@ -244,6 +255,29 @@ export default {
     // 判断是否为旅行作者
     const isAuthor = computed(() => {
       return trip.value?.author?.id === userStore.userInfo?.id
+    })
+
+    // 是否已登录
+    const isAuthenticated = computed(() => userStore.isLoggedIn)
+
+    // 将行程转换为日历事件格式
+    const calendarEvents = computed(() => {
+      if (!tripConfig.value?.overview?.itinerary) return []
+      
+      return tripConfig.value.overview.itinerary.map((item, index) => ({
+        title: item.day || `第${index + 1}天`,
+        description: item.content || '',
+        event_time: item.time ? new Date(item.time).toISOString() : null,
+        location: {
+          name: item.highlight || '',
+          address: '',
+          lat: null,
+          lng: null
+        },
+        reminder: {
+          enabled: false
+        }
+      }))
     })
     
     // 获取旅行详情
@@ -655,7 +689,9 @@ export default {
       toggleMusic,
       scrollToComments,
       getAvatarUrl,
-      isAuthor
+      isAuthor,
+      isAuthenticated,
+      calendarEvents
     }
   }
 }
