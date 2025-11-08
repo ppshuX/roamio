@@ -1,33 +1,60 @@
 # 🔑 Roamio 数据库信息 - 提供给 Ralendar 团队
 
-> **文档版本**: v1.0  
+> **文档版本**: v2.0  
 > **更新日期**: 2025-11-08  
-> **状态**: 待提供数据库信息
+> **状态**: ✅ 数据库已配置完成
 
 ---
 
-## ⚠️ **重要说明**
+## ✅ **数据库已迁移到阿里云 RDS！**
 
-Roamio 当前使用 **SQLite 本地数据库**，需要先迁移到腾讯云 MySQL/PostgreSQL 才能与 Ralendar 共享数据库。
+Roamio 已成功迁移到 **阿里云 RDS MySQL**，可以与 Ralendar 共享数据库！ 🎉
 
 ---
 
-## 📊 **当前数据库状态**
+## 🗄️ **生产数据库连接信息**
 
-### 数据库类型
+### 阿里云 RDS MySQL
+```bash
+# 数据库类型
+DB_TYPE=mysql
+
+# 连接信息
+DB_HOST=rm-wz91m3g4wa6io3dfi8o.mysql.rds.aliyuncs.com  # 外网地址
+DB_PORT=3306
+DB_NAME=roamio_production
+
+# Ralendar 专用账号（SELECT, INSERT, UPDATE, DELETE 权限）
+DB_USER=ralendar_user
+DB_PASSWORD=Ralendar@2025!Pass
+
+# Roamio 管理账号（完整权限）
+ADMIN_USER=roamio_user
+ADMIN_PASSWORD=Roamio@2025!Pass
+```
+
+### Django SECRET_KEY
+```python
+SECRET_KEY = 'django-insecure-*il-h$$9=73a(2g5g_edot=!#$je=r@ey7(ov0s1uyitc@@o9m'
+```
+
+### 数据库配置示例
 ```python
 # roamio/settings.py
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',  # 本地文件
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'roamio_production',
+        'USER': 'roamio_user',
+        'PASSWORD': 'Roamio@2025!Pass',
+        'HOST': 'rm-wz91m3g4wa6io3dfi8o.mysql.rds.aliyuncs.com',
+        'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        }
     }
 }
-```
-
-### SECRET_KEY
-```python
-SECRET_KEY = 'django-insecure-*il-h$$9=73a(2g5g_edot=!#$je=r@ey7(ov0s1uyitc@@o9m'
 ```
 
 ---
