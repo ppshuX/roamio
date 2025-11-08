@@ -141,18 +141,20 @@ def main():
     print(f"   ✅ 修复了 {len(fixed_social)} 个社交账号")
     print()
     
-    # 合并所有数据
+    # 合并所有数据（不包括用户，因为已经导入了）
     print("📦 步骤 7：合并数据...")
     other_data = [obj for obj in data if obj['model'] not in [
-        'auth.user', 
+        'auth.user',  # ⚠️ 不包括用户，已经导入过了
         'backend.userprofile', 
         'backend.trip', 
         'backend.comment',
         'backend.socialaccount'
     ]]
     
-    final_data = users + fixed_profiles + fixed_trips + fixed_comments + fixed_social + other_data
+    # 不包括 users，因为已经导入了
+    final_data = fixed_profiles + fixed_trips + fixed_comments + fixed_social + other_data
     print(f"   总记录数: {len(final_data)}")
+    print(f"   （不包括已导入的 {len(users)} 个用户）")
     print()
     
     # 保存修复后的数据
