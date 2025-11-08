@@ -117,6 +117,7 @@ def get_qq_openid(access_token):
     """
     params = {
         'access_token': access_token,
+        'unionid': 1,  # ⭐ 添加此参数以获取 UnionID
     }
     
     try:
