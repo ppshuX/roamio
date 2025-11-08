@@ -13,11 +13,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='userprofile',
-            name='birthday',
-            field=models.DateField(blank=True, help_text='生日', null=True),
-        ),
         migrations.CreateModel(
             name='TripEvent',
             fields=[
@@ -52,3 +47,4 @@ class Migration(migrations.Migration):
             },
         ),
     ]
+
