@@ -320,6 +320,30 @@ class AuthViewSet(viewsets.GenericViewSet):
             # 已绑定，直接登录
             user = social_account.user
             
+            # 更新 QQ 头像（如果用户还没有头像，或者 QQ 头像有更新）
+            if qq_info.get('avatar_url'):
+                # 确保 UserProfile 已创建
+                if not hasattr(user, 'profile'):
+                    from ...models import UserProfile
+                    UserProfile.objects.create(user=user)
+                    user.refresh_from_db()
+                
+                # 如果用户没有头像，自动设置 QQ 头像
+                if not user.profile.avatar:
+                    from ...utils.avatar_downloader import set_user_avatar_from_url
+                    try:
+                        print(f"[QQ Login] Setting QQ avatar for existing user - user ID: {user.id}, avatar URL: {qq_info.get('avatar_url')}")
+                        success, message = set_user_avatar_from_url(user, qq_info.get('avatar_url'))
+                        if success:
+                            print(f"[SUCCESS] QQ avatar set successfully: {message}")
+                            user.refresh_from_db()  # 刷新用户数据以获取最新头像
+                        else:
+                            print(f"[FAILED] QQ avatar set failed: {message}")
+                    except Exception as e:
+                        print(f"[WARNING] QQ avatar download exception: {e}")
+                        import traceback
+                        traceback.print_exc()
+            
             # 生成JWT Token
             refresh = RefreshToken.for_user(user)
             
