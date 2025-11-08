@@ -64,9 +64,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Vue build output
+# Vue build output (不再需要 static/vue/)
 web/dist/
-static/vue/
 
 # Test coverage
 htmlcov/

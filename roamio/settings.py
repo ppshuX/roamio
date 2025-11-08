@@ -158,6 +158,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # 这些资源会被提交到 Git，供 Roamio、Ralendar 等所有生态产品使用
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'backend/static'),  # 公共资源：images, audios, videos
+    os.path.join(BASE_DIR, 'web/dist'),  # Vue 前端构建输出
 ]
 
 MEDIA_URL = '/media/'
