@@ -77,7 +77,7 @@ class FileUploadHandler:
         处理文件上传到 COS（支持图片压缩）
         
         Args:
-            uploaded_file: Django UploadedFile 对象
+            uploaded_file: Django UploadedFile 对象或 InMemoryUploadedFile 对象
             save_dir (str): COS 中的保存目录（如 'media/avatars'）
             filename_prefix (str): 文件名前缀（如用户ID）
             compress_image (bool): 是否压缩图片（默认 True）
@@ -103,8 +103,14 @@ class FileUploadHandler:
             
             # 保存上传的文件到临时目录
             with open(temp_file_path, 'wb+') as temp_file:
-                for chunk in uploaded_file.chunks():
-                    temp_file.write(chunk)
+                # 如果有 chunks() 方法（Django UploadedFile），使用 chunks()
+                if hasattr(uploaded_file, 'chunks') and callable(uploaded_file.chunks):
+                    for chunk in uploaded_file.chunks():
+                        temp_file.write(chunk)
+                else:
+                    # 否则直接读取（InMemoryUploadedFile 或类似对象）
+                    uploaded_file.seek(0)
+                    temp_file.write(uploaded_file.read())
             
             logger.info(f"临时文件已保存: {temp_file_path}")
             
@@ -155,7 +161,7 @@ class FileUploadHandler:
         上传用户头像（会压缩为 300x300 正方形）
         
         Args:
-            uploaded_file: Django UploadedFile 对象
+            uploaded_file: Django UploadedFile 对象或 InMemoryUploadedFile 对象
             user_id (int): 用户ID
             
         Returns:
@@ -176,8 +182,14 @@ class FileUploadHandler:
             
             # 保存上传的文件到临时目录
             with open(temp_file_path, 'wb+') as temp_file:
-                for chunk in uploaded_file.chunks():
-                    temp_file.write(chunk)
+                # 如果有 chunks() 方法（Django UploadedFile），使用 chunks()
+                if hasattr(uploaded_file, 'chunks') and callable(uploaded_file.chunks):
+                    for chunk in uploaded_file.chunks():
+                        temp_file.write(chunk)
+                else:
+                    # 否则直接读取（InMemoryUploadedFile 或类似对象）
+                    uploaded_file.seek(0)
+                    temp_file.write(uploaded_file.read())
             
             # 头像特殊处理：裁剪为正方形并缩放到 300x300
             try:
