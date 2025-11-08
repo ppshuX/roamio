@@ -24,6 +24,15 @@ def fix_duplicate_userprofiles(data):
     
     for profile in profiles:
         user_id = profile['fields']['user']
+        
+        # 处理 user_id 可能是列表的情况
+        if isinstance(user_id, list):
+            user_id = user_id[0] if user_id else None
+        
+        if user_id is None:
+            print(f"   ⚠️  跳过无效的 profile: pk={profile['pk']}")
+            continue
+            
         if user_id not in seen_user_ids:
             seen_user_ids.add(user_id)
             unique_profiles.append(profile)
