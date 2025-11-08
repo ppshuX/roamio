@@ -32,6 +32,7 @@ staticfiles/
 .env
 .env.local
 .env.*.local
+env.example  # 包含真实配置，不提交
 *.env
 
 # IDE
