@@ -25,7 +25,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # ⚠️ 重要：与 Ralendar 共享相同的 SECRET_KEY 以实现 JWT Token 互认
-SECRET_KEY = 'django-insecure-#6avwo7=$9vse4txxj!phdfx5-ql(bc5otpoiw@x)u0i+^1-5h'
+# 生产环境从 .env 文件读取，开发环境使用默认值
+SECRET_KEY = os.getenv(
+    'SECRET_KEY', 
+    'django-insecure-#6avwo7=$9vse4txxj!phdfx5-ql(bc5otpoiw@x)u0i+^1-5h'  # 默认值（与 Ralendar 一致）
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True  # Keep enabled for better error messages with Chinese support
@@ -450,3 +454,10 @@ LOGGING = {
         },
     },
 }
+
+# ==================== Ralendar 集成配置 ====================
+# Ralendar API 基础 URL
+RALENDAR_API_URL = os.getenv(
+    'RALENDAR_API_URL',
+    'https://app7626.acapp.acwing.com.cn/api/v1'  # 默认值
+)
