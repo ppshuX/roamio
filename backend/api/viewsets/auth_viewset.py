@@ -332,17 +332,12 @@ class AuthViewSet(viewsets.GenericViewSet):
                 if not user.profile.avatar:
                     from ...utils.avatar_downloader import set_user_avatar_from_url
                     try:
-                        print(f"[QQ Login] Setting QQ avatar for existing user - user ID: {user.id}, avatar URL: {qq_info.get('avatar_url')}")
                         success, message = set_user_avatar_from_url(user, qq_info.get('avatar_url'))
                         if success:
-                            print(f"[SUCCESS] QQ avatar set successfully: {message}")
                             user.refresh_from_db()  # 刷新用户数据以获取最新头像
-                        else:
-                            print(f"[FAILED] QQ avatar set failed: {message}")
                     except Exception as e:
-                        print(f"[WARNING] QQ avatar download exception: {e}")
-                        import traceback
-                        traceback.print_exc()
+                        # Avatar download failure does not affect login
+                        pass
             
             # 生成JWT Token
             refresh = RefreshToken.for_user(user)
@@ -408,17 +403,10 @@ class AuthViewSet(viewsets.GenericViewSet):
                 if qq_info.get('avatar_url'):
                     from ...utils.avatar_downloader import set_user_avatar_from_url
                     try:
-                        print(f"Setting QQ avatar - user ID: {user.id}, avatar URL: {qq_info.get('avatar_url')}")
-                        success, message = set_user_avatar_from_url(user, qq_info.get('avatar_url'))
-                        if success:
-                            print(f"[SUCCESS] QQ avatar set successfully: {message}")
-                        else:
-                            print(f"[FAILED] QQ avatar set failed: {message}")
+                        set_user_avatar_from_url(user, qq_info.get('avatar_url'))
                     except Exception as e:
                         # Avatar download failure does not affect login
-                        print(f"[WARNING] QQ avatar download exception: {e}")
-                        import traceback
-                        traceback.print_exc()
+                        pass
                 
                 # 生成JWT Token
                 refresh = RefreshToken.for_user(user)
@@ -548,17 +536,10 @@ class AuthViewSet(viewsets.GenericViewSet):
         if qq_info.get('avatar_url') and not user.profile.avatar:
             from ...utils.avatar_downloader import set_user_avatar_from_url
             try:
-                print(f"Setting QQ avatar - user ID: {user.id}, avatar URL: {qq_info.get('avatar_url')}")
-                success, message = set_user_avatar_from_url(user, qq_info.get('avatar_url'))
-                if success:
-                    print(f"[SUCCESS] QQ avatar set successfully: {message}")
-                else:
-                    print(f"[FAILED] QQ avatar set failed: {message}")
+                set_user_avatar_from_url(user, qq_info.get('avatar_url'))
             except Exception as e:
                 # Avatar download failure does not affect binding
-                print(f"[WARNING] QQ avatar download exception: {e}")
-                import traceback
-                traceback.print_exc()
+                pass
         
         # 删除验证token
         cache.delete(cache_key)
@@ -634,17 +615,10 @@ class AuthViewSet(viewsets.GenericViewSet):
         if qq_info.get('avatar_url') and not request.user.profile.avatar:
             from ...utils.avatar_downloader import set_user_avatar_from_url
             try:
-                print(f"Setting QQ avatar - user ID: {request.user.id}, avatar URL: {qq_info.get('avatar_url')}")
-                success, message = set_user_avatar_from_url(request.user, qq_info.get('avatar_url'))
-                if success:
-                    print(f"[SUCCESS] QQ avatar set successfully: {message}")
-                else:
-                    print(f"[FAILED] QQ avatar set failed: {message}")
+                set_user_avatar_from_url(request.user, qq_info.get('avatar_url'))
             except Exception as e:
                 # Avatar download failure does not affect binding
-                print(f"[WARNING] QQ avatar download exception: {e}")
-                import traceback
-                traceback.print_exc()
+                pass
         
         return Response({
             'success': True,

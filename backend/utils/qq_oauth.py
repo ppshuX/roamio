@@ -189,9 +189,6 @@ def get_qq_user_info(access_token, openid):
         response = requests.get(settings.QQ_GET_USER_DETAIL_URL, params=params, timeout=10)
         data = response.json()
         
-        # 打印原始数据以便调试
-        print(f"[DEBUG] QQ user info raw data: {data}")
-        
         if 'ret' in data and data['ret'] == 0:  # ret=0表示成功
             return {
                 'success': True,
@@ -274,8 +271,6 @@ def get_qq_user_info_by_code(code):
         user_info_result.get('figureurl') or       # 最基础的头像
         ''
     )
-    
-    print(f"[DEBUG] Selected avatar URL: {avatar_url}")
     
     # 5. 返回完整信息
     return {
