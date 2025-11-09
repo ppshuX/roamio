@@ -225,7 +225,7 @@ class RalendarClient:
             logger.error(f"Delete trip events failed: {e}")
             raise
     
-    def update_event(self, user_token, event_id, event_data):
+    def update_event(self, user_token, event_id, event_data, unionid=None):
         """
         更新事件（使用 Fusion API）
         
@@ -233,6 +233,7 @@ class RalendarClient:
             user_token (str): 用户的 JWT Token
             event_id (int): 事件 ID
             event_data (dict): 更新的事件数据
+            unionid (str, optional): UnionID，用于加速匹配
         
         Returns:
             dict: 更新后的事件数据
@@ -242,9 +243,10 @@ class RalendarClient:
         """
         url = f"{self.base_url}/fusion/events/{event_id}/"
         headers = self.get_headers(user_token)
+        params = {'unionid': unionid} if unionid else {}
         
         try:
-            response = requests.put(url, json=event_data, headers=headers, timeout=self.timeout)
+            response = requests.put(url, json=event_data, headers=headers, params=params, timeout=self.timeout)
             response.raise_for_status()
             logger.info(f"Updated event {event_id}")
             return response.json()
@@ -252,13 +254,14 @@ class RalendarClient:
             logger.error(f"Update event failed: {e}")
             raise
     
-    def delete_event(self, user_token, event_id):
+    def delete_event(self, user_token, event_id, unionid=None):
         """
         删除单个事件（使用 Fusion API）
         
         Args:
             user_token (str): 用户的 JWT Token
             event_id (int): 事件 ID
+            unionid (str, optional): UnionID，用于加速匹配
         
         Returns:
             bool: 是否删除成功
@@ -268,9 +271,10 @@ class RalendarClient:
         """
         url = f"{self.base_url}/fusion/events/{event_id}/delete/"
         headers = self.get_headers(user_token)
+        params = {'unionid': unionid} if unionid else {}
         
         try:
-            response = requests.delete(url, headers=headers, timeout=self.timeout)
+            response = requests.delete(url, headers=headers, params=params, timeout=self.timeout)
             response.raise_for_status()
             logger.info(f"Deleted event {event_id}")
             return True

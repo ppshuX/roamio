@@ -171,11 +171,24 @@ class RalendarIntegrationViewSet(ViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
+        # 获取 UnionID
+        from backend.models import SocialAccount
+        unionid = None
+        try:
+            social_account = SocialAccount.objects.filter(
+                user=request.user,
+                provider='qq'
+            ).first()
+            if social_account:
+                unionid = social_account.unionid
+        except Exception as e:
+            logger.error(f"Failed to get UnionID: {e}")
+        
         event_data = request.data.copy()
         client = RalendarClient()
         
         try:
-            result = client.update_event(user_token, event_id, event_data)
+            result = client.update_event(user_token, event_id, event_data, unionid=unionid)
             return Response(result, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"更新事件失败: {e}")
@@ -197,10 +210,23 @@ class RalendarIntegrationViewSet(ViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
+        # 获取 UnionID
+        from backend.models import SocialAccount
+        unionid = None
+        try:
+            social_account = SocialAccount.objects.filter(
+                user=request.user,
+                provider='qq'
+            ).first()
+            if social_account:
+                unionid = social_account.unionid
+        except Exception as e:
+            logger.error(f"Failed to get UnionID: {e}")
+        
         client = RalendarClient()
         
         try:
-            client.delete_event(user_token, event_id)
+            client.delete_event(user_token, event_id, unionid=unionid)
             return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             logger.error(f"删除事件失败: {e}")
