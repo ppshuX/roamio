@@ -245,7 +245,7 @@ export default defineComponent({
         }
         
         // 调用 Roamio 后端 API（代理到 Ralendar）
-        const response = await fetch('/api/v1/ralendar/events/', {
+        const response = await fetch('/api/v1/ralendar/trips/events/', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
