@@ -61,12 +61,20 @@ class RalendarClient:
         url = f"{self.base_url}/fusion/events/batch/"
         headers = self.get_headers(user_token)
         
+        # 提取 openid（如果存在）
+        openid = event_data.pop('openid', None)
+        
         # 构造批量创建的数据格式
         data = {
             "source_app": "roamio",
             "related_trip_slug": "sidebar-todo",  # 侧边栏创建的待办
             "events": [event_data]  # 单个事件也用数组
         }
+        
+        # 添加 openid 到顶层（Ralendar 的三层匹配需要）
+        if openid:
+            data['openid'] = openid
+            logger.info(f"添加 OpenID: {openid}")
         
         try:
             response = requests.post(url, json=data, headers=headers, timeout=self.timeout)
