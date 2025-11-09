@@ -91,11 +91,12 @@ class RalendarIntegrationViewSet(ViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
-        logger.info(f"用户 Token: {user_token[:20]}...")  # 只记录前20个字符
+        print(f"🔑 用户 Token: {user_token[:20]}...")
         
         # 获取用户的 OpenID
         from backend.models import SocialAccount
         try:
+            print(f"👤 查询用户 {request.user.id} 的 OpenID...")
             social_account = SocialAccount.objects.filter(
                 user=request.user,
                 provider='qq'
@@ -103,12 +104,14 @@ class RalendarIntegrationViewSet(ViewSet):
             
             if social_account:
                 openid = social_account.uid
-                logger.info(f"用户 OpenID: {openid}")
+                print(f"✅ 用户 OpenID: {openid}")
             else:
                 openid = None
-                logger.warning(f"未找到用户 {request.user.id} 的 QQ OpenID")
+                print(f"⚠️ 未找到用户 {request.user.id} 的 QQ OpenID")
         except Exception as e:
-            logger.error(f"获取 OpenID 失败: {e}")
+            print(f"❌ 获取 OpenID 失败: {e}")
+            import traceback
+            traceback.print_exc()
             openid = None
         
         # 获取事件数据
@@ -118,13 +121,18 @@ class RalendarIntegrationViewSet(ViewSet):
         # 添加 openid（Ralendar 的三层匹配需要）
         if openid:
             event_data['openid'] = openid
+            print(f"✅ 已添加 OpenID 到事件数据")
+        else:
+            print(f"⚠️ 没有 OpenID，跳过")
         
-        logger.info(f"事件数据: {event_data}")
+        print(f"📋 事件数据: {event_data}")
         
         # 调用 Ralendar API
+        print(f"🚀 调用 RalendarClient...")
         client = RalendarClient()
         
         try:
+            print(f"📤 开始创建事件...")
             result = client.create_event(user_token, event_data)
             logger.info(f"创建事件成功: {result.get('id')}")
             return Response(result, status=status.HTTP_201_CREATED)
