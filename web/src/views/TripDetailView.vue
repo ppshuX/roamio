@@ -30,9 +30,6 @@
           <TripHeader
             :title="trip.name || trip.title"
             :description="trip.description"
-            :trip-slug="trip.slug"
-            :show-calendar-button="isAuthenticated && hasItinerary"
-            :events="calendarEvents"
           />
           
           <!-- 旅行进度条 -->
@@ -172,25 +169,6 @@ export default {
       return tripConfig.value?.overview?.itinerary && tripConfig.value.overview.itinerary.length > 0
     })
     
-    // 日历事件
-    const calendarEvents = computed(() => {
-      if (!tripConfig.value?.overview?.itinerary) return []
-      
-      return tripConfig.value.overview.itinerary.map((item, index) => ({
-        title: item.day || `第${index + 1}天`,
-        description: item.content || '',
-        event_time: item.time ? new Date(item.time).toISOString() : null,
-        location: {
-          name: item.highlight || '',
-          address: '',
-          lat: null,
-          lng: null
-        },
-        reminder: {
-          enabled: false
-        }
-      }))
-    })
     
     // 登录校验
     const ensureLoggedIn = () => {
@@ -409,7 +387,6 @@ export default {
       isAuthor,
       isAuthenticated,
       hasItinerary,
-      calendarEvents,
       handleLike,
       handleSubmitComment,
       handleDeleteComment,
