@@ -17,7 +17,7 @@
             >
             Ralendar 待办
           </h5>
-          <button @click="$emit('close')" class="btn-close">
+          <button @click="$emit('close')" class="btn-close" title="关闭">
             <i class="bi bi-x-lg"></i>
           </button>
         </div>
@@ -216,21 +216,30 @@ export default defineComponent({
 }
 
 .btn-close {
-  background: rgba(255, 255, 255, 0.2);
+  background: white;
   border: none;
-  color: white;
-  width: 32px;
-  height: 32px;
+  color: #667eea;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: all 0.3s ease;
+  font-size: 18px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btn-close:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #f8f9fa;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-close:active {
+  transform: scale(0.95);
 }
 
 .sidebar-body {
