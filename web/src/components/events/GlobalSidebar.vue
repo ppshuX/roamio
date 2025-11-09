@@ -253,6 +253,8 @@ export default defineComponent({
           start_time: newEvent.value.event_time ? new Date(newEvent.value.event_time).toISOString() : new Date().toISOString()
         }
         
+        console.log('📤 发送的数据:', eventData)
+        
         // 调用 Roamio 后端 API（代理到 Ralendar）
         const response = await fetch('/api/v1/ralendar/trips/events/', {
           method: 'POST',
@@ -263,12 +265,16 @@ export default defineComponent({
           body: JSON.stringify(eventData)
         })
         
+        console.log('📥 响应状态:', response.status, response.statusText)
+        
         if (!response.ok) {
           const error = await response.json()
+          console.error('❌ 错误响应:', error)
           throw new Error(error.error || '创建失败')
         }
         
         const result = await response.json()
+        console.log('✅ 成功响应:', result)
         
         // 添加到列表
         allEvents.value.unshift(result)
