@@ -324,7 +324,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             if unionid and not social_account.unionid:
                 social_account.unionid = unionid
                 social_account.save()
-                print(f"[DEBUG] Updated UnionID for user {user.id}: {unionid}")
+                logger.info(f"Updated UnionID for user {user.id}")
             
             # 更新 QQ 头像（如果用户还没有头像，或者 QQ 头像有更新）
             if qq_info.get('avatar_url'):

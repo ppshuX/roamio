@@ -91,12 +91,9 @@ class RalendarIntegrationViewSet(ViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
-        print(f"[DEBUG] User Token: {user_token[:20]}...")
-        
         # 获取用户的 OpenID 和 UnionID
         from backend.models import SocialAccount
         try:
-            print(f"[DEBUG] Query QQ info for user {request.user.id}...")
             social_account = SocialAccount.objects.filter(
                 user=request.user,
                 provider='qq'
@@ -105,16 +102,11 @@ class RalendarIntegrationViewSet(ViewSet):
             if social_account:
                 openid = social_account.uid
                 unionid = social_account.unionid
-                print(f"[DEBUG] User OpenID: {openid}")
-                print(f"[DEBUG] User UnionID: {unionid}")
             else:
                 openid = None
                 unionid = None
-                print(f"[WARNING] No QQ account found for user {request.user.id}")
         except Exception as e:
-            print(f"[ERROR] Failed to get QQ info: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Failed to get QQ info: {e}")
             openid = None
             unionid = None
         
@@ -125,20 +117,14 @@ class RalendarIntegrationViewSet(ViewSet):
         # 添加 unionid 和 openid（Ralendar 的三层匹配需要）
         if unionid:
             event_data['unionid'] = unionid
-            print(f"[DEBUG] Added UnionID to event data")
         
         if openid:
             event_data['openid'] = openid
-            print(f"[DEBUG] Added OpenID to event data")
-        
-        print(f"[DEBUG] Event data: {event_data}")
         
         # 调用 Ralendar API
-        print(f"[DEBUG] Calling RalendarClient...")
         client = RalendarClient()
         
         try:
-            print(f"[DEBUG] Creating event...")
             result = client.create_event(user_token, event_data)
             logger.info(f"创建事件成功: {result.get('id')}")
             return Response(result, status=status.HTTP_201_CREATED)
