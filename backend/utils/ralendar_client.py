@@ -76,39 +76,32 @@ class RalendarClient:
             data['openid'] = openid
             print(f"[DEBUG] Added OpenID to top-level data: {openid}")
         
-        # 详细日志：发送给 Ralendar 的完整数据（使用 print 输出到 uWSGI 日志）
+        # 详细日志：发送给 Ralendar 的完整数据
         print("=" * 80)
         print("[DEBUG] Sending request to Ralendar:")
         print(f"   URL: {url}")
-        print(f"   Headers: {headers}")
         print(f"   Data: {data}")
         print("=" * 80)
         
         try:
             response = requests.post(url, json=data, headers=headers, timeout=self.timeout)
             
-            # 详细日志：Ralendar 的响应（使用 print）
+            # 详细日志：Ralendar 的响应
             print(f"[DEBUG] Ralendar response status: {response.status_code}")
-            print(f"[DEBUG] Ralendar response headers: {dict(response.headers)}")
-            try:
-                # 尝试解析为 JSON 并打印
-                response_json = response.json()
-                print(f"[DEBUG] Ralendar response body (JSON): {response_json}")
-            except:
-                # 如果不是 JSON，打印原始文本（安全编码）
-                print(f"[DEBUG] Ralendar response body (text): {response.text.encode('utf-8', errors='replace').decode('utf-8')}")
-            print("=" * 80)
             
             # 检查响应状态
             if response.status_code >= 400:
-                # 错误响应，记录详细信息
+                # 错误响应 - 直接抛出异常，不打印响应体（避免编码错误）
+                print(f"[ERROR] Ralendar returned {response.status_code}")
+                print(f"[ERROR] Response length: {len(response.text)} bytes")
                 try:
                     error_data = response.json()
-                    logger.error(f"Ralendar API error {response.status_code}: {error_data}")
-                    raise Exception(f"Ralendar returned {response.status_code}: {error_data}")
-                except ValueError:
-                    logger.error(f"Ralendar API error {response.status_code}: {response.text}")
-                    raise Exception(f"Ralendar returned {response.status_code}: {response.text}")
+                    # 只打印 error 字段的前 200 个字符（ASCII 安全）
+                    error_msg = str(error_data).encode('ascii', errors='ignore').decode('ascii')[:200]
+                    print(f"[ERROR] Error (ASCII only): {error_msg}")
+                    raise Exception(f"Ralendar API error {response.status_code}")
+                except:
+                    raise Exception(f"Ralendar API error {response.status_code}")
             
             response.raise_for_status()
             result = response.json()
