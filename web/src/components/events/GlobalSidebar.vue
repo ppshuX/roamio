@@ -164,6 +164,9 @@
                     </label>
                     <select v-model="newEvent.reminder_minutes" class="form-select form-select-sm">
                       <option :value="0">不提醒</option>
+                      <option :value="1">提前 1 分钟</option>
+                      <option :value="3">提前 3 分钟</option>
+                      <option :value="5">提前 5 分钟</option>
                       <option :value="15">提前 15 分钟</option>
                       <option :value="30">提前 30 分钟</option>
                       <option :value="60">提前 1 小时</option>
