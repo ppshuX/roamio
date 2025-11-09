@@ -121,17 +121,27 @@ export default defineComponent({
     }
     
     // 获取地点名称（反向地理编码）
+    // 添加防抖，避免频繁调用
+    let geocodeTimer = null
     const getLocationName = (point) => {
-      const gc = new window.BMap.Geocoder()
-      gc.getLocation(point, (result) => {
-        if (result) {
-          selectedLocation.value = {
-            name: result.address,
-            lat: point.lat,
-            lng: point.lng
+      // 清除之前的定时器
+      if (geocodeTimer) {
+        clearTimeout(geocodeTimer)
+      }
+      
+      // 延迟 500ms 执行，避免频繁调用
+      geocodeTimer = setTimeout(() => {
+        const gc = new window.BMap.Geocoder()
+        gc.getLocation(point, (result) => {
+          if (result) {
+            selectedLocation.value = {
+              name: result.address,
+              lat: point.lat,
+              lng: point.lng
+            }
           }
-        }
-      })
+        })
+      }, 500)
     }
     
     // 搜索地点
