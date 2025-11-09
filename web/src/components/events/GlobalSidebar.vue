@@ -131,12 +131,27 @@
                       </svg>
                       地点（可选）
                     </label>
-                    <input 
-                      v-model="newEvent.location" 
-                      type="text" 
-                      class="form-control form-control-sm" 
-                      placeholder="例如：北京故宫"
-                    >
+                    <div class="input-group input-group-sm">
+                      <input 
+                        v-model="newEvent.location" 
+                        type="text" 
+                        class="form-control form-control-sm" 
+                        placeholder="例如：北京故宫"
+                      >
+                      <button 
+                        class="btn btn-outline-secondary btn-sm" 
+                        type="button"
+                        @click="showMapPicker = true"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                          <path fill-rule="evenodd" d="M15.817.113A.5.5 0 0 1 16 .5v14a.5.5 0 0 1-.402.49l-5 1a.502.502 0 0 1-.196 0L5.5 15.01l-4.902.98A.5.5 0 0 1 0 15.5v-14a.5.5 0 0 1 .402-.49l5-1a.5.5 0 0 1 .196 0L10.5.99l4.902-.98a.5.5 0 0 1 .415.103zM10 1.91l-4-.8v12.98l4 .8V1.91zm1 12.98 4-.8V1.11l-4 .8v12.98zm-6-.8V1.11l-4 .8v12.98l4-.8z"/>
+                        </svg>
+                        地图
+                      </button>
+                    </div>
+                    <small v-if="newEvent.latitude && newEvent.longitude" class="text-muted">
+                      坐标: {{ newEvent.latitude.toFixed(4) }}, {{ newEvent.longitude.toFixed(4) }}
+                    </small>
                   </div>
                   
                   <!-- 提醒设置 -->
@@ -279,15 +294,28 @@
         </div>
       </div>
     </transition>
+    
+    <!-- 地图选择器 -->
+    <MapPicker 
+      :show="showMapPicker"
+      :default-location="newEvent.location"
+      @close="showMapPicker = false"
+      @select="handleMapSelect"
+    />
   </div>
 </template>
 
 <script>
 import { ref, computed, watch, defineComponent } from 'vue'
 import { useUserStore } from '@/stores/user'
+import MapPicker from '@/components/map/MapPicker.vue'
 
 export default defineComponent({
   name: 'GlobalSidebar',
+  
+  components: {
+    MapPicker
+  },
   
   props: {
     show: {
@@ -305,6 +333,7 @@ export default defineComponent({
     const loading = ref(false)
     const allEvents = ref([])
     const showAddForm = ref(false)
+    const showMapPicker = ref(false)
     const submitting = ref(false)
     const editingEventId = ref(null)
     const newEvent = ref({
@@ -313,6 +342,8 @@ export default defineComponent({
       start_time: '',
       end_time: '',
       location: '',
+      latitude: null,
+      longitude: null,
       reminder_minutes: 15,
       email_reminder: false
     })
@@ -370,6 +401,8 @@ export default defineComponent({
           start_time: new Date(newEvent.value.start_time).toISOString(),
           end_time: newEvent.value.end_time ? new Date(newEvent.value.end_time).toISOString() : null,
           location: newEvent.value.location || '',
+          latitude: newEvent.value.latitude,
+          longitude: newEvent.value.longitude,
           reminder_minutes: newEvent.value.reminder_minutes || 15,
           email_reminder: newEvent.value.email_reminder || false
         }
@@ -462,9 +495,18 @@ export default defineComponent({
         start_time: '',
         end_time: '',
         location: '',
+        latitude: null,
+        longitude: null,
         reminder_minutes: 15,
         email_reminder: false
       }
+    }
+    
+    // 地图选择处理
+    const handleMapSelect = (location) => {
+      newEvent.value.location = location.name
+      newEvent.value.latitude = location.lat
+      newEvent.value.longitude = location.lng
     }
     
     // 编辑事件
@@ -476,6 +518,8 @@ export default defineComponent({
         start_time: event.start_time ? event.start_time.substring(0, 16) : '',
         end_time: event.end_time ? event.end_time.substring(0, 16) : '',
         location: event.location || '',
+        latitude: event.latitude || null,
+        longitude: event.longitude || null,
         reminder_minutes: event.reminder_minutes || 15,
         email_reminder: event.email_reminder || false
       }
@@ -535,12 +579,14 @@ export default defineComponent({
       loading,
       allEvents,
       showAddForm,
+      showMapPicker,
       submitting,
       editingEventId,
       newEvent,
       formatTime,
       handleAddEvent,
       cancelAdd,
+      handleMapSelect,
       handleEditEvent,
       handleDeleteEvent
     }
