@@ -269,7 +269,7 @@ class RalendarClient:
         Raises:
             requests.exceptions.RequestException: API 请求失败
         """
-        url = f"{self.base_url}/fusion/events/{event_id}/delete/"
+        url = f"{self.base_url}/fusion/events/{event_id}/"
         headers = self.get_headers(user_token)
         params = {'unionid': unionid} if unionid else {}
         
