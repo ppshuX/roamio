@@ -93,9 +93,31 @@ class RalendarIntegrationViewSet(ViewSet):
         
         logger.info(f"用户 Token: {user_token[:20]}...")  # 只记录前20个字符
         
+        # 获取用户的 OpenID
+        from backend.models import SocialAccount
+        try:
+            social_account = SocialAccount.objects.filter(
+                user=request.user,
+                provider='qq'
+            ).first()
+            
+            if social_account:
+                openid = social_account.uid
+                logger.info(f"用户 OpenID: {openid}")
+            else:
+                openid = None
+                logger.warning(f"未找到用户 {request.user.id} 的 QQ OpenID")
+        except Exception as e:
+            logger.error(f"获取 OpenID 失败: {e}")
+            openid = None
+        
         # 获取事件数据
         event_data = request.data.copy()
         event_data['source_app'] = 'roamio'
+        
+        # 添加 openid（Ralendar 的三层匹配需要）
+        if openid:
+            event_data['openid'] = openid
         
         logger.info(f"事件数据: {event_data}")
         
