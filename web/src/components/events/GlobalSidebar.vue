@@ -402,12 +402,19 @@ export default defineComponent({
           title: newEvent.value.title,
           description: newEvent.value.description || '',
           start_time: new Date(newEvent.value.start_time).toISOString(),
-          end_time: newEvent.value.end_time ? new Date(newEvent.value.end_time).toISOString() : null,
           location: newEvent.value.location || '',
-          latitude: newEvent.value.latitude,
-          longitude: newEvent.value.longitude,
-          reminder_minutes: newEvent.value.reminder_minutes || 15,
+          reminder_minutes: parseInt(newEvent.value.reminder_minutes) || 15,
           email_reminder: newEvent.value.email_reminder || false
+        }
+        
+        // 只有在有值时才添加这些字段
+        if (newEvent.value.end_time) {
+          eventData.end_time = new Date(newEvent.value.end_time).toISOString()
+        }
+        
+        if (newEvent.value.latitude && newEvent.value.longitude) {
+          eventData.latitude = newEvent.value.latitude
+          eventData.longitude = newEvent.value.longitude
         }
         
         if (editingEventId.value) {
