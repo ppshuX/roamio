@@ -357,12 +357,29 @@ export default defineComponent({
       
       loading.value = true
       try {
-        // TODO: 调用 API 获取用户的所有待办事项
-        // const response = await getAllUserEvents()
-        // allEvents.value = response.data
-        allEvents.value = []
+        const token = localStorage.getItem('access_token')
+        if (!token) return
+        
+        // 调用 Ralendar API 获取所有事件
+        const response = await fetch('https://app7626.acapp.acwing.com.cn/api/v1/events/', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          // Ralendar 返回的格式可能是 {results: [...]} 或直接是数组
+          allEvents.value = data.results || data || []
+          console.log('✅ 加载了', allEvents.value.length, '个待办')
+        } else {
+          console.error('加载待办失败:', response.status)
+          allEvents.value = []
+        }
       } catch (error) {
         console.error('加载待办失败:', error)
+        allEvents.value = []
       } finally {
         loading.value = false
       }
