@@ -518,10 +518,10 @@ export default defineComponent({
         }
         
         if (editingEventId.value) {
-          // 编辑模式：调用更新 API
+          // 编辑模式：通过 Roamio 后端代理更新
           console.log('📝 更新事件:', editingEventId.value, eventData)
           
-          const response = await fetch(`https://app7626.acapp.acwing.com.cn/api/v1/events/${editingEventId.value}/`, {
+          const response = await fetch(`/api/v1/ralendar/trips/events/${editingEventId.value}/`, {
             method: 'PUT',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -660,8 +660,8 @@ export default defineComponent({
           return
         }
         
-        // 调用 Ralendar API 删除事件
-        const response = await fetch(`https://app7626.acapp.acwing.com.cn/api/v1/events/${event.id}/`, {
+        // 通过 Roamio 后端代理删除事件
+        const response = await fetch(`/api/v1/ralendar/trips/events/${event.id}/`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`

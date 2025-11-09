@@ -157,6 +157,57 @@ class RalendarIntegrationViewSet(ViewSet):
                 'error': f'创建事件失败: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
+    @action(detail=True, methods=['put'], url_path='')
+    def update_event(self, request, pk=None):
+        """
+        更新事件
+        
+        URL: PUT /api/v1/ralendar/trips/events/{event_id}/
+        """
+        user_token = self.get_user_token(request)
+        if not user_token:
+            return Response(
+                {'error': '未找到用户认证信息'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        event_data = request.data.copy()
+        client = RalendarClient()
+        
+        try:
+            result = client.update_event(user_token, pk, event_data)
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"更新事件失败: {e}")
+            return Response({
+                'error': f'更新事件失败: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=True, methods=['delete'], url_path='')
+    def delete_event(self, request, pk=None):
+        """
+        删除事件
+        
+        URL: DELETE /api/v1/ralendar/trips/events/{event_id}/
+        """
+        user_token = self.get_user_token(request)
+        if not user_token:
+            return Response(
+                {'error': '未找到用户认证信息'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        client = RalendarClient()
+        
+        try:
+            client.delete_event(user_token, pk)
+            return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            logger.error(f"删除事件失败: {e}")
+            return Response({
+                'error': f'删除事件失败: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
     def get_user_token(self, request):
         """
         获取用户的 JWT Token
