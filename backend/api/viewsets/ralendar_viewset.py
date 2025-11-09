@@ -157,8 +157,8 @@ class RalendarIntegrationViewSet(ViewSet):
                 'error': f'创建事件失败: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    @action(detail=True, methods=['put'], url_path='')
-    def update_event(self, request, pk=None):
+    @action(detail=False, methods=['put'], url_path=r'events/(?P<event_id>\d+)')
+    def update_event(self, request, event_id=None):
         """
         更新事件
         
@@ -175,7 +175,7 @@ class RalendarIntegrationViewSet(ViewSet):
         client = RalendarClient()
         
         try:
-            result = client.update_event(user_token, pk, event_data)
+            result = client.update_event(user_token, event_id, event_data)
             return Response(result, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"更新事件失败: {e}")
@@ -183,8 +183,8 @@ class RalendarIntegrationViewSet(ViewSet):
                 'error': f'更新事件失败: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    @action(detail=True, methods=['delete'], url_path='')
-    def delete_event(self, request, pk=None):
+    @action(detail=False, methods=['delete'], url_path=r'events/(?P<event_id>\d+)')
+    def delete_event(self, request, event_id=None):
         """
         删除事件
         
@@ -200,7 +200,7 @@ class RalendarIntegrationViewSet(ViewSet):
         client = RalendarClient()
         
         try:
-            client.delete_event(user_token, pk)
+            client.delete_event(user_token, event_id)
             return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             logger.error(f"删除事件失败: {e}")
