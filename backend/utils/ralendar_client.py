@@ -78,21 +78,22 @@ class RalendarClient:
         #     logger.info(f"添加 OpenID: {openid}")
         logger.info(f"⚠️ OpenID 临时禁用，测试中...")
         
-        # 🔍 详细日志：发送给 Ralendar 的完整数据
-        logger.info(f"=" * 60)
-        logger.info(f"📤 发送给 Ralendar 的完整请求:")
-        logger.info(f"   URL: {url}")
-        logger.info(f"   Headers: {headers}")
-        logger.info(f"   Data: {data}")
-        logger.info(f"=" * 60)
+        # 🔍 详细日志：发送给 Ralendar 的完整数据（使用 print 输出到 uWSGI 日志）
+        print("=" * 80)
+        print("📤 发送给 Ralendar 的完整请求:")
+        print(f"   URL: {url}")
+        print(f"   Headers: {headers}")
+        print(f"   Data: {data}")
+        print("=" * 80)
         
         try:
             response = requests.post(url, json=data, headers=headers, timeout=self.timeout)
             
-            # 🔍 详细日志：Ralendar 的响应
-            logger.info(f"📥 Ralendar 响应状态: {response.status_code}")
-            logger.info(f"📥 Ralendar 响应头: {dict(response.headers)}")
-            logger.info(f"📥 Ralendar 响应体: {response.text}")
+            # 🔍 详细日志：Ralendar 的响应（使用 print）
+            print(f"📥 Ralendar 响应状态: {response.status_code}")
+            print(f"📥 Ralendar 响应头: {dict(response.headers)}")
+            print(f"📥 Ralendar 响应体: {response.text}")
+            print("=" * 80)
             
             response.raise_for_status()
             result = response.json()
