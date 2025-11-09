@@ -227,7 +227,7 @@ class RalendarClient:
     
     def update_event(self, user_token, event_id, event_data):
         """
-        更新事件
+        更新事件（使用 Fusion API）
         
         Args:
             user_token (str): 用户的 JWT Token
@@ -240,7 +240,7 @@ class RalendarClient:
         Raises:
             requests.exceptions.RequestException: API 请求失败
         """
-        url = f"{self.base_url}/events/{event_id}/"
+        url = f"{self.base_url}/fusion/events/{event_id}/"
         headers = self.get_headers(user_token)
         
         try:
@@ -254,7 +254,7 @@ class RalendarClient:
     
     def delete_event(self, user_token, event_id):
         """
-        删除单个事件
+        删除单个事件（使用 Fusion API）
         
         Args:
             user_token (str): 用户的 JWT Token
@@ -266,7 +266,7 @@ class RalendarClient:
         Raises:
             requests.exceptions.RequestException: API 请求失败
         """
-        url = f"{self.base_url}/events/{event_id}/"
+        url = f"{self.base_url}/fusion/events/{event_id}/delete/"
         headers = self.get_headers(user_token)
         
         try:
