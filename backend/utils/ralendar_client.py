@@ -99,10 +99,21 @@ class RalendarClient:
                 print(f"[DEBUG] Ralendar response body (text): {response.text.encode('utf-8', errors='replace').decode('utf-8')}")
             print("=" * 80)
             
+            # 检查响应状态
+            if response.status_code >= 400:
+                # 错误响应，记录详细信息
+                try:
+                    error_data = response.json()
+                    logger.error(f"Ralendar API error {response.status_code}: {error_data}")
+                    raise Exception(f"Ralendar returned {response.status_code}: {error_data}")
+                except ValueError:
+                    logger.error(f"Ralendar API error {response.status_code}: {response.text}")
+                    raise Exception(f"Ralendar returned {response.status_code}: {response.text}")
+            
             response.raise_for_status()
             result = response.json()
             
-            logger.info(f"Ralendar API 响应: {result}")
+            logger.info(f"Ralendar API success: {result}")
             
             # 适配不同的响应格式
             if result.get('events') and len(result['events']) > 0:
