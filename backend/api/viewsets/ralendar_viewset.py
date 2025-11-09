@@ -91,12 +91,12 @@ class RalendarIntegrationViewSet(ViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
-        print(f"🔑 用户 Token: {user_token[:20]}...")
+        print(f"[DEBUG] User Token: {user_token[:20]}...")
         
         # 获取用户的 OpenID
         from backend.models import SocialAccount
         try:
-            print(f"👤 查询用户 {request.user.id} 的 OpenID...")
+            print(f"[DEBUG] Query OpenID for user {request.user.id}...")
             social_account = SocialAccount.objects.filter(
                 user=request.user,
                 provider='qq'
@@ -104,12 +104,12 @@ class RalendarIntegrationViewSet(ViewSet):
             
             if social_account:
                 openid = social_account.uid
-                print(f"✅ 用户 OpenID: {openid}")
+                print(f"[DEBUG] User OpenID: {openid}")
             else:
                 openid = None
-                print(f"⚠️ 未找到用户 {request.user.id} 的 QQ OpenID")
+                print(f"[WARNING] No QQ OpenID found for user {request.user.id}")
         except Exception as e:
-            print(f"❌ 获取 OpenID 失败: {e}")
+            print(f"[ERROR] Failed to get OpenID: {e}")
             import traceback
             traceback.print_exc()
             openid = None
@@ -121,18 +121,18 @@ class RalendarIntegrationViewSet(ViewSet):
         # 添加 openid（Ralendar 的三层匹配需要）
         if openid:
             event_data['openid'] = openid
-            print(f"✅ 已添加 OpenID 到事件数据")
+            print(f"[DEBUG] Added OpenID to event data")
         else:
-            print(f"⚠️ 没有 OpenID，跳过")
+            print(f"[WARNING] No OpenID, skipping")
         
-        print(f"📋 事件数据: {event_data}")
+        print(f"[DEBUG] Event data: {event_data}")
         
         # 调用 Ralendar API
-        print(f"🚀 调用 RalendarClient...")
+        print(f"[DEBUG] Calling RalendarClient...")
         client = RalendarClient()
         
         try:
-            print(f"📤 开始创建事件...")
+            print(f"[DEBUG] Creating event...")
             result = client.create_event(user_token, event_data)
             logger.info(f"创建事件成功: {result.get('id')}")
             return Response(result, status=status.HTTP_201_CREATED)
