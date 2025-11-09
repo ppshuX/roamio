@@ -22,12 +22,51 @@ class RalendarIntegrationViewSet(ViewSet):
     
     permission_classes = [IsAuthenticated]
     
-    @action(detail=False, methods=['post'], url_path='events')
+    @action(detail=False, methods=['get'], url_path='events')
+    def list_events(self, request):
+        """
+        获取用户的所有事件
+        
+        URL: GET /api/v1/ralendar/trips/events/
+        
+        响应:
+        {
+            "results": [...]
+        }
+        """
+        # 获取用户 Token
+        user_token = self.get_user_token(request)
+        if not user_token:
+            logger.error("未找到用户认证信息")
+            return Response(
+                {'error': '未找到用户认证信息'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        logger.info(f"获取事件列表，Token: {user_token[:20]}...")
+        
+        # 调用 Ralendar API
+        client = RalendarClient()
+        
+        try:
+            result = client.list_events(user_token)
+            logger.info(f"获取事件成功: {len(result.get('results', []))} 个")
+            return Response(result, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            logger.error(f"获取事件失败: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return Response({
+                'error': f'获取事件失败: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'], url_path='events/create')
     def create_event(self, request):
         """
         创建单个事件到 Ralendar
         
-        URL: POST /api/v1/ralendar/events/
+        URL: POST /api/v1/ralendar/trips/events/create/
         
         请求体:
         {

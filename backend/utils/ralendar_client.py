@@ -144,6 +144,34 @@ class RalendarClient:
             logger.error(f"批量创建事件失败: {e}")
             raise
     
+    def list_events(self, user_token):
+        """
+        获取用户的所有事件
+        
+        Args:
+            user_token (str): 用户的 JWT Token
+        
+        Returns:
+            dict: {"results": [...]}
+            
+        Raises:
+            requests.exceptions.RequestException: API 请求失败
+        """
+        url = f"{self.base_url}/events/"
+        headers = self.get_headers(user_token)
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=self.timeout)
+            response.raise_for_status()
+            result = response.json()
+            logger.info(f"获取事件列表成功: {len(result.get('results', []))} 个")
+            return result
+        except requests.exceptions.RequestException as e:
+            logger.error(f"获取事件列表失败: {e}")
+            if hasattr(e.response, 'text'):
+                logger.error(f"响应内容: {e.response.text}")
+            raise
+    
     def get_trip_events(self, user_token, trip_slug):
         """
         获取某个旅行计划的所有事件

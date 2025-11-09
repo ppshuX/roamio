@@ -353,35 +353,53 @@ export default defineComponent({
     
     // 加载所有待办事项
     const loadAllEvents = async () => {
-      if (!isLoggedIn.value) return
+      console.log('🔄 开始加载待办列表...')
+      
+      if (!isLoggedIn.value) {
+        console.log('❌ 未登录，跳过加载')
+        return
+      }
       
       loading.value = true
       try {
         const token = localStorage.getItem('access_token')
-        if (!token) return
+        if (!token) {
+          console.log('❌ 未找到 Token')
+          return
+        }
         
-        // 调用 Ralendar API 获取所有事件
-        const response = await fetch('https://app7626.acapp.acwing.com.cn/api/v1/events/', {
+        console.log('📡 调用 Roamio 代理: GET /api/v1/ralendar/trips/events/')
+        console.log('🔑 Token 前20位:', token.substring(0, 20))
+        
+        // 通过 Roamio 后端代理调用 Ralendar API
+        const response = await fetch('/api/v1/ralendar/trips/events/', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`
           }
         })
         
+        console.log('📥 响应状态:', response.status, response.statusText)
+        
         if (response.ok) {
           const data = await response.json()
+          console.log('📦 原始响应数据:', data)
+          
           // Ralendar 返回的格式可能是 {results: [...]} 或直接是数组
           allEvents.value = data.results || data || []
-          console.log('✅ 加载了', allEvents.value.length, '个待办')
+          console.log('✅ 成功加载', allEvents.value.length, '个待办')
+          console.log('📋 待办列表:', allEvents.value)
         } else {
-          console.error('加载待办失败:', response.status)
+          const errorText = await response.text()
+          console.error('❌ 加载失败:', response.status, errorText)
           allEvents.value = []
         }
       } catch (error) {
-        console.error('加载待办失败:', error)
+        console.error('❌ 加载待办失败:', error)
         allEvents.value = []
       } finally {
         loading.value = false
+        console.log('🏁 加载完成，当前待办数:', allEvents.value.length)
       }
     }
     
@@ -465,7 +483,7 @@ export default defineComponent({
           // 创建模式
           console.log('📤 发送的数据:', eventData)
           
-          const response = await fetch('/api/v1/ralendar/trips/events/', {
+          const response = await fetch('/api/v1/ralendar/trips/events/create/', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
