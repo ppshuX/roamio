@@ -56,34 +56,126 @@
               <div class="card-body">
                 <h6 class="card-title mb-3">{{ editingEventId ? '编辑待办' : '新建待办' }}</h6>
                 <form @submit.prevent="handleAddEvent">
+                  <!-- 标题 -->
                   <div class="mb-3">
-                    <label class="form-label small text-muted">标题 *</label>
+                    <label class="form-label small text-muted">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                        <path d="M2.5 3.5a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1h-11zm0 3a.5.5 0 0 1 0-1h6a.5.5 0 0 1 0 1h-6zm0 3a.5.5 0 0 1 0-1h6a.5.5 0 0 1 0 1h-6zm0 3a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1h-11z"/>
+                      </svg>
+                      标题 *
+                    </label>
                     <input 
                       v-model="newEvent.title" 
                       type="text" 
-                      class="form-control" 
+                      class="form-control form-control-sm" 
                       placeholder="例如：准备出行物品"
                       required
                     >
                   </div>
+                  
+                  <!-- 描述 -->
                   <div class="mb-3">
-                    <label class="form-label small text-muted">描述（可选）</label>
+                    <label class="form-label small text-muted">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                        <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+                        <path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/>
+                      </svg>
+                      描述（可选）
+                    </label>
                     <textarea 
                       v-model="newEvent.description" 
-                      class="form-control" 
+                      class="form-control form-control-sm" 
                       rows="2" 
                       placeholder="详细说明..."
                     ></textarea>
                   </div>
+                  
+                  <!-- 时间范围 -->
+                  <div class="row mb-3">
+                    <div class="col-6">
+                      <label class="form-label small text-muted">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                          <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                          <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                        </svg>
+                        开始时间 *
+                      </label>
+                      <input 
+                        v-model="newEvent.start_time" 
+                        type="datetime-local" 
+                        class="form-control form-control-sm"
+                        required
+                      >
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small text-muted">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                          <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                          <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                        </svg>
+                        结束时间
+                      </label>
+                      <input 
+                        v-model="newEvent.end_time" 
+                        type="datetime-local" 
+                        class="form-control form-control-sm"
+                      >
+                    </div>
+                  </div>
+                  
+                  <!-- 地点 -->
                   <div class="mb-3">
-                    <label class="form-label small text-muted">时间 *</label>
+                    <label class="form-label small text-muted">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                      </svg>
+                      地点（可选）
+                    </label>
                     <input 
-                      v-model="newEvent.event_time" 
-                      type="datetime-local" 
-                      class="form-control"
-                      required
+                      v-model="newEvent.location" 
+                      type="text" 
+                      class="form-control form-control-sm" 
+                      placeholder="例如：北京故宫"
                     >
                   </div>
+                  
+                  <!-- 提醒设置 -->
+                  <div class="mb-3">
+                    <label class="form-label small text-muted">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                        <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/>
+                      </svg>
+                      提醒设置
+                    </label>
+                    <select v-model="newEvent.reminder_minutes" class="form-select form-select-sm">
+                      <option :value="0">不提醒</option>
+                      <option :value="15">提前 15 分钟</option>
+                      <option :value="30">提前 30 分钟</option>
+                      <option :value="60">提前 1 小时</option>
+                      <option :value="120">提前 2 小时</option>
+                      <option :value="1440">提前 1 天</option>
+                    </select>
+                  </div>
+                  
+                  <!-- 邮件提醒 -->
+                  <div class="mb-3">
+                    <div class="form-check">
+                      <input 
+                        v-model="newEvent.email_reminder" 
+                        class="form-check-input" 
+                        type="checkbox" 
+                        id="emailReminder"
+                      >
+                      <label class="form-check-label small text-muted" for="emailReminder">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/>
+                        </svg>
+                        发送邮件提醒
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <!-- 操作按钮 -->
                   <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary btn-sm" :disabled="submitting">
                       <span v-if="submitting" class="spinner-border spinner-border-sm me-1"></span>
@@ -218,7 +310,11 @@ export default defineComponent({
     const newEvent = ref({
       title: '',
       description: '',
-      event_time: ''
+      start_time: '',
+      end_time: '',
+      location: '',
+      reminder_minutes: 15,
+      email_reminder: false
     })
     
     // 加载所有待办事项
@@ -252,8 +348,8 @@ export default defineComponent({
         return
       }
       
-      if (!newEvent.value.event_time) {
-        alert('请选择时间')
+      if (!newEvent.value.start_time) {
+        alert('请选择开始时间')
         return
       }
       
@@ -271,7 +367,11 @@ export default defineComponent({
         const eventData = {
           title: newEvent.value.title,
           description: newEvent.value.description || '',
-          start_time: newEvent.value.event_time ? new Date(newEvent.value.event_time).toISOString() : new Date().toISOString()
+          start_time: new Date(newEvent.value.start_time).toISOString(),
+          end_time: newEvent.value.end_time ? new Date(newEvent.value.end_time).toISOString() : null,
+          location: newEvent.value.location || '',
+          reminder_minutes: newEvent.value.reminder_minutes || 15,
+          email_reminder: newEvent.value.email_reminder || false
         }
         
         if (editingEventId.value) {
@@ -335,7 +435,11 @@ export default defineComponent({
         newEvent.value = {
           title: '',
           description: '',
-          event_time: ''
+          start_time: '',
+          end_time: '',
+          location: '',
+          reminder_minutes: 15,
+          email_reminder: false
         }
         editingEventId.value = null
         showAddForm.value = false
@@ -355,7 +459,11 @@ export default defineComponent({
       newEvent.value = {
         title: '',
         description: '',
-        event_time: ''
+        start_time: '',
+        end_time: '',
+        location: '',
+        reminder_minutes: 15,
+        email_reminder: false
       }
     }
     
@@ -365,7 +473,11 @@ export default defineComponent({
       newEvent.value = {
         title: event.title,
         description: event.description || '',
-        event_time: event.start_time ? event.start_time.substring(0, 16) : ''
+        start_time: event.start_time ? event.start_time.substring(0, 16) : '',
+        end_time: event.end_time ? event.end_time.substring(0, 16) : '',
+        location: event.location || '',
+        reminder_minutes: event.reminder_minutes || 15,
+        email_reminder: event.email_reminder || false
       }
       
       // 保存正在编辑的事件 ID
@@ -585,6 +697,47 @@ export default defineComponent({
 
 .event-meta i {
   margin-right: 4px;
+}
+
+/* 表单样式 */
+.add-event-form .card {
+  border: 2px solid #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.add-event-form .card-title {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.add-event-form .form-label {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.add-event-form .form-control,
+.add-event-form .form-select {
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  transition: all 0.2s;
+}
+
+.add-event-form .form-control:focus,
+.add-event-form .form-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.add-event-form .form-check-input:checked {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+.add-event-form .btn {
+  border-radius: 6px;
+  font-weight: 500;
 }
 
 .sidebar-overlay {
