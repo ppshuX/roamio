@@ -46,24 +46,32 @@ class RalendarIntegrationViewSet(ViewSet):
         # 获取用户 Token
         user_token = self.get_user_token(request)
         if not user_token:
+            logger.error("未找到用户认证信息")
             return Response(
                 {'error': '未找到用户认证信息'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
+        logger.info(f"用户 Token: {user_token[:20]}...")  # 只记录前20个字符
+        
         # 获取事件数据
         event_data = request.data.copy()
         event_data['source_app'] = 'roamio'
+        
+        logger.info(f"事件数据: {event_data}")
         
         # 调用 Ralendar API
         client = RalendarClient()
         
         try:
             result = client.create_event(user_token, event_data)
+            logger.info(f"创建事件成功: {result.get('id')}")
             return Response(result, status=status.HTTP_201_CREATED)
         
         except Exception as e:
             logger.error(f"创建事件失败: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return Response({
                 'error': f'创建事件失败: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
