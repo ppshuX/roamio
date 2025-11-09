@@ -72,11 +72,9 @@ class RalendarClient:
         }
         
         # 添加 openid 到顶层（Ralendar 的三层匹配需要）
-        # ⚠️ 临时禁用：测试是否是 openid 导致 400 错误
-        # if openid:
-        #     data['openid'] = openid
-        #     logger.info(f"添加 OpenID: {openid}")
-        logger.info(f"⚠️ OpenID 临时禁用，测试中...")
+        if openid:
+            data['openid'] = openid
+            print(f"[DEBUG] Added OpenID to top-level data: {openid}")
         
         # 详细日志：发送给 Ralendar 的完整数据（使用 print 输出到 uWSGI 日志）
         print("=" * 80)
