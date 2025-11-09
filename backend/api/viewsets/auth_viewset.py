@@ -320,6 +320,12 @@ class AuthViewSet(viewsets.GenericViewSet):
             # 已绑定，直接登录
             user = social_account.user
             
+            # 更新 UnionID（如果之前没有保存）
+            if unionid and not social_account.unionid:
+                social_account.unionid = unionid
+                social_account.save()
+                print(f"[DEBUG] Updated UnionID for user {user.id}: {unionid}")
+            
             # 更新 QQ 头像（如果用户还没有头像，或者 QQ 头像有更新）
             if qq_info.get('avatar_url'):
                 # 确保 UserProfile 已创建
