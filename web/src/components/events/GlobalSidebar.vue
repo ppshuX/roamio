@@ -39,13 +39,16 @@
         <template v-else>
           <!-- 快捷操作 -->
           <div class="quick-actions mb-3">
-            <button 
+            <a 
+              href="https://app7626.acapp.acwing.com.cn" 
+              target="_blank"
               class="btn btn-primary w-100"
-              @click="showAddEvent = true"
             >
-              <i class="bi bi-plus-lg me-1"></i>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 8px;">
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+              </svg>
               添加待办
-            </button>
+            </a>
           </div>
           
           <!-- 待办列表 -->
@@ -56,23 +59,32 @@
           </div>
           
           <div v-else-if="allEvents.length === 0" class="empty-state">
-            <i class="bi bi-calendar-plus text-muted mb-3" style="font-size: 64px;"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="#6c757d" viewBox="0 0 16 16" style="margin-bottom: 1rem;">
+              <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM2 2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H2z"/>
+              <path d="M2.5 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V4zM11 7.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/>
+            </svg>
             <h6 class="text-muted mb-2">还没有待办事项</h6>
             <p class="text-muted small mb-3">添加待办，设置提醒<br>让生活更有条理</p>
-            <button 
+            <a 
+              href="https://app7626.acapp.acwing.com.cn" 
+              target="_blank"
               class="btn btn-primary btn-sm mb-3"
-              @click="showAddEvent = true"
             >
-              <i class="bi bi-plus-lg me-1"></i>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+              </svg>
               添加第一个待办
-            </button>
+            </a>
             <hr>
             <a 
-              href="https://ralendar.com" 
+              href="https://app7626.acapp.acwing.com.cn" 
               target="_blank" 
               class="btn btn-outline-primary btn-sm"
             >
-              <i class="bi bi-box-arrow-up-right me-1"></i>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/>
+                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/>
+              </svg>
               访问 Ralendar 完整版
             </a>
           </div>
@@ -134,7 +146,6 @@ export default defineComponent({
     const isLoggedIn = computed(() => userStore.isLoggedIn)
     const loading = ref(false)
     const allEvents = ref([])
-    const showAddEvent = ref(false)
     
     // 加载所有待办事项
     const loadAllEvents = async () => {
@@ -171,7 +182,6 @@ export default defineComponent({
       isLoggedIn,
       loading,
       allEvents,
-      showAddEvent,
       formatTime
     }
   }
