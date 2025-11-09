@@ -98,13 +98,19 @@ def send_verification_email(email, code, verification_type='register', user=None
             import time
             
             logger.info("创建SMTP连接...")
-            server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT, timeout=30)
-            time.sleep(0.5)  # 短暂延迟
-            
-            logger.info("启动TLS...")
-            if settings.EMAIL_USE_TLS:
-                server.starttls()
-            time.sleep(0.5)  # 短暂延迟
+            # 根据配置选择 SMTP 或 SMTP_SSL
+            if settings.EMAIL_USE_SSL:
+                logger.info(f"使用 SMTP_SSL 连接 {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
+                server = smtplib.SMTP_SSL(settings.EMAIL_HOST, settings.EMAIL_PORT, timeout=30)
+            else:
+                logger.info(f"使用 SMTP 连接 {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
+                server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT, timeout=30)
+                time.sleep(0.5)  # 短暂延迟
+                
+                logger.info("启动TLS...")
+                if settings.EMAIL_USE_TLS:
+                    server.starttls()
+                time.sleep(0.5)  # 短暂延迟
             
             logger.info("登录SMTP服务器...")
             server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
