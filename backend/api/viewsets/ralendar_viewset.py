@@ -22,6 +22,52 @@ class RalendarIntegrationViewSet(ViewSet):
     
     permission_classes = [IsAuthenticated]
     
+    @action(detail=False, methods=['post'], url_path='events')
+    def create_event(self, request):
+        """
+        创建单个事件到 Ralendar
+        
+        URL: POST /api/v1/ralendar/events/
+        
+        请求体:
+        {
+            "title": "待办标题",
+            "description": "描述",
+            "start_time": "2025-11-20T09:00:00+08:00"
+        }
+        
+        响应:
+        {
+            "id": 123,
+            "title": "待办标题",
+            ...
+        }
+        """
+        # 获取用户 Token
+        user_token = self.get_user_token(request)
+        if not user_token:
+            return Response(
+                {'error': '未找到用户认证信息'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # 获取事件数据
+        event_data = request.data.copy()
+        event_data['source_app'] = 'roamio'
+        
+        # 调用 Ralendar API
+        client = RalendarClient()
+        
+        try:
+            result = client.create_event(user_token, event_data)
+            return Response(result, status=status.HTTP_201_CREATED)
+        
+        except Exception as e:
+            logger.error(f"创建事件失败: {e}")
+            return Response({
+                'error': f'创建事件失败: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
     def get_user_token(self, request):
         """
         获取用户的 JWT Token

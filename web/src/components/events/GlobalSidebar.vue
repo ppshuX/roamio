@@ -241,12 +241,11 @@ export default defineComponent({
         const eventData = {
           title: newEvent.value.title,
           description: newEvent.value.description || '',
-          start_time: newEvent.value.event_time ? new Date(newEvent.value.event_time).toISOString() : new Date().toISOString(),
-          source_app: 'roamio'
+          start_time: newEvent.value.event_time ? new Date(newEvent.value.event_time).toISOString() : new Date().toISOString()
         }
         
-        // 调用 Ralendar API
-        const response = await fetch('https://app7626.acapp.acwing.com.cn/api/v1/events/', {
+        // 调用 Roamio 后端 API（代理到 Ralendar）
+        const response = await fetch('/api/v1/ralendar/events/', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -256,7 +255,8 @@ export default defineComponent({
         })
         
         if (!response.ok) {
-          throw new Error('创建失败')
+          const error = await response.json()
+          throw new Error(error.error || '创建失败')
         }
         
         const result = await response.json()
@@ -275,7 +275,7 @@ export default defineComponent({
         alert('创建成功！')
       } catch (error) {
         console.error('创建事件失败:', error)
-        alert('创建失败，请稍后重试')
+        alert(error.message || '创建失败，请稍后重试')
       } finally {
         submitting.value = false
       }
