@@ -72,9 +72,11 @@ class RalendarClient:
         }
         
         # 添加 openid 到顶层（Ralendar 的三层匹配需要）
-        if openid:
-            data['openid'] = openid
-            logger.info(f"添加 OpenID: {openid}")
+        # ⚠️ 临时禁用：测试是否是 openid 导致 400 错误
+        # if openid:
+        #     data['openid'] = openid
+        #     logger.info(f"添加 OpenID: {openid}")
+        logger.info(f"⚠️ OpenID 临时禁用，测试中...")
         
         try:
             response = requests.post(url, json=data, headers=headers, timeout=self.timeout)
