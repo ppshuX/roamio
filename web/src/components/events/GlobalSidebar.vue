@@ -353,22 +353,12 @@ export default defineComponent({
     
     // 加载所有待办事项
     const loadAllEvents = async () => {
-      console.log('🔄 开始加载待办列表...')
-      
-      if (!isLoggedIn.value) {
-        console.log('❌ 未登录，跳过加载')
-        return
-      }
+      if (!isLoggedIn.value) return
       
       loading.value = true
       try {
         const token = localStorage.getItem('access_token')
-        if (!token) {
-          console.log('❌ 未找到 Token')
-          return
-        }
-        
-        console.log('📡 调用 Roamio 代理: GET /api/v1/ralendar/trips/events/')
+        if (!token) return
         
         // 通过 Roamio 后端代理调用 Ralendar API
         const response = await fetch('/api/v1/ralendar/trips/events/', {
@@ -378,40 +368,29 @@ export default defineComponent({
           }
         })
         
-        console.log('📥 响应状态:', response.status, response.statusText)
-        
         if (response.ok) {
           const data = await response.json()
-          console.log('📦 原始响应数据:', data)
-          
-          // Ralendar 返回的格式可能是 {results: [...]} 或直接是数组
           allEvents.value = data.results || data || []
-          console.log('✅ 成功加载', allEvents.value.length, '个待办')
           
           // 同时保存到本地存储（备份）
           localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
         } else {
-          const errorText = await response.text()
-          console.error('❌ 加载失败:', response.status, errorText)
-          
           // 加载失败时，尝试从本地存储恢复
           const stored = localStorage.getItem('ralendar_events')
           if (stored) {
             allEvents.value = JSON.parse(stored)
-            console.log('⚠️ 从本地存储恢复', allEvents.value.length, '个待办')
           } else {
             allEvents.value = []
           }
         }
       } catch (error) {
-        console.error('❌ 加载待办失败:', error)
+        console.error('加载待办失败:', error)
         
         // 加载失败时，尝试从本地存储恢复
         try {
           const stored = localStorage.getItem('ralendar_events')
           if (stored) {
             allEvents.value = JSON.parse(stored)
-            console.log('⚠️ 从本地存储恢复', allEvents.value.length, '个待办')
           } else {
             allEvents.value = []
           }
@@ -420,52 +399,7 @@ export default defineComponent({
         }
       } finally {
         loading.value = false
-        console.log('🏁 加载完成，当前待办数:', allEvents.value.length)
       }
-      
-      /* 原始代码（等 UnionID 问题解决后恢复）
-      loading.value = true
-      try {
-        const token = localStorage.getItem('access_token')
-        if (!token) {
-          console.log('❌ 未找到 Token')
-          return
-        }
-        
-        console.log('📡 调用 Roamio 代理: GET /api/v1/ralendar/trips/events/')
-        console.log('🔑 Token 前20位:', token.substring(0, 20))
-        
-        // 通过 Roamio 后端代理调用 Ralendar API
-        const response = await fetch('/api/v1/ralendar/trips/events/', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        
-        console.log('📥 响应状态:', response.status, response.statusText)
-        
-        if (response.ok) {
-          const data = await response.json()
-          console.log('📦 原始响应数据:', data)
-          
-          // Ralendar 返回的格式可能是 {results: [...]} 或直接是数组
-          allEvents.value = data.results || data || []
-          console.log('✅ 成功加载', allEvents.value.length, '个待办')
-          console.log('📋 待办列表:', allEvents.value)
-        } else {
-          const errorText = await response.text()
-          console.error('❌ 加载失败:', response.status, errorText)
-          allEvents.value = []
-        }
-      } catch (error) {
-        console.error('❌ 加载待办失败:', error)
-        allEvents.value = []
-      } finally {
-        loading.value = false
-        console.log('🏁 加载完成，当前待办数:', allEvents.value.length)
-      }
-      */
     }
     
     // 格式化时间
@@ -519,8 +453,6 @@ export default defineComponent({
         
         if (editingEventId.value) {
           // 编辑模式：通过 Roamio 后端代理更新
-          console.log('📝 更新事件:', editingEventId.value, eventData)
-          
           const response = await fetch(`/api/v1/ralendar/trips/events/${editingEventId.value}/`, {
             method: 'PUT',
             headers: {
@@ -535,7 +467,6 @@ export default defineComponent({
           }
           
           const result = await response.json()
-          console.log('✅ 更新成功:', result)
           
           // 更新列表中的事件
           const index = allEvents.value.findIndex(e => e.id === editingEventId.value)
@@ -543,15 +474,12 @@ export default defineComponent({
             allEvents.value[index] = result
           }
           
-          // 💾 保存到本地存储
+          // 保存到本地存储
           localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
-          console.log('💾 已保存到本地存储')
           
           alert('更新成功！')
         } else {
           // 创建模式
-          console.log('📤 发送的数据:', eventData)
-          
           const response = await fetch('/api/v1/ralendar/trips/events/create/', {
             method: 'POST',
             headers: {
@@ -561,23 +489,18 @@ export default defineComponent({
             body: JSON.stringify(eventData)
           })
           
-          console.log('📥 响应状态:', response.status, response.statusText)
-          
           if (!response.ok) {
             const error = await response.json()
-            console.error('❌ 错误响应:', error)
             throw new Error(error.error || '创建失败')
           }
           
           const result = await response.json()
-          console.log('✅ 成功响应:', result)
           
           // 添加到列表
           allEvents.value.unshift(result)
           
-          // 💾 保存到本地存储
+          // 保存到本地存储
           localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
-          console.log('💾 已保存到本地存储')
           
           alert('创建成功！')
         }
@@ -678,9 +601,8 @@ export default defineComponent({
           allEvents.value.splice(index, 1)
         }
         
-        // 💾 保存到本地存储
+        // 保存到本地存储
         localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
-        console.log('💾 已保存到本地存储')
         
         alert('删除成功！')
       } catch (error) {
