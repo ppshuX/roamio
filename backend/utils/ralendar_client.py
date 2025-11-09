@@ -35,7 +35,7 @@ class RalendarClient:
     
     def create_event(self, user_token, event_data):
         """
-        为旅行计划创建日程事件
+        创建单个事件到 Ralendar（使用 Fusion API）
         
         Args:
             user_token (str): 用户的 JWT access_token
@@ -48,9 +48,7 @@ class RalendarClient:
                     "location": "北京故宫",
                     "latitude": 39.9163,
                     "longitude": 116.3972,
-                    "email_reminder": True,
-                    "source_app": "roamio",
-                    "related_trip_slug": "beijing-trip-2025"
+                    "email_reminder": True
                 }
         
         Returns:
@@ -59,16 +57,34 @@ class RalendarClient:
         Raises:
             requests.exceptions.RequestException: API 请求失败
         """
-        url = f"{self.base_url}/events/"
+        # 使用 Fusion API 的批量端点（即使只有 1 个事件）
+        url = f"{self.base_url}/fusion/events/batch/"
         headers = self.get_headers(user_token)
         
+        # 构造批量创建的数据格式
+        data = {
+            "source_app": "roamio",
+            "related_trip_slug": "sidebar-todo",  # 侧边栏创建的待办
+            "events": [event_data]  # 单个事件也用数组
+        }
+        
         try:
-            response = requests.post(url, json=event_data, headers=headers, timeout=self.timeout)
+            response = requests.post(url, json=data, headers=headers, timeout=self.timeout)
             response.raise_for_status()
-            logger.info(f"成功创建 Ralendar 事件: {event_data.get('title')}")
-            return response.json()
+            result = response.json()
+            
+            # 返回第一个创建的事件
+            if result.get('created_events'):
+                created_event = result['created_events'][0]
+                logger.info(f"成功创建 Ralendar 事件: {created_event.get('title')}")
+                return created_event
+            else:
+                raise Exception("未返回创建的事件")
+                
         except requests.exceptions.RequestException as e:
             logger.error(f"创建 Ralendar 事件失败: {e}")
+            if hasattr(e.response, 'text'):
+                logger.error(f"响应内容: {e.response.text}")
             raise
     
     def batch_create_events(self, user_token, events_list, trip_slug):
