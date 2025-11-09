@@ -360,6 +360,27 @@ export default defineComponent({
         return
       }
       
+      // ⚠️ 临时禁用：由于 UnionID 问题，Ralendar 的 GET /events/ 返回 401
+      // 暂时使用前端本地存储来维护事件列表
+      console.log('⚠️ 临时方案：从本地存储加载事件')
+      
+      try {
+        const stored = localStorage.getItem('ralendar_events')
+        if (stored) {
+          allEvents.value = JSON.parse(stored)
+          console.log('✅ 从本地加载', allEvents.value.length, '个待办')
+        } else {
+          allEvents.value = []
+          console.log('📋 本地暂无待办')
+        }
+      } catch (error) {
+        console.error('❌ 加载本地待办失败:', error)
+        allEvents.value = []
+      }
+      
+      console.log('🏁 加载完成，当前待办数:', allEvents.value.length)
+      
+      /* 原始代码（等 UnionID 问题解决后恢复）
       loading.value = true
       try {
         const token = localStorage.getItem('access_token')
@@ -401,6 +422,7 @@ export default defineComponent({
         loading.value = false
         console.log('🏁 加载完成，当前待办数:', allEvents.value.length)
       }
+      */
     }
     
     // 格式化时间
@@ -478,6 +500,10 @@ export default defineComponent({
             allEvents.value[index] = result
           }
           
+          // 💾 保存到本地存储
+          localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
+          console.log('💾 已保存到本地存储')
+          
           alert('更新成功！')
         } else {
           // 创建模式
@@ -505,6 +531,10 @@ export default defineComponent({
           
           // 添加到列表
           allEvents.value.unshift(result)
+          
+          // 💾 保存到本地存储
+          localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
+          console.log('💾 已保存到本地存储')
           
           alert('创建成功！')
         }
@@ -604,6 +634,10 @@ export default defineComponent({
         if (index > -1) {
           allEvents.value.splice(index, 1)
         }
+        
+        // 💾 保存到本地存储
+        localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
+        console.log('💾 已保存到本地存储')
         
         alert('删除成功！')
       } catch (error) {
