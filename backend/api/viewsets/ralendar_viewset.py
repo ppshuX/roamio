@@ -43,15 +43,35 @@ class RalendarIntegrationViewSet(ViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
-        logger.info(f"获取事件列表，Token: {user_token[:20]}...")
+        # 获取用户的 UnionID（用于加速匹配）
+        from backend.models import SocialAccount
+        unionid = None
+        try:
+            social_account = SocialAccount.objects.filter(
+                user=request.user,
+                provider='qq'
+            ).first()
+            
+            if social_account:
+                unionid = social_account.unionid
+        except Exception as e:
+            logger.error(f"Failed to get UnionID: {e}")
         
-        # 调用 Ralendar API
+        # 调用 Ralendar Fusion API
         client = RalendarClient()
         
         try:
-            result = client.list_events(user_token)
-            logger.info(f"获取事件成功: {len(result.get('results', []))} 个")
-            return Response(result, status=status.HTTP_200_OK)
+            result = client.list_events(user_token, unionid=unionid)
+            # Fusion API 返回格式：{"events": [...], "events_count": 10}
+            # 转换为前端期望的格式：{"results": [...]}
+            response_data = {
+                'results': result.get('events', []),
+                'count': result.get('events_count', 0),
+                'user_id': result.get('user_id'),
+                'username': result.get('username')
+            }
+            logger.info(f"获取事件成功: {response_data['count']} 个")
+            return Response(response_data, status=status.HTTP_200_OK)
         
         except Exception as e:
             logger.error(f"获取事件失败: {e}")

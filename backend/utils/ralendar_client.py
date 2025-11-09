@@ -142,27 +142,32 @@ class RalendarClient:
             logger.error(f"Batch create failed: {e}")
             raise
     
-    def list_events(self, user_token):
+    def list_events(self, user_token, unionid=None):
         """
-        获取用户的所有事件
+        获取用户的所有事件（使用 Fusion API）
         
         Args:
             user_token (str): 用户的 JWT Token
+            unionid (str, optional): UnionID，可选，用于加速匹配
         
         Returns:
-            dict: {"results": [...]}
+            dict: {"events": [...], "user_id": 2, "username": "...", "events_count": 10}
             
         Raises:
             requests.exceptions.RequestException: API 请求失败
         """
-        url = f"{self.base_url}/events/"
+        url = f"{self.base_url}/fusion/events/"
         headers = self.get_headers(user_token)
+        params = {}
+        
+        if unionid:
+            params['unionid'] = unionid
         
         try:
-            response = requests.get(url, headers=headers, timeout=self.timeout)
+            response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
             response.raise_for_status()
             result = response.json()
-            logger.info(f"Got {len(result.get('results', []))} events")
+            logger.info(f"Got {result.get('events_count', 0)} events for user {result.get('username')}")
             return result
         except requests.exceptions.RequestException as e:
             logger.error(f"List events failed: {e}")
