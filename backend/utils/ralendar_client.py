@@ -90,7 +90,13 @@ class RalendarClient:
             # 详细日志：Ralendar 的响应（使用 print）
             print(f"[DEBUG] Ralendar response status: {response.status_code}")
             print(f"[DEBUG] Ralendar response headers: {dict(response.headers)}")
-            print(f"[DEBUG] Ralendar response body: {response.text}")
+            try:
+                # 尝试解析为 JSON 并打印
+                response_json = response.json()
+                print(f"[DEBUG] Ralendar response body (JSON): {response_json}")
+            except:
+                # 如果不是 JSON，打印原始文本（安全编码）
+                print(f"[DEBUG] Ralendar response body (text): {response.text.encode('utf-8', errors='replace').decode('utf-8')}")
             print("=" * 80)
             
             response.raise_for_status()
