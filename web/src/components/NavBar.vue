@@ -89,27 +89,15 @@
       </div>
     </div>
   </nav>
-  
-  <!-- Ralendar 设置对话框 -->
-  <RalendarSettingsModal 
-    :show="showRalendarSettings"
-    @close="showRalendarSettings = false"
-    @saved="handleRalendarSaved"
-  />
 </template>
 
 <script>
-import { ref, computed, inject, onMounted, onUnmounted } from 'vue'
+import { computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
-import RalendarSettingsModal from './RalendarSettingsModal.vue'
 
 export default {
   name: 'NavBar',
-  
-  components: {
-    RalendarSettingsModal
-  },
   
   setup() {
     const router = useRouter()
@@ -119,26 +107,6 @@ export default {
     const isLoggedIn = computed(() => userStore.isLoggedIn)
     const username = computed(() => userStore.username)
     const avatar = computed(() => userStore.avatar)
-    const showRalendarSettings = ref(false)
-    const windowWidth = ref(window.innerWidth)
-    
-    // 检测是否为移动端
-    const isMobile = computed(() => {
-      return windowWidth.value <= 768
-    })
-    
-    // 监听窗口大小变化
-    const handleResize = () => {
-      windowWidth.value = window.innerWidth
-    }
-    
-    onMounted(() => {
-      window.addEventListener('resize', handleResize)
-    })
-    
-    onUnmounted(() => {
-      window.removeEventListener('resize', handleResize)
-    })
     
     const handleLogout = async () => {
       if (!confirm('确定要退出登录吗？')) return
@@ -152,34 +120,20 @@ export default {
     }
     
     const handleRalendarClick = () => {
-      console.log('Ralendar clicked, isMobile:', isMobile.value, 'width:', window.innerWidth)
-      if (isMobile.value) {
-        // 移动端：弹出设置对话框
-        console.log('Opening settings modal')
-        showRalendarSettings.value = true
+      // 统一行为：切换右侧栏（手机端和桌面端都一样）
+      if (toggleRalendarSidebar) {
+        toggleRalendarSidebar()
       } else {
-        // 桌面端：切换右侧栏
-        console.log('Toggling sidebar')
-        if (toggleRalendarSidebar) {
-          toggleRalendarSidebar()
-        } else {
-          console.error('toggleRalendarSidebar not available')
-        }
+        console.error('toggleRalendarSidebar not available')
       }
-    }
-    
-    const handleRalendarSaved = (enabled) => {
-      console.log('Ralendar 悬浮窗设置已保存:', enabled)
     }
     
     return {
       isLoggedIn,
       username,
       avatar,
-      showRalendarSettings,
       handleRalendarClick,
-      handleLogout,
-      handleRalendarSaved
+      handleLogout
     }
   }
 }
