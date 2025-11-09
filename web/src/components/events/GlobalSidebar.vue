@@ -360,25 +360,68 @@ export default defineComponent({
         return
       }
       
-      // ⚠️ 临时禁用：由于 UnionID 问题，Ralendar 的 GET /events/ 返回 401
-      // 暂时使用前端本地存储来维护事件列表
-      console.log('⚠️ 临时方案：从本地存储加载事件')
-      
+      loading.value = true
       try {
-        const stored = localStorage.getItem('ralendar_events')
-        if (stored) {
-          allEvents.value = JSON.parse(stored)
-          console.log('✅ 从本地加载', allEvents.value.length, '个待办')
+        const token = localStorage.getItem('access_token')
+        if (!token) {
+          console.log('❌ 未找到 Token')
+          return
+        }
+        
+        console.log('📡 调用 Roamio 代理: GET /api/v1/ralendar/trips/events/')
+        
+        // 通过 Roamio 后端代理调用 Ralendar API
+        const response = await fetch('/api/v1/ralendar/trips/events/', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        console.log('📥 响应状态:', response.status, response.statusText)
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log('📦 原始响应数据:', data)
+          
+          // Ralendar 返回的格式可能是 {results: [...]} 或直接是数组
+          allEvents.value = data.results || data || []
+          console.log('✅ 成功加载', allEvents.value.length, '个待办')
+          
+          // 同时保存到本地存储（备份）
+          localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
         } else {
-          allEvents.value = []
-          console.log('📋 本地暂无待办')
+          const errorText = await response.text()
+          console.error('❌ 加载失败:', response.status, errorText)
+          
+          // 加载失败时，尝试从本地存储恢复
+          const stored = localStorage.getItem('ralendar_events')
+          if (stored) {
+            allEvents.value = JSON.parse(stored)
+            console.log('⚠️ 从本地存储恢复', allEvents.value.length, '个待办')
+          } else {
+            allEvents.value = []
+          }
         }
       } catch (error) {
-        console.error('❌ 加载本地待办失败:', error)
-        allEvents.value = []
+        console.error('❌ 加载待办失败:', error)
+        
+        // 加载失败时，尝试从本地存储恢复
+        try {
+          const stored = localStorage.getItem('ralendar_events')
+          if (stored) {
+            allEvents.value = JSON.parse(stored)
+            console.log('⚠️ 从本地存储恢复', allEvents.value.length, '个待办')
+          } else {
+            allEvents.value = []
+          }
+        } catch (e) {
+          allEvents.value = []
+        }
+      } finally {
+        loading.value = false
+        console.log('🏁 加载完成，当前待办数:', allEvents.value.length)
       }
-      
-      console.log('🏁 加载完成，当前待办数:', allEvents.value.length)
       
       /* 原始代码（等 UnionID 问题解决后恢复）
       loading.value = true
