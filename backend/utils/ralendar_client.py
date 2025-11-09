@@ -73,13 +73,31 @@ class RalendarClient:
             response.raise_for_status()
             result = response.json()
             
-            # 返回第一个创建的事件
+            logger.info(f"Ralendar API 响应: {result}")
+            
+            # 适配不同的响应格式
             if result.get('created_events'):
+                # 格式 1: {"created_events": [...]}
                 created_event = result['created_events'][0]
-                logger.info(f"成功创建 Ralendar 事件: {created_event.get('title')}")
+                logger.info(f"成功创建 Ralendar 事件 (格式1): {created_event.get('title')}")
                 return created_event
+            elif result.get('created'):
+                # 格式 2: {"created": [...]}
+                created_event = result['created'][0]
+                logger.info(f"成功创建 Ralendar 事件 (格式2): {created_event.get('title')}")
+                return created_event
+            elif isinstance(result, list) and len(result) > 0:
+                # 格式 3: 直接返回数组
+                created_event = result[0]
+                logger.info(f"成功创建 Ralendar 事件 (格式3): {created_event.get('title')}")
+                return created_event
+            elif result.get('id'):
+                # 格式 4: 直接返回单个事件对象
+                logger.info(f"成功创建 Ralendar 事件 (格式4): {result.get('title')}")
+                return result
             else:
-                raise Exception("未返回创建的事件")
+                logger.error(f"未知的响应格式: {result}")
+                raise Exception(f"未返回创建的事件，响应格式: {result}")
                 
         except requests.exceptions.RequestException as e:
             logger.error(f"创建 Ralendar 事件失败: {e}")
