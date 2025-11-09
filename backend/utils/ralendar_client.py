@@ -61,17 +61,22 @@ class RalendarClient:
         url = f"{self.base_url}/fusion/events/batch/"
         headers = self.get_headers(user_token)
         
-        # 获取 openid（如果存在），但不从 event_data 中移除
+        # 获取 unionid 和 openid（如果存在），但不从 event_data 中移除
+        unionid = event_data.get('unionid', None)
         openid = event_data.get('openid', None)
         
         # 构造批量创建的数据格式
         data = {
             "source_app": "roamio",
             "related_trip_slug": "sidebar-todo",  # 侧边栏创建的待办
-            "events": [event_data]  # 单个事件也用数组（包含 openid）
+            "events": [event_data]  # 单个事件也用数组（包含 unionid 和 openid）
         }
         
-        # 同时也添加 openid 到顶层（双重保险）
+        # 同时也添加 unionid 和 openid 到顶层（双重保险）
+        if unionid:
+            data['unionid'] = unionid
+            print(f"[DEBUG] UnionID in both top-level and event data: {unionid}")
+        
         if openid:
             data['openid'] = openid
             print(f"[DEBUG] OpenID in both top-level and event data: {openid}")

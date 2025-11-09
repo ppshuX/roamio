@@ -93,10 +93,10 @@ class RalendarIntegrationViewSet(ViewSet):
         
         print(f"[DEBUG] User Token: {user_token[:20]}...")
         
-        # 获取用户的 OpenID
+        # 获取用户的 OpenID 和 UnionID
         from backend.models import SocialAccount
         try:
-            print(f"[DEBUG] Query OpenID for user {request.user.id}...")
+            print(f"[DEBUG] Query QQ info for user {request.user.id}...")
             social_account = SocialAccount.objects.filter(
                 user=request.user,
                 provider='qq'
@@ -104,26 +104,32 @@ class RalendarIntegrationViewSet(ViewSet):
             
             if social_account:
                 openid = social_account.uid
+                unionid = social_account.unionid
                 print(f"[DEBUG] User OpenID: {openid}")
+                print(f"[DEBUG] User UnionID: {unionid}")
             else:
                 openid = None
-                print(f"[WARNING] No QQ OpenID found for user {request.user.id}")
+                unionid = None
+                print(f"[WARNING] No QQ account found for user {request.user.id}")
         except Exception as e:
-            print(f"[ERROR] Failed to get OpenID: {e}")
+            print(f"[ERROR] Failed to get QQ info: {e}")
             import traceback
             traceback.print_exc()
             openid = None
+            unionid = None
         
         # 获取事件数据
         event_data = request.data.copy()
         event_data['source_app'] = 'roamio'
         
-        # 添加 openid（Ralendar 的三层匹配需要）
+        # 添加 unionid 和 openid（Ralendar 的三层匹配需要）
+        if unionid:
+            event_data['unionid'] = unionid
+            print(f"[DEBUG] Added UnionID to event data")
+        
         if openid:
             event_data['openid'] = openid
             print(f"[DEBUG] Added OpenID to event data")
-        else:
-            print(f"[WARNING] No OpenID, skipping")
         
         print(f"[DEBUG] Event data: {event_data}")
         
