@@ -39,7 +39,19 @@
 <script>
 import { ref, onMounted, defineComponent } from 'vue'
 import { addTripToCalendar, getTripCalendarEvents, deleteTripCalendarEvents } from '@/api/ralendar'
-import { ElMessage, ElMessageBox } from 'element-plus'
+
+// 简单的消息提示函数
+const showMessage = (message, type = 'info') => {
+  const toast = document.createElement('div')
+  toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} position-fixed top-0 start-50 translate-middle-x mt-3`
+  toast.style.zIndex = '9999'
+  toast.textContent = message
+  document.body.appendChild(toast)
+  
+  setTimeout(() => {
+    toast.remove()
+  }, 3000)
+}
 
 export default defineComponent({
   name: 'AddToCalendarButton',
@@ -81,20 +93,12 @@ export default defineComponent({
     // 添加到日历
     const handleAddToCalendar = async () => {
       if (!props.events || props.events.length === 0) {
-        ElMessage.warning('当前旅行计划没有事件，请先添加行程安排')
+        showMessage('当前旅行计划没有事件，请先添加行程安排', 'warning')
         return
       }
 
       // 确认对话框
-      const confirmed = await ElMessageBox.confirm(
-        `确定要将「${props.tripTitle}」的 ${props.events.length} 个行程添加到 Ralendar 日历吗？`,
-        '添加到日历',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'info'
-        }
-      ).catch(() => false)
+      const confirmed = confirm(`确定要将「${props.tripTitle}」的 ${props.events.length} 个行程添加到 Ralendar 日历吗？`)
 
       if (!confirmed) return
 
@@ -116,14 +120,14 @@ export default defineComponent({
         const response = await addTripToCalendar(props.tripSlug, formattedEvents)
 
         if (response.success) {
-          ElMessage.success(`成功添加 ${response.created_count} 个事件到日历`)
+          showMessage(`成功添加 ${response.created_count} 个事件到日历`, 'success')
           synced.value = true
         } else {
-          ElMessage.error('添加到日历失败')
+          showMessage('添加到日历失败', 'error')
         }
       } catch (error) {
         console.error('添加到日历失败:', error)
-        ElMessage.error(error.response?.data?.error || '添加到日历失败，请稍后重试')
+        showMessage(error.response?.data?.error || '添加到日历失败，请稍后重试', 'error')
       } finally {
         processing.value = false
       }
@@ -131,15 +135,7 @@ export default defineComponent({
 
     // 从日历移除
     const handleRemoveFromCalendar = async () => {
-      const confirmed = await ElMessageBox.confirm(
-        `确定要从 Ralendar 日历中移除「${props.tripTitle}」的所有事件吗？`,
-        '移除事件',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-      ).catch(() => false)
+      const confirmed = confirm(`确定要从 Ralendar 日历中移除「${props.tripTitle}」的所有事件吗？`)
 
       if (!confirmed) return
 
@@ -149,14 +145,14 @@ export default defineComponent({
         const response = await deleteTripCalendarEvents(props.tripSlug)
 
         if (response.success) {
-          ElMessage.success(`已移除 ${response.deleted_count} 个事件`)
+          showMessage(`已移除 ${response.deleted_count} 个事件`, 'success')
           synced.value = false
         } else {
-          ElMessage.error('移除失败')
+          showMessage('移除失败', 'error')
         }
       } catch (error) {
         console.error('移除事件失败:', error)
-        ElMessage.error(error.response?.data?.error || '移除失败，请稍后重试')
+        showMessage(error.response?.data?.error || '移除失败，请稍后重试', 'error')
       } finally {
         processing.value = false
       }

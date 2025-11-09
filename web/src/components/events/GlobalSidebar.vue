@@ -356,15 +356,30 @@ export default defineComponent({
 /* 响应式 */
 @media (max-width: 768px) {
   .global-sidebar {
-    display: none; /* 移动端使用悬浮窗 */
+    top: 0; /* 移动端从顶部开始 */
+    height: 100vh;
+    width: 85vw; /* 移动端占85%宽度 */
+    max-width: 400px;
+  }
+  
+  .sidebar-header {
+    padding: 16px;
+  }
+  
+  .sidebar-header h5 {
+    font-size: 16px;
+  }
+  
+  .sidebar-body {
+    padding: 16px;
   }
   
   .sidebar-overlay {
-    display: none;
+    top: 0; /* 移动端遮罩从顶部开始 */
   }
 }
 
-@media (max-width: 1200px) {
+@media (min-width: 769px) and (max-width: 1200px) {
   .global-sidebar {
     width: 320px;
   }

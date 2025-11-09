@@ -71,13 +71,6 @@
         </div>
       </div>
     </div>
-    
-    <!-- 悬浮 Ralendar 按钮（仅编辑模式 + 移动端） -->
-    <FloatingRalendarButton 
-      v-if="isEditMode && tripId"
-      ref="floatingButton"
-      :trip-id="tripId"
-    />
   </div>
 </template>
 
@@ -91,7 +84,6 @@ import BasicInfoEditor from '@/components/editor/BasicInfoEditor.vue'
 import ModuleSelector from '@/components/editor/ModuleSelector.vue'
 import ContentEditor from '@/components/editor/ContentEditor.vue'
 import EditorSidebar from '@/components/editor/EditorSidebar.vue'
-import FloatingRalendarButton from '@/components/events/FloatingRalendarButton.vue'
 
 export default {
   name: 'TripEditorView',
@@ -101,8 +93,7 @@ export default {
     BasicInfoEditor,
     ModuleSelector,
     ContentEditor,
-    EditorSidebar,
-    FloatingRalendarButton
+    EditorSidebar
   },
   
   setup() {
