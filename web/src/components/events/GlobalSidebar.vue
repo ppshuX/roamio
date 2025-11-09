@@ -39,16 +39,59 @@
         <template v-else>
           <!-- 快捷操作 -->
           <div class="quick-actions mb-3">
-            <a 
-              href="https://app7626.acapp.acwing.com.cn" 
-              target="_blank"
+            <button 
               class="btn btn-primary w-100"
+              @click="showAddForm = true"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 8px;">
                 <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
               </svg>
               添加待办
-            </a>
+            </button>
+          </div>
+          
+          <!-- 添加事件表单 -->
+          <div v-if="showAddForm" class="add-event-form mb-3">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="card-title mb-3">新建待办</h6>
+                <form @submit.prevent="handleAddEvent">
+                  <div class="mb-3">
+                    <input 
+                      v-model="newEvent.title" 
+                      type="text" 
+                      class="form-control" 
+                      placeholder="待办标题"
+                      required
+                    >
+                  </div>
+                  <div class="mb-3">
+                    <textarea 
+                      v-model="newEvent.description" 
+                      class="form-control" 
+                      rows="2" 
+                      placeholder="描述（可选）"
+                    ></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <input 
+                      v-model="newEvent.event_time" 
+                      type="datetime-local" 
+                      class="form-control"
+                    >
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm" :disabled="submitting">
+                      <span v-if="submitting" class="spinner-border spinner-border-sm me-1"></span>
+                      {{ submitting ? '创建中...' : '创建' }}
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" @click="cancelAdd">
+                      取消
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
           
           <!-- 待办列表 -->
@@ -65,16 +108,15 @@
             </svg>
             <h6 class="text-muted mb-2">还没有待办事项</h6>
             <p class="text-muted small mb-3">添加待办，设置提醒<br>让生活更有条理</p>
-            <a 
-              href="https://app7626.acapp.acwing.com.cn" 
-              target="_blank"
+            <button 
               class="btn btn-primary btn-sm mb-3"
+              @click="showAddForm = true"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
                 <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
               </svg>
               添加第一个待办
-            </a>
+            </button>
             <hr>
             <a 
               href="https://app7626.acapp.acwing.com.cn" 
@@ -146,6 +188,13 @@ export default defineComponent({
     const isLoggedIn = computed(() => userStore.isLoggedIn)
     const loading = ref(false)
     const allEvents = ref([])
+    const showAddForm = ref(false)
+    const submitting = ref(false)
+    const newEvent = ref({
+      title: '',
+      description: '',
+      event_time: ''
+    })
     
     // 加载所有待办事项
     const loadAllEvents = async () => {
@@ -171,6 +220,77 @@ export default defineComponent({
       return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`
     }
     
+    // 添加事件
+    const handleAddEvent = async () => {
+      if (!newEvent.value.title) {
+        alert('请输入待办标题')
+        return
+      }
+      
+      submitting.value = true
+      
+      try {
+        // 获取用户 Token
+        const token = localStorage.getItem('access_token')
+        if (!token) {
+          alert('请先登录')
+          return
+        }
+        
+        // 准备事件数据
+        const eventData = {
+          title: newEvent.value.title,
+          description: newEvent.value.description || '',
+          start_time: newEvent.value.event_time ? new Date(newEvent.value.event_time).toISOString() : new Date().toISOString(),
+          source_app: 'roamio'
+        }
+        
+        // 调用 Ralendar API
+        const response = await fetch('https://app7626.acapp.acwing.com.cn/api/v1/events/', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(eventData)
+        })
+        
+        if (!response.ok) {
+          throw new Error('创建失败')
+        }
+        
+        const result = await response.json()
+        
+        // 添加到列表
+        allEvents.value.unshift(result)
+        
+        // 重置表单
+        newEvent.value = {
+          title: '',
+          description: '',
+          event_time: ''
+        }
+        showAddForm.value = false
+        
+        alert('创建成功！')
+      } catch (error) {
+        console.error('创建事件失败:', error)
+        alert('创建失败，请稍后重试')
+      } finally {
+        submitting.value = false
+      }
+    }
+    
+    // 取消添加
+    const cancelAdd = () => {
+      showAddForm.value = false
+      newEvent.value = {
+        title: '',
+        description: '',
+        event_time: ''
+      }
+    }
+    
     // 监听显示状态，打开时加载数据
     watch(() => props.show, (newVal) => {
       if (newVal && isLoggedIn.value) {
@@ -182,7 +302,12 @@ export default defineComponent({
       isLoggedIn,
       loading,
       allEvents,
-      formatTime
+      showAddForm,
+      submitting,
+      newEvent,
+      formatTime,
+      handleAddEvent,
+      cancelAdd
     }
   }
 })
