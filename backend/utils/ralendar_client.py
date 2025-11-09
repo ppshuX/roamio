@@ -61,20 +61,20 @@ class RalendarClient:
         url = f"{self.base_url}/fusion/events/batch/"
         headers = self.get_headers(user_token)
         
-        # 提取 openid（如果存在）
-        openid = event_data.pop('openid', None)
+        # 获取 openid（如果存在），但不从 event_data 中移除
+        openid = event_data.get('openid', None)
         
         # 构造批量创建的数据格式
         data = {
             "source_app": "roamio",
             "related_trip_slug": "sidebar-todo",  # 侧边栏创建的待办
-            "events": [event_data]  # 单个事件也用数组
+            "events": [event_data]  # 单个事件也用数组（包含 openid）
         }
         
-        # 添加 openid 到顶层（Ralendar 的三层匹配需要）
+        # 同时也添加 openid 到顶层（双重保险）
         if openid:
             data['openid'] = openid
-            print(f"[DEBUG] Added OpenID to top-level data: {openid}")
+            print(f"[DEBUG] OpenID in both top-level and event data: {openid}")
         
         # 详细日志：发送给 Ralendar 的完整数据
         print("=" * 80)
@@ -106,41 +106,39 @@ class RalendarClient:
             response.raise_for_status()
             result = response.json()
             
-            logger.info(f"Ralendar API success: {result}")
+            print("[DEBUG] Ralendar API success")
             
-            # 适配不同的响应格式
+            # Adapt to different response formats
             if result.get('events') and len(result['events']) > 0:
-                # 格式 1: {"events": [...]} ← Ralendar 实际使用的格式
+                # Format 1: {"events": [...]}
                 created_event = result['events'][0]
-                logger.info(f"成功创建 Ralendar 事件: {created_event.get('title')}")
+                print(f"[DEBUG] Created event ID: {created_event.get('id')}")
                 return created_event
             elif result.get('created_events'):
-                # 格式 2: {"created_events": [...]}
+                # Format 2: {"created_events": [...]}
                 created_event = result['created_events'][0]
-                logger.info(f"成功创建 Ralendar 事件: {created_event.get('title')}")
+                print(f"[DEBUG] Created event ID: {created_event.get('id')}")
                 return created_event
             elif result.get('created'):
-                # 格式 3: {"created": [...]}
+                # Format 3: {"created": [...]}
                 created_event = result['created'][0]
-                logger.info(f"成功创建 Ralendar 事件: {created_event.get('title')}")
+                print(f"[DEBUG] Created event ID: {created_event.get('id')}")
                 return created_event
             elif isinstance(result, list) and len(result) > 0:
-                # 格式 4: 直接返回数组
+                # Format 4: Direct array
                 created_event = result[0]
-                logger.info(f"成功创建 Ralendar 事件: {created_event.get('title')}")
+                print(f"[DEBUG] Created event ID: {created_event.get('id')}")
                 return created_event
             elif result.get('id'):
-                # 格式 5: 直接返回单个事件对象
-                logger.info(f"成功创建 Ralendar 事件: {result.get('title')}")
+                # Format 5: Direct object
+                print(f"[DEBUG] Created event ID: {result.get('id')}")
                 return result
             else:
-                logger.error(f"未知的响应格式: {result}")
-                raise Exception(f"未返回创建的事件，响应格式: {result}")
+                print(f"[ERROR] Unknown response format")
+                raise Exception(f"Unknown response format")
                 
         except requests.exceptions.RequestException as e:
-            logger.error(f"创建 Ralendar 事件失败: {e}")
-            if hasattr(e.response, 'text'):
-                logger.error(f"响应内容: {e.response.text}")
+            print(f"[ERROR] Request failed: {type(e).__name__}")
             raise
     
     def batch_create_events(self, user_token, events_list, trip_slug):
@@ -171,10 +169,10 @@ class RalendarClient:
             response = requests.post(url, json=data, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             result = response.json()
-            logger.info(f"批量创建事件成功: {len(result.get('created', []))} 个")
+            print(f"[DEBUG] Batch created {len(result.get('created', []))} events")
             return result
         except requests.exceptions.RequestException as e:
-            logger.error(f"批量创建事件失败: {e}")
+            print(f"[ERROR] Batch create failed: {type(e).__name__}")
             raise
     
     def list_events(self, user_token):
@@ -197,12 +195,10 @@ class RalendarClient:
             response = requests.get(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             result = response.json()
-            logger.info(f"获取事件列表成功: {len(result.get('results', []))} 个")
+            print(f"[DEBUG] Got {len(result.get('results', []))} events")
             return result
         except requests.exceptions.RequestException as e:
-            logger.error(f"获取事件列表失败: {e}")
-            if hasattr(e.response, 'text'):
-                logger.error(f"响应内容: {e.response.text}")
+            print(f"[ERROR] List events failed: {type(e).__name__}")
             raise
     
     def get_trip_events(self, user_token, trip_slug):
@@ -227,7 +223,7 @@ class RalendarClient:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            logger.error(f"获取旅行事件失败: {e}")
+            print(f"[ERROR] Get trip events failed: {type(e).__name__}")
             raise
     
     def delete_trip_events(self, user_token, trip_slug):
@@ -251,10 +247,10 @@ class RalendarClient:
             response = requests.delete(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             result = response.json()
-            logger.info(f"删除旅行事件成功: {result.get('deleted_count', 0)} 个")
+            print(f"[DEBUG] Deleted {result.get('deleted_count', 0)} trip events")
             return result
         except requests.exceptions.RequestException as e:
-            logger.error(f"删除旅行事件失败: {e}")
+            print(f"[ERROR] Delete trip events failed: {type(e).__name__}")
             raise
     
     def update_event(self, user_token, event_id, event_data):
@@ -278,10 +274,10 @@ class RalendarClient:
         try:
             response = requests.put(url, json=event_data, headers=headers, timeout=self.timeout)
             response.raise_for_status()
-            logger.info(f"更新事件成功: {event_id}")
+            print(f"[DEBUG] Updated event {event_id}")
             return response.json()
         except requests.exceptions.RequestException as e:
-            logger.error(f"更新事件失败: {e}")
+            print(f"[ERROR] Update event failed: {type(e).__name__}")
             raise
     
     def delete_event(self, user_token, event_id):
@@ -304,9 +300,9 @@ class RalendarClient:
         try:
             response = requests.delete(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
-            logger.info(f"删除事件成功: {event_id}")
+            print(f"[DEBUG] Deleted event {event_id}")
             return True
         except requests.exceptions.RequestException as e:
-            logger.error(f"删除事件失败: {e}")
+            print(f"[ERROR] Delete event failed: {type(e).__name__}")
             raise
 
