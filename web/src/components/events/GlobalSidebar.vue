@@ -57,27 +57,31 @@
                 <h6 class="card-title mb-3">新建待办</h6>
                 <form @submit.prevent="handleAddEvent">
                   <div class="mb-3">
+                    <label class="form-label small text-muted">标题 *</label>
                     <input 
                       v-model="newEvent.title" 
                       type="text" 
                       class="form-control" 
-                      placeholder="待办标题"
+                      placeholder="例如：准备出行物品"
                       required
                     >
                   </div>
                   <div class="mb-3">
+                    <label class="form-label small text-muted">描述（可选）</label>
                     <textarea 
                       v-model="newEvent.description" 
                       class="form-control" 
                       rows="2" 
-                      placeholder="描述（可选）"
+                      placeholder="详细说明..."
                     ></textarea>
                   </div>
                   <div class="mb-3">
+                    <label class="form-label small text-muted">时间 *</label>
                     <input 
                       v-model="newEvent.event_time" 
                       type="datetime-local" 
                       class="form-control"
+                      required
                     >
                   </div>
                   <div class="d-flex gap-2">
@@ -224,6 +228,11 @@ export default defineComponent({
     const handleAddEvent = async () => {
       if (!newEvent.value.title) {
         alert('请输入待办标题')
+        return
+      }
+      
+      if (!newEvent.value.event_time) {
+        alert('请选择时间')
         return
       }
       
