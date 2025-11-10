@@ -32,7 +32,7 @@
               {{ errorMessage.includes('不存在') ? '该旅行可能不存在、已被删除，或设置为私有。' : '如有疑问，请联系旅行计划的作者。' }}
             </p>
             <div class="error-actions">
-              <button class="btn btn-primary" @click="goBack">
+              <button class="btn btn-primary" @click="router.push('/')">
                 <i class="bi bi-arrow-left me-2"></i>返回首页
               </button>
               <button v-if="!isAuthenticated && errorMessage.includes('不存在')" class="btn btn-outline-primary ms-2" @click="router.push('/login')">
@@ -496,6 +496,7 @@ export default {
       error,
       errorMessage,
       tripConfig,
+      router,
       isAdmin,
       isPlaying,
       audioPlayer,
