@@ -76,6 +76,10 @@ export default {
 </script>
 
 <style scoped>
+.card {
+  margin-bottom: 1.5rem;
+}
+
 .progress-container {
   background: #e0e0e0;
   border-radius: 20px;

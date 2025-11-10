@@ -76,9 +76,10 @@ h4 {
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 0.8rem;
-  background: rgba(255, 255, 255, 0.8);
+  background: #f5f7fa;
   border-radius: 6px;
   border-left: 3px solid #667eea;
+  border: 1px solid #e8eaf0;
 }
 
 .info-label {
