@@ -2,7 +2,7 @@
  * AI 旅行规划 API
  */
 
-import request from '@/utils/request'
+import request from './request'
 
 /**
  * 生成旅行计划
