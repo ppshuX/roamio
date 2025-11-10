@@ -336,14 +336,19 @@ export default {
       if (!ensureLoggedIn()) return
       
       try {
-        await createComment({
+        const replyData = {
           content,
-          page: trip.value.slug,  // 后端字段是 page
+          page: trip.value.slug,
           parent: parentId
-        })
+        }
+        console.log('💬 提交回复数据:', replyData)
+        console.log('📊 parent 类型:', typeof parentId, 'parent 值:', parentId)
+        
+        await createComment(replyData)
         await fetchComments()
       } catch (error) {
-        console.error('提交回复失败:', error)
+        console.error('❌ 提交回复失败:', error)
+        console.error('错误详情:', error.response?.data)
       }
     }
     
