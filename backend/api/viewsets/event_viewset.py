@@ -2,13 +2,15 @@
 旅行事件 API ViewSet
 提供事件的 CRUD 操作和同步功能
 """
-
+import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.db import models
+
+logger = logging.getLogger(__name__)
 
 from backend.models import TripEvent, Trip
 from backend.serializers import (
@@ -241,7 +243,7 @@ class TripEventViewSet(viewsets.ModelViewSet):
             event.save()
             return True
         except Exception as e:
-            print(f'同步到 Ralendar 失败: {e}')
+            logger.error(f'同步到 Ralendar 失败: {e}')
             return False
     
     def _update_ralendar_event(self, event):
@@ -255,7 +257,7 @@ class TripEventViewSet(viewsets.ModelViewSet):
             
             return True
         except Exception as e:
-            print(f'更新 Ralendar 事件失败: {e}')
+            logger.error(f'更新 Ralendar 事件失败: {e}')
             return False
     
     def _delete_ralendar_event(self, event):
@@ -272,6 +274,6 @@ class TripEventViewSet(viewsets.ModelViewSet):
             event.save()
             return True
         except Exception as e:
-            print(f'删除 Ralendar 事件失败: {e}')
+            logger.error(f'删除 Ralendar 事件失败: {e}')
             return False
 

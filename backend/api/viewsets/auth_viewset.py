@@ -2,6 +2,7 @@
 认证相关 ViewSet
 处理用户注册、登录、登出等功能
 """
+import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -9,6 +10,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+
+logger = logging.getLogger(__name__)
 
 from ...serializers import (
     UserSerializer,
@@ -256,13 +259,11 @@ class AuthViewSet(viewsets.GenericViewSet):
             # 验证是否成功存储
             stored_value = cache.get(cache_key)
             if not stored_value:
-                print(f"[WARNING] QQ state cache storage failed - cache_key: {cache_key}")
+                logger.warning(f"QQ state cache storage failed - cache_key: {cache_key}")
         except Exception as e:
-            print(f"[ERROR] QQ state cache storage exception: {e}")
+            logger.error(f"QQ state cache storage exception: {e}")
         
         # Debug logging
-        import logging
-        logger = logging.getLogger(__name__)
         logger.info(f'QQ login URL generated - state: {state_generated[:20] if state_generated else None}..., cache_key: {cache_key}, timeout: 1800s')
         
         return Response({
@@ -431,8 +432,8 @@ class AuthViewSet(viewsets.GenericViewSet):
             except Exception as e:
                 # 捕获并记录详细错误信息
                 error_detail = traceback.format_exc()
-                print(f"QQ login account creation failed: {e}")
-                print(f"Error details: {error_detail}")
+                logger.error(f"QQ login account creation failed: {e}")
+                logger.error(f"Error details: {error_detail}")
                 return Response({
                     'error': f'创建账号失败: {str(e)}'
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
