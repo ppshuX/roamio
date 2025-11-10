@@ -3,23 +3,25 @@
     <NavBar />
     
     <div class="container py-5">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>我的旅行列表</h2>
-        <button class="btn btn-primary" @click="createNew">
-          <i class="bi bi-plus-circle me-2"></i>创建新旅行
-        </button>
-      </div>
-      
-      <!-- Loading状态 -->
-      <div v-if="loading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">加载中...</span>
+      <!-- 大卡片容器 -->
+      <div class="main-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2>我的旅行列表</h2>
+          <button class="btn btn-primary" @click="createNew">
+            <i class="bi bi-plus-circle me-2"></i>创建新旅行
+          </button>
         </div>
-      </div>
-      
-      <!-- 旅行列表 -->
-      <div v-else-if="trips.length > 0" class="row">
-        <div v-for="trip in trips" :key="trip.id" class="col-md-6 col-lg-4 mb-4">
+        
+        <!-- Loading状态 -->
+        <div v-if="loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">加载中...</span>
+          </div>
+        </div>
+        
+        <!-- 旅行列表 -->
+        <div v-else-if="trips.length > 0" class="row">
+          <div v-for="trip in trips" :key="trip.id" class="col-md-6 col-lg-4 mb-4">
           <div class="trip-card" @click="viewTrip(trip.slug)" style="cursor: pointer;">
             <div class="trip-header" :style="{ background: trip.theme_color || '#f0e68c' }">
               <div class="trip-icon">{{ trip.icon }}</div>
@@ -80,14 +82,15 @@
         </div>
       </div>
       
-      <!-- 空状态 -->
-      <div v-else class="empty-state text-center py-5">
-        <div class="empty-icon mb-3">📝</div>
-        <h4>还没有旅行</h4>
-        <p class="text-muted mb-4">开始创建你的第一个旅行吧！</p>
-        <button class="btn btn-primary btn-lg" @click="createNew">
-          <i class="bi bi-plus-circle me-2"></i>创建新旅行
-        </button>
+        <!-- 空状态 -->
+        <div v-else class="empty-state text-center py-5">
+          <div class="empty-icon mb-3">📝</div>
+          <h4>还没有旅行</h4>
+          <p class="text-muted mb-4">开始创建你的第一个旅行吧！</p>
+          <button class="btn btn-primary btn-lg" @click="createNew">
+            <i class="bi bi-plus-circle me-2"></i>创建新旅行
+          </button>
+        </div>
       </div>
     </div>
     
@@ -303,6 +306,19 @@ export default {
 .my-trips-wrapper {
   min-height: 100vh;
   background: linear-gradient(135deg, #e8f4fd 0%, #d1ecf1 100%);
+}
+
+/* 大卡片容器 */
+.main-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.3s ease;
+}
+
+.main-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .trip-card {
