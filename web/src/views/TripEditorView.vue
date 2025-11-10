@@ -317,16 +317,18 @@ export default {
     // AI 生成应用处理
     const handleAIApply = (aiTripPlan) => {
       try {
-        // 应用 AI 生成的数据到表单
-        tripData.value.title = aiTripPlan.trip_title
-        tripData.value.description = aiTripPlan.summary
+        console.log('AI 返回数据:', aiTripPlan)
         
-        // 应用目的地
+        // 1. 应用基本信息
+        tripData.value.title = aiTripPlan.trip_title || ''
+        tripData.value.description = aiTripPlan.summary || ''
+        
+        // 2. 应用目的地
         if (aiTripPlan.destination) {
           tripData.value.overview.basicInfo.destination = aiTripPlan.destination
         }
         
-        // 应用日期
+        // 3. 应用日期
         if (aiTripPlan.days_detail && aiTripPlan.days_detail.length > 0) {
           const firstDay = aiTripPlan.days_detail[0]
           const lastDay = aiTripPlan.days_detail[aiTripPlan.days_detail.length - 1]
@@ -334,46 +336,55 @@ export default {
           if (lastDay.date) tripData.value.end_date = lastDay.date
         }
         
-        // 应用行程亮点
-        if (aiTripPlan.days_detail) {
-          tripData.value.overview.highlights = aiTripPlan.days_detail.map(day => 
-            `${day.title}: ${day.activities.map(a => a.location).join('、')}`
-          )
+        // 4. 应用行程亮点（提取每天最精彩的活动）
+        if (aiTripPlan.days_detail && aiTripPlan.days_detail.length > 0) {
+          tripData.value.overview.highlights = aiTripPlan.days_detail.map(day => {
+            // 找出当天最有特色的活动（通常是景点类型）
+            const mainActivity = day.activities.find(a => 
+              a.location_type === '景点' || a.location_type === 'attraction'
+            ) || day.activities[0]
+            
+            return `${day.title.replace(/^Day \d+:\s*/, '')}: ${mainActivity.location} - ${mainActivity.description.substring(0, 50)}...`
+          })
         }
         
-        // 应用详细行程
-        if (aiTripPlan.days_detail) {
+        // 5. 应用详细行程
+        if (aiTripPlan.days_detail && aiTripPlan.days_detail.length > 0) {
           tripData.value.overview.itinerary = aiTripPlan.days_detail.map(day => ({
             day: day.day_number,
             title: day.title,
             activities: day.activities.map(activity => ({
-              time: activity.time,
-              location: activity.location,
-              description: activity.description,
-              cost: activity.estimated_cost
+              time: activity.time || '',
+              location: activity.location || '',
+              description: activity.description || '',
+              cost: activity.estimated_cost || 0
             }))
           }))
         }
         
-        // 应用预算
+        // 6. 应用预算（确保字段匹配）
         if (aiTripPlan.budget_breakdown) {
           const breakdown = aiTripPlan.budget_breakdown
-          tripData.value.overview.budget.items = [
-            { category: '住宿', amount: breakdown.accommodation || 0 },
-            { category: '餐饮', amount: breakdown.meals || 0 },
-            { category: '交通', amount: breakdown.transportation || 0 },
-            { category: '门票', amount: breakdown.tickets || 0 },
-            { category: '购物', amount: breakdown.shopping || 0 },
-            { category: '应急', amount: breakdown.emergency || 0 }
-          ].filter(item => item.amount > 0)
+          const budgetItems = []
           
-          tripData.value.overview.budget.total = aiTripPlan.total_budget || 0
+          if (breakdown.accommodation > 0) budgetItems.push({ category: '住宿', amount: breakdown.accommodation })
+          if (breakdown.meals > 0) budgetItems.push({ category: '餐饮', amount: breakdown.meals })
+          if (breakdown.transportation > 0) budgetItems.push({ category: '交通', amount: breakdown.transportation })
+          if (breakdown.tickets > 0) budgetItems.push({ category: '门票', amount: breakdown.tickets })
+          if (breakdown.shopping > 0) budgetItems.push({ category: '购物', amount: breakdown.shopping })
+          if (breakdown.emergency > 0) budgetItems.push({ category: '应急', amount: breakdown.emergency })
+          
+          tripData.value.overview.budget.items = budgetItems
+          tripData.value.overview.budget.total = aiTripPlan.total_budget || 
+            budgetItems.reduce((sum, item) => sum + item.amount, 0)
         }
         
-        // 应用旅行建议
-        if (aiTripPlan.travel_tips) {
+        // 7. 应用旅行建议
+        if (aiTripPlan.travel_tips && Array.isArray(aiTripPlan.travel_tips)) {
           tripData.value.overview.tips = aiTripPlan.travel_tips
         }
+        
+        console.log('应用后的 tripData:', tripData.value)
         
         // 启用相关模块
         tripData.value.config.enabledModules = [
