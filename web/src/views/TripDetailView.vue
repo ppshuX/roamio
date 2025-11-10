@@ -226,7 +226,7 @@ export default {
     // 获取评论列表
     const fetchComments = async () => {
       try {
-        const response = await getCommentList({ trip: trip.value.slug })
+        const response = await getCommentList({ page: trip.value.slug })  // 后端字段是 page
         comments.value = response.results || []
       } catch (error) {
         console.error('获取评论失败:', error)
@@ -268,7 +268,7 @@ export default {
       try {
         const commentData = {
           content,
-          trip: trip.value.slug
+          page: trip.value.slug  // 后端字段是 page，不是 trip
         }
         
         const newComment = await createComment(commentData, onProgress)
