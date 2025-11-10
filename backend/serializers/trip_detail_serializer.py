@@ -43,6 +43,7 @@ class TripDetailSerializer(serializers.ModelSerializer):
     is_published = serializers.ReadOnlyField()
     is_public = serializers.ReadOnlyField()
     name = serializers.CharField(source='title', read_only=True)  # 前端兼容字段
+    stats = serializers.SerializerMethodField()  # 添加统计字段
     
     class Meta:
         model = Trip
@@ -51,9 +52,27 @@ class TripDetailSerializer(serializers.ModelSerializer):
             'author', 'start_date', 'end_date', 'days_count',
             'status', 'visibility', 'is_published', 'is_public',
             'config', 'overview', 'theme_color', 'background_music',
+            'stats',  # 添加到字段列表
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'slug', 'author', 'created_at', 'updated_at', 'name']
+        read_only_fields = ['id', 'slug', 'author', 'created_at', 'updated_at', 'name', 'stats']
+    
+    def get_stats(self, obj):
+        """获取统计数据"""
+        from ..models import SiteStat
+        try:
+            stat = SiteStat.objects.get(page=obj.slug)
+            return {
+                'views': stat.views,
+                'likes': stat.likes
+            }
+        except SiteStat.DoesNotExist:
+            # 如果没有统计记录，创建一个
+            stat = SiteStat.objects.create(page=obj.slug)
+            return {
+                'views': 0,
+                'likes': 0
+            }
 
 
 class TripListSerializer(serializers.ModelSerializer):
