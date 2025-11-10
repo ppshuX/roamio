@@ -242,22 +242,32 @@ export default {
       if (!ensureLoggedIn()) return
       
       try {
+        // 立即更新 UI（乐观更新）
+        if (!trip.value.stats) {
+          trip.value.stats = { views: 0, likes: 0 }
+        }
+        trip.value.stats.likes += 1
+        
+        // 发送点赞请求
         if (trip.value.overview) {
           await likeTripPlan(trip.value.slug)
         } else {
           await likeTrip(tripId.value)
         }
         
-        // 刷新统计
+        // 后台刷新统计（确保数据准确）
         const statsResponse = trip.value.overview 
           ? await getTripPlanStats(trip.value.slug)
           : await getTripStats(tripId.value)
         
-        if (trip.value.stats) {
-          trip.value.stats.likes = statsResponse.likes
-        }
+        trip.value.stats.likes = statsResponse.likes
+        trip.value.stats.views = statsResponse.views
       } catch (error) {
         console.error('点赞失败:', error)
+        // 如果失败，回滚
+        if (trip.value.stats) {
+          trip.value.stats.likes -= 1
+        }
       }
     }
     
@@ -332,17 +342,19 @@ export default {
     }
     
     // 提交回复
-    const handleSubmitReply = async (parentId, content) => {
+    const handleSubmitReply = async (payload) => {
       if (!ensureLoggedIn()) return
+      
+      // payload 格式: { commentId, content }
+      const { commentId, content } = payload
       
       try {
         const replyData = {
           content,
           page: trip.value.slug,
-          parent: parentId
+          parent: commentId  // 使用 commentId 作为 parent
         }
         console.log('💬 提交回复数据:', replyData)
-        console.log('📊 parent 类型:', typeof parentId, 'parent 值:', parentId)
         
         await createComment(replyData)
         await fetchComments()
@@ -353,8 +365,10 @@ export default {
     }
     
     // 提交嵌套回复
-    const handleSubmitNestedReply = async (parentId, content) => {
-      await handleSubmitReply(parentId, content)
+    const handleSubmitNestedReply = async (payload) => {
+      // payload 格式: { parentId, content }
+      const { parentId, content } = payload
+      await handleSubmitReply({ commentId: parentId, content })
     }
     
     // 加载回复
