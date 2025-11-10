@@ -7,8 +7,7 @@
           v-model="formData.content"
           class="form-control"
           rows="4"
-          placeholder="分享你的旅行故事..."
-          required
+          placeholder="分享你的旅行故事...（可选，也可以只上传图片/视频）"
         ></textarea>
       </div>
       
@@ -96,6 +95,16 @@ export default {
     }
     
     const handleSubmit = () => {
+      // 验证：至少有一项内容
+      const hasContent = formData.value.content && formData.value.content.trim()
+      const hasImage = formData.value.image
+      const hasVideo = formData.value.video
+      
+      if (!hasContent && !hasImage && !hasVideo) {
+        alert('请至少填写文字、上传图片或上传视频中的一项')
+        return
+      }
+      
       // 先保存表单数据引用（因为后面会重置）
       const submitData = {
         content: formData.value.content,
@@ -109,6 +118,10 @@ export default {
         image: null,
         video: null
       }
+      
+      // 重置文件输入框
+      const fileInputs = document.querySelectorAll('input[type="file"]')
+      fileInputs.forEach(input => input.value = '')
       
       // 提交数据
       emit('submit', submitData, (progressEvent) => {
