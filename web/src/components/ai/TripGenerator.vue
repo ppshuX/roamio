@@ -164,14 +164,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { generateTripPlan, getUsageStats } from '@/api/ai'
-import { ElMessage } from 'element-plus'
-
-// Props
-const props = defineProps({
-  // 可以接收初始参数
-})
 
 // Emits
+// eslint-disable-next-line no-undef
 const emit = defineEmits(['apply'])
 
 // 数据
@@ -210,7 +205,7 @@ const loadUsageStats = async () => {
 
 const generateTrip = async () => {
   if (!canGenerate.value) {
-    ElMessage.warning('请详细描述你的旅行想法（至少10个字）')
+    alert('请详细描述你的旅行想法（至少10个字）')
     return
   }
 
@@ -224,7 +219,7 @@ const generateTrip = async () => {
 
     if (response.code === 200) {
       generatedTrip.value = response.data.trip_plan
-      ElMessage.success('行程生成成功！')
+      alert('✅ 行程生成成功！')
       
       // 更新使用统计
       await loadUsageStats()
@@ -235,11 +230,11 @@ const generateTrip = async () => {
     console.error('生成失败:', error)
     
     if (error.response?.status === 429) {
-      ElMessage.error('今日生成次数已用完，请明天再试')
+      alert('❌ 今日生成次数已用完，请明天再试')
     } else if (error.response?.status === 401) {
-      ElMessage.error('请先登录')
+      alert('❌ 请先登录')
     } else {
-      ElMessage.error(error.response?.data?.message || '生成失败，请重试')
+      alert('❌ ' + (error.response?.data?.message || '生成失败，请重试'))
     }
   } finally {
     isGenerating.value = false
@@ -249,12 +244,12 @@ const generateTrip = async () => {
 const applyTrip = () => {
   // 将生成的行程应用到创建表单
   emit('apply', generatedTrip.value)
-  ElMessage.success('已应用到行程，你可以继续编辑')
+  alert('✅ 已应用到行程，你可以继续编辑')
 }
 
 const regenerate = () => {
   generatedTrip.value = null
-  ElMessage.info('请重新描述你的旅行想法')
+  alert('请重新描述你的旅行想法')
 }
 
 // 生命周期
@@ -263,7 +258,8 @@ onMounted(() => {
 })
 </script>
 
-<style scoped lang="scss">
+<style scoped>
+/* 简化的纯 CSS 样式 */
 .ai-trip-generator {
   max-width: 900px;
   margin: 0 auto;

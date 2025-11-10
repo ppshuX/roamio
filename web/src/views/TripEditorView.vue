@@ -44,6 +44,20 @@
         <div class="row">
           <!-- 左侧：编辑面板 -->
           <div class="col-lg-8">
+            <!-- AI 智能生成按钮 -->
+            <div v-if="!isEditMode" class="ai-quick-start mb-4">
+              <button 
+                class="btn btn-lg btn-ai w-100" 
+                @click="showAIGenerator = true"
+              >
+                <span class="ai-icon">🤖</span>
+                <span class="ai-text">
+                  <strong>AI 智能生成行程</strong>
+                  <small>告诉 AI 你的想法，5分钟生成完整行程</small>
+                </span>
+              </button>
+            </div>
+            
             <!-- 基本信息编辑器 -->
             <BasicInfoEditor v-model="tripData" />
             
@@ -71,6 +85,19 @@
         </div>
       </div>
     </div>
+    
+    <!-- AI 生成器弹窗 -->
+    <div v-if="showAIGenerator" class="ai-modal-overlay" @click.self="showAIGenerator = false">
+      <div class="ai-modal-content">
+        <div class="ai-modal-header">
+          <h3>🤖 AI 智能生成行程</h3>
+          <button class="btn-close-modal" @click="showAIGenerator = false">✕</button>
+        </div>
+        <div class="ai-modal-body">
+          <TripGenerator @apply="handleAIApply" />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -84,6 +111,7 @@ import BasicInfoEditor from '@/components/editor/BasicInfoEditor.vue'
 import ModuleSelector from '@/components/editor/ModuleSelector.vue'
 import ContentEditor from '@/components/editor/ContentEditor.vue'
 import EditorSidebar from '@/components/editor/EditorSidebar.vue'
+import TripGenerator from '@/components/ai/TripGeneratorSimple.vue'
 
 export default {
   name: 'TripEditorView',
@@ -93,7 +121,8 @@ export default {
     BasicInfoEditor,
     ModuleSelector,
     ContentEditor,
-    EditorSidebar
+    EditorSidebar,
+    TripGenerator
   },
   
   setup() {
@@ -103,6 +132,7 @@ export default {
     
     const saving = ref(false)
     const publishing = ref(false)
+    const showAIGenerator = ref(false)
     const tripId = computed(() => route.params.id ? parseInt(route.params.id) : null)
     
     // 可用模块
@@ -284,6 +314,82 @@ export default {
       }
     }
     
+    // AI 生成应用处理
+    const handleAIApply = (aiTripPlan) => {
+      try {
+        // 应用 AI 生成的数据到表单
+        tripData.value.title = aiTripPlan.trip_title
+        tripData.value.description = aiTripPlan.summary
+        
+        // 应用目的地
+        if (aiTripPlan.destination) {
+          tripData.value.overview.basicInfo.destination = aiTripPlan.destination
+        }
+        
+        // 应用日期
+        if (aiTripPlan.days_detail && aiTripPlan.days_detail.length > 0) {
+          const firstDay = aiTripPlan.days_detail[0]
+          const lastDay = aiTripPlan.days_detail[aiTripPlan.days_detail.length - 1]
+          if (firstDay.date) tripData.value.start_date = firstDay.date
+          if (lastDay.date) tripData.value.end_date = lastDay.date
+        }
+        
+        // 应用行程亮点
+        if (aiTripPlan.days_detail) {
+          tripData.value.overview.highlights = aiTripPlan.days_detail.map(day => 
+            `${day.title}: ${day.activities.map(a => a.location).join('、')}`
+          )
+        }
+        
+        // 应用详细行程
+        if (aiTripPlan.days_detail) {
+          tripData.value.overview.itinerary = aiTripPlan.days_detail.map(day => ({
+            day: day.day_number,
+            title: day.title,
+            activities: day.activities.map(activity => ({
+              time: activity.time,
+              location: activity.location,
+              description: activity.description,
+              cost: activity.estimated_cost
+            }))
+          }))
+        }
+        
+        // 应用预算
+        if (aiTripPlan.budget_breakdown) {
+          const breakdown = aiTripPlan.budget_breakdown
+          tripData.value.overview.budget.items = [
+            { category: '住宿', amount: breakdown.accommodation || 0 },
+            { category: '餐饮', amount: breakdown.meals || 0 },
+            { category: '交通', amount: breakdown.transportation || 0 },
+            { category: '门票', amount: breakdown.tickets || 0 },
+            { category: '购物', amount: breakdown.shopping || 0 },
+            { category: '应急', amount: breakdown.emergency || 0 }
+          ].filter(item => item.amount > 0)
+          
+          tripData.value.overview.budget.total = aiTripPlan.total_budget || 0
+        }
+        
+        // 应用旅行建议
+        if (aiTripPlan.travel_tips) {
+          tripData.value.overview.tips = aiTripPlan.travel_tips
+        }
+        
+        // 启用相关模块
+        tripData.value.config.enabledModules = [
+          'basicInfo', 'highlights', 'itinerary', 'budget', 'tips'
+        ]
+        
+        // 关闭弹窗
+        showAIGenerator.value = false
+        
+        alert('✅ AI 生成的行程已应用，你可以继续编辑！')
+      } catch (error) {
+        console.error('应用 AI 数据失败:', error)
+        alert('❌ 应用失败，请重试')
+      }
+    }
+    
     onMounted(() => {
       if (!userStore.isLoggedIn) {
         alert('请先登录')
@@ -298,6 +404,7 @@ export default {
       tripId,
       saving,
       publishing,
+      showAIGenerator,
       isEditMode,
       canPublish,
       daysCount,
@@ -305,6 +412,7 @@ export default {
       toggleModule,
       handleSave,
       handlePublish,
+      handleAIApply,
       goBack
     }
   }
@@ -339,10 +447,127 @@ export default {
   overflow: hidden;
 }
 
+/* AI 快速开始按钮 */
+.ai-quick-start {
+  margin-bottom: 20px;
+}
+
+.btn-ai {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  transition: all 0.3s;
+  border-radius: 12px;
+}
+
+.btn-ai:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  color: white;
+}
+
+.ai-icon {
+  font-size: 32px;
+}
+
+.ai-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.ai-text strong {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.ai-text small {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* AI 弹窗样式 */
+.ai-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.ai-modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 1000px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.ai-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.ai-modal-header h3 {
+  margin: 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.btn-close-modal {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s;
+}
+
+.btn-close-modal:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.ai-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
 /* 响应式 */
 @media (max-width: 991px) {
   .editor-container {
     padding-top: 120px;
+  }
+  
+  .ai-modal-content {
+    max-height: 95vh;
   }
 }
 </style>
