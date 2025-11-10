@@ -43,8 +43,13 @@ class TripPlanViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         """根据action设置权限"""
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+        # 需要登录的操作
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'my_trips']:
             return [IsAuthenticated()]
+        # 公开操作（任何人都可以访问公开内容）
+        if self.action in ['retrieve', 'list', 'stats', 'view', 'like']:
+            return [AllowAny()]
+        # 其他操作
         return [IsAuthenticatedOrReadOnly()]
     
     def get_queryset(self):
