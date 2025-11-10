@@ -206,15 +206,24 @@ export default {
         const response = await getTripDetail(slug)
         trip.value = response
         
+        // 确保 stats 存在
+        if (!trip.value.stats) {
+          trip.value.stats = { views: 0, likes: 0 }
+        }
+        
         // 加载配置
         tripConfig.value = getTripConfig(slug)
         
         // 加载评论
         await fetchComments()
         
-        // 记录浏览量
+        // 记录浏览量并刷新统计
         if (trip.value.overview) {
           await viewTripPlan(slug)
+          // 刷新统计数据
+          const statsResponse = await getTripPlanStats(slug)
+          trip.value.stats.views = statsResponse.views
+          trip.value.stats.likes = statsResponse.likes
         }
       } catch (error) {
         console.error('获取旅行详情失败:', error)
@@ -224,16 +233,20 @@ export default {
     }
     
     // 获取评论列表
+    let fetchingComments = false
     const fetchComments = async () => {
+      // 防止重复调用
+      if (fetchingComments) return
+      fetchingComments = true
+      
       try {
         // 后端 CommentFilter 使用 'trip' 参数映射到 'page' 字段
-        console.log('🔍 查询评论，slug:', trip.value.slug)
         const response = await getCommentList({ trip: trip.value.slug })
-        console.log('📥 评论响应:', response)
         comments.value = response.results || response || []
-        console.log('📝 评论数量:', comments.value.length)
       } catch (error) {
         console.error('❌ 获取评论失败:', error)
+      } finally {
+        fetchingComments = false
       }
     }
     
@@ -313,6 +326,11 @@ export default {
     
     // 删除评论
     const handleDeleteComment = async (commentId) => {
+      // 删除前确认
+      if (!confirm('确定要删除这条评论吗？此操作无法撤销。')) {
+        return
+      }
+      
       try {
         await deleteComment(commentId)
         await fetchComments()
@@ -349,14 +367,11 @@ export default {
       const { commentId, content } = payload
       
       try {
-        const replyData = {
+        await createComment({
           content,
           page: trip.value.slug,
-          parent: commentId  // 使用 commentId 作为 parent
-        }
-        console.log('💬 提交回复数据:', replyData)
-        
-        await createComment(replyData)
+          parent: commentId
+        })
         await fetchComments()
       } catch (error) {
         console.error('❌ 提交回复失败:', error)

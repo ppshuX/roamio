@@ -218,16 +218,11 @@ export default {
           (sum, item) => sum + (item.amount || 0), 0
         )
         
-        console.log('💾 准备保存的数据:', JSON.stringify(tripData.value, null, 2))
-        console.log('📊 Overview 内容:', tripData.value.overview)
-        
         if (isEditMode.value) {
-          const result = await updateTripPlan(route.params.slug, tripData.value)
-          console.log('✅ 更新响应:', result)
+          await updateTripPlan(route.params.slug, tripData.value)
           alert('保存成功！')
         } else {
           const result = await createTripPlan(tripData.value)
-          console.log('✅ 创建响应:', result)
           alert('创建成功！')
           router.push(`/editor/${result.slug}`)
         }
@@ -262,15 +257,10 @@ export default {
           (sum, item) => sum + (item.amount || 0), 0
         )
         
-        console.log('📢 准备发布的数据:', JSON.stringify(tripData.value, null, 2))
-        console.log('📊 Overview 内容:', tripData.value.overview)
-        
         if (isEditMode.value) {
-          const result = await updateTripPlan(route.params.slug, tripData.value)
-          console.log('✅ 发布响应:', result)
+          await updateTripPlan(route.params.slug, tripData.value)
         } else {
           const result = await createTripPlan(tripData.value)
-          console.log('✅ 创建并发布响应:', result)
           router.push(`/editor/${result.slug}`)
         }
         
@@ -329,8 +319,6 @@ export default {
     // AI 生成应用处理
     const handleAIApply = (aiTripPlan) => {
       try {
-        console.log('AI 返回数据:', aiTripPlan)
-        
         // 1. 应用基本信息
         tripData.value.title = aiTripPlan.trip_title || ''
         tripData.value.description = aiTripPlan.summary || ''
@@ -405,8 +393,6 @@ export default {
         if (aiTripPlan.travel_tips && Array.isArray(aiTripPlan.travel_tips)) {
           tripData.value.overview.tips = aiTripPlan.travel_tips
         }
-        
-        console.log('应用后的 tripData:', tripData.value)
         
         // 启用相关模块
         tripData.value.config.enabledModules = [
