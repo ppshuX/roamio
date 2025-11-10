@@ -440,7 +440,6 @@ export default {
 <style scoped>
 .trip-detail-container {
   min-height: 100vh;
-  padding-top: 80px;
   transition: background 0.5s ease;
 }
 
