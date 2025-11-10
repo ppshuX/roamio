@@ -338,7 +338,7 @@ export default {
       try {
         await createComment({
           content,
-          trip: trip.value.slug,
+          page: trip.value.slug,  // 后端字段是 page
           parent: parentId
         })
         await fetchComments()
