@@ -226,7 +226,8 @@ export default {
     // 获取评论列表
     const fetchComments = async () => {
       try {
-        const response = await getCommentList({ page: trip.value.slug })  // 后端字段是 page
+        // 后端 CommentFilter 使用 'trip' 参数映射到 'page' 字段
+        const response = await getCommentList({ trip: trip.value.slug })
         comments.value = response.results || []
       } catch (error) {
         console.error('获取评论失败:', error)

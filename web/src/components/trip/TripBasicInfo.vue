@@ -55,47 +55,42 @@ export default defineComponent({
 
 <style scoped>
 .basic-info-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 h4 {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  margin-bottom: 1.5rem;
-  color: #2c3e50;
+  margin-bottom: 1rem;
+  color: #333;
 }
 
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
 }
 
 .info-item {
   display: flex;
-  flex-direction: column;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.info-item:hover {
-  background: rgba(255, 255, 255, 0.9);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  border-left: 3px solid #667eea;
 }
 
 .info-label {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #666;
-  margin-bottom: 0.3rem;
+  white-space: nowrap;
 }
 
 .info-value {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #2c3e50;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
 }
 
 @media (max-width: 768px) {

@@ -5,8 +5,8 @@ import request from './request'
 
 /**
  * 获取评论列表
- * @param {Object} params - 查询参数 {page, page_size, user}
- * @param {string} params.page - 旅行页面标识（必需）
+ * @param {Object} params - 查询参数 {trip, page_size, user}
+ * @param {string} params.trip - 旅行页面标识（必需，后端会映射到 page 字段）
  * @param {number} params.page_size - 每页数量
  * @param {number} params.user - 用户ID过滤
  */
