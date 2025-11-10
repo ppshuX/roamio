@@ -293,22 +293,25 @@ export default {
       const { content, image, video } = data
       
       try {
-        const commentData = {
-          content,
-          page: trip.value.slug  // 后端字段是 page，不是 trip
-        }
+        // 使用 FormData 一次性提交（包含文件）
+        const formData = new FormData()
+        formData.append('content', content || '')
+        formData.append('page', trip.value.slug)
         
-        const newComment = await createComment(commentData, onProgress)
-        
-        // 上传图片或视频
         if (image) {
-          await addCommentImage(newComment.id, image, 'image', onProgress)
-        } else if (video) {
-          await addCommentImage(newComment.id, video, 'video', onProgress)
+          formData.append('image', image)
         }
+        if (video) {
+          formData.append('video', video)
+        }
+        
+        await createComment(formData, onProgress)
         
         // 刷新评论列表
         await fetchComments()
+        
+        // 成功提示
+        alert('✅ 评论发表成功！')
         
         // 调用完成回调
         if (onComplete) {
@@ -316,6 +319,7 @@ export default {
         }
       } catch (error) {
         console.error('提交评论失败:', error)
+        alert('❌ 评论发表失败：' + (error.response?.data?.detail || error.message))
         
         // 即使失败也要调用完成回调
         if (onComplete) {
@@ -373,9 +377,10 @@ export default {
           parent: commentId
         })
         await fetchComments()
+        alert('✅ 回复成功！')
       } catch (error) {
         console.error('❌ 提交回复失败:', error)
-        console.error('错误详情:', error.response?.data)
+        alert('❌ 回复失败：' + (error.response?.data?.detail || error.message))
       }
     }
     
