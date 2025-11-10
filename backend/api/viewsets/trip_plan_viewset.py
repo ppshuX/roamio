@@ -73,6 +73,14 @@ class TripPlanViewSet(viewsets.ModelViewSet):
                 )
             return queryset.filter(visibility='public')
         
+        # 公开接口（stats, view, like）：公开的旅行或自己的
+        if self.action in ['stats', 'view', 'like']:
+            if self.request.user.is_authenticated:
+                return queryset.filter(
+                    models.Q(visibility='public') | models.Q(author=self.request.user)
+                )
+            return queryset.filter(visibility='public')
+        
         return queryset
     
     def perform_create(self, serializer):
