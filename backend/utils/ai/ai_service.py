@@ -144,13 +144,9 @@ class TripPlannerAI:
         budget_desc = budget_map.get(preferences.get('budget_level', 'medium'))
         style_desc = style_map.get(preferences.get('travel_style', 'leisure'))
         
-        return f"""你是 Roamio 专业旅行规划助手，擅长为中国用户规划详细的旅行行程。
+        return f"""你是 Roamio 旅行规划助手。根据用户需求生成详细的旅行计划。
 
-【核心任务】
-根据用户需求，生成结构化、可执行的旅行计划，包含每日详细活动、时间安排、预算估算和实用建议。
-
-【输出格式要求】
-必须返回严格的 JSON 格式，结构如下：
+【输出格式】严格的 JSON 格式：
 {{
   "trip_title": "行程标题（简洁有吸引力）",
   "summary": "行程概述（100字内，突出亮点）",
@@ -202,26 +198,12 @@ class TripPlannerAI:
   "weather_note": "天气注意事项"
 }}
 
-【内容要求】
-1. **真实性**：所有地点必须真实存在，优先推荐热门景点和口碑餐厅
-2. **可行性**：时间安排合理，考虑交通时间、排队时间、体力消耗
-3. **预算准确**：符合用户要求（{budget_desc}），价格贴近实际
-4. **风格匹配**：符合旅行风格（{style_desc}）
-5. **详细实用**：每个活动包含具体建议，避免空泛描述
-6. **本地化**：使用中国地名、景点名称，价格用人民币
-
-【语言风格】
-- 亲切专业，像朋友推荐
-- 描述生动但简洁，避免堆砌形容词
-- 适度使用 emoji 增加可读性（每段1-2个）
-- 避免过于书面化的表达
-
-【特别注意】
-- 必须严格遵守 JSON 格式，不要添加任何注释
-- 所有数字类型不要加引号
-- 日期格式统一为 YYYY-MM-DD
-- 时间格式统一为 HH:MM（24小时制）
-- 确保 JSON 可以被 Python json.loads() 解析
+【要求】
+1. 地点真实存在，推荐热门景点
+2. 时间安排合理，预算符合{budget_desc}
+3. 风格匹配{style_desc}
+4. 严格遵守 JSON 格式，数字不加引号
+5. 日期 YYYY-MM-DD，时间 HH:MM
 """
     
     def _build_user_prompt(self, user_prompt, preferences, user):
@@ -236,7 +218,10 @@ class TripPlannerAI:
         user_context = ""
         if user:
             try:
-                from backend.models import Trip
+                # 延迟导入，避免循环依赖和初始化延迟
+                from django.apps import apps
+                Trip = apps.get_model('backend', 'Trip')
+                
                 past_trips = Trip.objects.filter(
                     user=user, 
                     is_public=True
@@ -249,27 +234,13 @@ class TripPlannerAI:
             except Exception as e:
                 logger.warning(f"Failed to load user history: {e}")
         
-        prompt = f"""请根据以下信息生成详细的旅行计划：
+        prompt = f"""生成旅行计划：
 
-【用户需求】
-{user_prompt}
-
-【偏好设置】
-- 旅行天数：{days}天
-- 预算等级：{budget}
-- 旅行风格：{style}
-- 出发日期：{start_date if start_date else '待定'}
+需求：{user_prompt}
+天数：{days}天 | 预算：{budget} | 风格：{style} | 日期：{start_date if start_date else '待定'}
 {user_context}
 
-【特别要求】
-1. 每天安排 2-4 个主要活动，不要过于紧凑
-2. 预留用餐和休息时间
-3. 考虑景点开放时间和最佳游览时段
-4. 提供具体的交通方式和大致费用
-5. 包含实用的旅行建议（天气、穿着、注意事项）
-6. 确保返回完整的 JSON 格式
-
-请开始生成行程计划。
+要求：每天2-4个活动，包含交通和餐饮建议，返回完整 JSON。
 """
         return prompt
     
