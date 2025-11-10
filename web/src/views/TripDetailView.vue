@@ -40,7 +40,25 @@
           />
           
           <!-- 行程概览 -->
-          <TripOverview v-if="tripConfig && tripConfig.overview" title="行程概览">
+          <TripOverview v-if="trip.overview && Object.keys(trip.overview).length > 0" title="行程概览">
+            <!-- 基本信息 -->
+            <TripBasicInfo v-if="trip.overview.basicInfo" :basic-info="trip.overview.basicInfo" />
+            
+            <!-- 行程亮点 -->
+            <TripHighlights v-if="trip.overview.highlights" :highlights="trip.overview.highlights" />
+            
+            <!-- 详细行程 -->
+            <TripItinerary v-if="trip.overview.itinerary" :itinerary="trip.overview.itinerary" />
+            
+            <!-- 预算参考 -->
+            <TripBudget v-if="trip.overview.budget" :budget="trip.overview.budget" />
+            
+            <!-- 实用提示 -->
+            <TripTips v-if="trip.overview.tips" :tips="trip.overview.tips" />
+          </TripOverview>
+          
+          <!-- 如果没有 overview，尝试使用旧的 tripConfig（向后兼容） -->
+          <TripOverview v-else-if="tripConfig && tripConfig.overview" title="行程概览">
             <!-- 基本信息 -->
             <TripBasicInfo :basic-info="tripConfig.overview.basicInfo" />
             
@@ -57,7 +75,7 @@
             <TripTips :tips="tripConfig.overview.tips" />
           </TripOverview>
           
-          <!-- 如果没有配置，显示默认内容 -->
+          <!-- 如果都没有，显示默认内容 -->
           <TripOverview v-else title="行程概览">
             <p class="text-muted text-center">行程内容正在筹划中，敬请期待...</p>
           </TripOverview>
