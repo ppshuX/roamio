@@ -348,31 +348,41 @@ export default {
           })
         }
         
-        // 5. 应用详细行程
+        // 5. 应用详细行程（转换为前端期望的格式）
         if (aiTripPlan.days_detail && aiTripPlan.days_detail.length > 0) {
-          tripData.value.overview.itinerary = aiTripPlan.days_detail.map(day => ({
-            day: day.day_number,
-            title: day.title,
-            activities: day.activities.map(activity => ({
-              time: activity.time || '',
-              location: activity.location || '',
-              description: activity.description || '',
-              cost: activity.estimated_cost || 0
-            }))
-          }))
+          tripData.value.overview.itinerary = aiTripPlan.days_detail.map(day => {
+            // 将 activities 数组转换为文本描述
+            const contentText = day.activities.map(activity => 
+              `${activity.time} - ${activity.location}\n${activity.description}`
+            ).join('\n\n')
+            
+            // 提取当天亮点（第一个景点活动）
+            const mainActivity = day.activities.find(a => 
+              a.location_type === '景点' || a.location_type === 'attraction'
+            ) || day.activities[0]
+            
+            return {
+              day: day.title || `第${day.day_number}天`,
+              time: day.activities.length > 0 ? 
+                `${day.activities[0].time}-${day.activities[day.activities.length-1].time}` : '',
+              content: contentText,
+              highlight: mainActivity ? `${mainActivity.location} - ${mainActivity.description.substring(0, 30)}...` : ''
+            }
+          })
         }
         
-        // 6. 应用预算（确保字段匹配）
+        // 6. 应用预算（字段名改为 name，匹配前端组件）
         if (aiTripPlan.budget_breakdown) {
           const breakdown = aiTripPlan.budget_breakdown
           const budgetItems = []
           
-          if (breakdown.accommodation > 0) budgetItems.push({ category: '住宿', amount: breakdown.accommodation })
-          if (breakdown.meals > 0) budgetItems.push({ category: '餐饮', amount: breakdown.meals })
-          if (breakdown.transportation > 0) budgetItems.push({ category: '交通', amount: breakdown.transportation })
-          if (breakdown.tickets > 0) budgetItems.push({ category: '门票', amount: breakdown.tickets })
-          if (breakdown.shopping > 0) budgetItems.push({ category: '购物', amount: breakdown.shopping })
-          if (breakdown.emergency > 0) budgetItems.push({ category: '应急', amount: breakdown.emergency })
+          // 注意：前端组件期望 name 字段，不是 category
+          if (breakdown.accommodation > 0) budgetItems.push({ name: '住宿', amount: breakdown.accommodation, note: '' })
+          if (breakdown.meals > 0) budgetItems.push({ name: '餐饮', amount: breakdown.meals, note: '' })
+          if (breakdown.transportation > 0) budgetItems.push({ name: '交通', amount: breakdown.transportation, note: '' })
+          if (breakdown.tickets > 0) budgetItems.push({ name: '门票', amount: breakdown.tickets, note: '' })
+          if (breakdown.shopping > 0) budgetItems.push({ name: '购物', amount: breakdown.shopping, note: '' })
+          if (breakdown.emergency > 0) budgetItems.push({ name: '应急', amount: breakdown.emergency, note: '' })
           
           tripData.value.overview.budget.items = budgetItems
           tripData.value.overview.budget.total = aiTripPlan.total_budget || 
