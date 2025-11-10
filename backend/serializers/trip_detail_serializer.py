@@ -61,14 +61,15 @@ class TripDetailSerializer(serializers.ModelSerializer):
         """获取统计数据"""
         from ..models import SiteStat
         try:
-            stat = SiteStat.objects.get(page=obj.slug)
+            # 注意：TripPlan 的统计使用 'tp:' 前缀
+            stat = SiteStat.objects.get(page=f'tp:{obj.slug}')
             return {
                 'views': stat.views,
                 'likes': stat.likes
             }
         except SiteStat.DoesNotExist:
             # 如果没有统计记录，创建一个
-            stat = SiteStat.objects.create(page=obj.slug)
+            stat = SiteStat.objects.create(page=f'tp:{obj.slug}')
             return {
                 'views': 0,
                 'likes': 0
