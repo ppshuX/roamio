@@ -227,10 +227,13 @@ export default {
     const fetchComments = async () => {
       try {
         // 后端 CommentFilter 使用 'trip' 参数映射到 'page' 字段
+        console.log('🔍 查询评论，slug:', trip.value.slug)
         const response = await getCommentList({ trip: trip.value.slug })
-        comments.value = response.results || []
+        console.log('📥 评论响应:', response)
+        comments.value = response.results || response || []
+        console.log('📝 评论数量:', comments.value.length)
       } catch (error) {
-        console.error('获取评论失败:', error)
+        console.error('❌ 获取评论失败:', error)
       }
     }
     

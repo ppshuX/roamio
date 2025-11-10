@@ -44,14 +44,14 @@ export default defineComponent({
 
 <style scoped>
 .budget-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 h4 {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  margin-bottom: 1.5rem;
-  color: #2c3e50;
+  margin-bottom: 1rem;
+  color: #333;
 }
 
 .table-responsive {
@@ -61,69 +61,61 @@ h4 {
 .budget-table {
   width: 100%;
   border-collapse: collapse;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
+  background: #fff;
+  border: 2px solid #4caf50;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .budget-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
   color: white;
 }
 
 .budget-table th {
-  padding: 1rem;
+  padding: 0.7rem;
   text-align: left;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .budget-table td {
-  padding: 1rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  font-size: 0.95rem;
-}
-
-.budget-table tbody tr:hover {
-  background: rgba(102, 126, 234, 0.05);
+  padding: 0.7rem;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 0.85rem;
 }
 
 .budget-table .amount {
   font-weight: 600;
-  color: #667eea;
+  color: #4caf50;
   text-align: right;
 }
 
 .budget-table .note {
   color: #666;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .budget-table .total-row {
-  background: rgba(102, 126, 234, 0.1);
+  background: #e8f5e9;
   font-weight: 700;
 }
 
 .budget-table .total-row td {
   border-bottom: none;
-  padding: 1.2rem 1rem;
+  padding: 0.8rem 0.7rem;
 }
 
 .budget-table .total-row .amount {
-  color: #764ba2;
-  font-size: 1.1rem;
+  color: #2e7d32;
+  font-size: 1rem;
 }
 
 @media (max-width: 768px) {
   .budget-table th,
   .budget-table td {
-    padding: 0.8rem 0.5rem;
-    font-size: 0.9rem;
-  }
-
-  .budget-table .total-row .amount {
-    font-size: 1rem;
+    padding: 0.6rem 0.4rem;
+    font-size: 0.8rem;
   }
 }
 </style>
