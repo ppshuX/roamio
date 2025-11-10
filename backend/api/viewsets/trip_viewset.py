@@ -26,7 +26,22 @@ class TripViewSet(viewsets.ReadOnlyModelViewSet):
     
     def get_object(self):
         """确保旧页面或树上页面即使未初始化也能有统计记录"""
+        from ...models import Trip  # TripPlan模型
+        
         lookup_value = self.kwargs.get(self.lookup_field)
+        
+        # ⚠️ 防止为TripPlan意外创建不带'tp:'前缀的SiteStat
+        # 检查该slug是否对应一个TripPlan
+        if Trip.objects.filter(slug=lookup_value).exists():
+            # 如果是TripPlan，应该通过TripPlanViewSet访问
+            # 不应该在这里创建SiteStat记录
+            # 尝试获取已存在的记录，如果不存在则抛出404
+            from rest_framework.exceptions import NotFound
+            try:
+                return SiteStat.objects.get(page=lookup_value)
+            except SiteStat.DoesNotExist:
+                raise NotFound("该旅行计划尚未添加到旅行树，请使用TripPlan API访问")
+        
         # 旅行树页面已排除 tp: 前缀；其余页面如不存在则初始化
         stat, _ = SiteStat.objects.get_or_create(
             page=lookup_value,

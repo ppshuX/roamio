@@ -413,9 +413,14 @@ export default {
       }
     }
     
-    // 返回首页
+    // 返回上一页或首页
     const goBack = () => {
-      router.push('/')
+      // 如果有历史记录，返回上一页；否则跳转到首页
+      if (window.history.length > 1) {
+        router.back()
+      } else {
+        router.push('/')
+      }
     }
     
     // 切换音乐

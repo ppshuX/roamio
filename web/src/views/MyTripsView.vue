@@ -51,18 +51,18 @@
               
               <!-- 管理员可直接添加/移除旅行树 -->
               <template v-if="userStore.isAdmin">
-              <button 
-                v-if="trip.isOnTree" 
-                class="btn btn-sm btn-danger" 
+                <button 
+                  v-if="trip.isOnTree" 
+                  class="btn btn-sm btn-danger" 
                   @click.stop="removeFromTree(trip.slug)">
-                <i class="bi bi-x-circle me-1"></i>摘下果实
-              </button>
-              <button 
-                v-else
-                class="btn btn-sm btn-success" 
+                  <i class="bi bi-x-circle me-1"></i>摘下果实
+                </button>
+                <button 
+                  v-else
+                  class="btn btn-sm btn-success" 
                   @click.stop="addToTree(trip.slug)">
-                <i class="bi bi-tree me-1"></i>运用到旅行树
-              </button>
+                  <i class="bi bi-tree me-1"></i>运用到旅行树
+                </button>
               </template>
               <!-- 非管理员显示申请按钮 -->
               <template v-else>
