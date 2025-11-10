@@ -12,11 +12,7 @@ import request from './request'
  * @returns {Promise}
  */
 export function generateTripPlan(data) {
-  return request({
-    url: '/api/v1/ai/generate-trip/',
-    method: 'post',
-    data
-  })
+  return request.post('/api/v1/ai/generate-trip/', data)
 }
 
 /**
@@ -27,11 +23,7 @@ export function generateTripPlan(data) {
  * @returns {Promise}
  */
 export function refineTripPlan(data) {
-  return request({
-    url: '/api/v1/ai/refine-trip/',
-    method: 'post',
-    data
-  })
+  return request.post('/api/v1/ai/refine-trip/', data)
 }
 
 /**
@@ -39,9 +31,6 @@ export function refineTripPlan(data) {
  * @returns {Promise}
  */
 export function getUsageStats() {
-  return request({
-    url: '/api/v1/ai/usage-stats/',
-    method: 'get'
-  })
+  return request.get('/api/v1/ai/usage-stats/')
 }
 
