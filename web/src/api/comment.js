@@ -16,17 +16,26 @@ export const getCommentList = async (params) => {
 
 /**
  * 创建评论
- * @param {FormData} data - 表单数据（包含文件）
+ * @param {Object|FormData} data - 评论数据（普通对象或包含文件的FormData）
  * @param {Function} onUploadProgress - 上传进度回调函数
  */
 export const createComment = (data, onUploadProgress) => {
-    return request.post('/comments/', data, {
-        headers: {
+    const config = {
+        timeout: 300000 // 5分钟超时
+    }
+    
+    // 只有当 data 是 FormData 时才设置 multipart/form-data
+    // 否则让 request 自动设置 application/json
+    if (data instanceof FormData) {
+        config.headers = {
             'Content-Type': 'multipart/form-data'
-        },
-        timeout: 300000, // 5分钟超时
-        onUploadProgress: onUploadProgress
-    })
+        }
+        if (onUploadProgress) {
+            config.onUploadProgress = onUploadProgress
+        }
+    }
+    
+    return request.post('/comments/', data, config)
 }
 
 /**

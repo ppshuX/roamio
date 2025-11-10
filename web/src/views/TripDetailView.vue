@@ -240,8 +240,12 @@ export default {
     }
     
     // 提交评论
-    const handleSubmitComment = async (content, imageFile, videoFile) => {
+    const handleSubmitComment = async (payload) => {
       if (!ensureLoggedIn()) return
+      
+      // payload 格式: { data: { content, image, video }, onProgress, onComplete }
+      const { data, onProgress, onComplete } = payload
+      const { content, image, video } = data
       
       try {
         const commentData = {
@@ -249,19 +253,29 @@ export default {
           trip: trip.value.slug
         }
         
-        const newComment = await createComment(commentData)
+        const newComment = await createComment(commentData, onProgress)
         
         // 上传图片或视频
-        if (imageFile) {
-          await addCommentImage(newComment.id, imageFile, 'image')
-        } else if (videoFile) {
-          await addCommentImage(newComment.id, videoFile, 'video')
+        if (image) {
+          await addCommentImage(newComment.id, image, 'image', onProgress)
+        } else if (video) {
+          await addCommentImage(newComment.id, video, 'video', onProgress)
         }
         
         // 刷新评论列表
         await fetchComments()
+        
+        // 调用完成回调
+        if (onComplete) {
+          onComplete()
+        }
       } catch (error) {
         console.error('提交评论失败:', error)
+        
+        // 即使失败也要调用完成回调
+        if (onComplete) {
+          onComplete()
+        }
       }
     }
     
