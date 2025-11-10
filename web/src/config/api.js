@@ -52,14 +52,22 @@ export const getFullUrl = (path) => {
     return baseUrl + path
 }
 
-// 默认头像（SVG 作为备用方案，当 PNG 损坏时使用）
-export const DEFAULT_AVATAR_SVG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%23e0e0e0"/%3E%3Ccircle cx="24" cy="18" r="8" fill="%23999"/%3E%3Cpath d="M 8 40 Q 8 28 24 28 Q 40 28 40 40" fill="%23999"/%3E%3C/svg%3E'
+// 默认头像（SVG 作为备用方案）
+export const DEFAULT_AVATAR_SVG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%23667eea"/%3E%3Ccircle cx="24" cy="18" r="8" fill="%23fff"/%3E%3Cpath d="M 8 40 Q 8 28 24 28 Q 40 28 40 40" fill="%23fff"/%3E%3C/svg%3E'
 
 // 获取头像URL
 export const getAvatarUrl = (avatarUrl) => {
-    if (!avatarUrl) {
-        return '/static/images/default_avatar.png'
+    // 如果没有头像URL，返回默认SVG头像
+    if (!avatarUrl || avatarUrl === '' || avatarUrl === 'null' || avatarUrl === 'undefined') {
+        return DEFAULT_AVATAR_SVG
     }
+    
+    // 如果是完整URL，直接返回
+    if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+        return avatarUrl
+    }
+    
+    // 如果是相对路径，返回
     return avatarUrl
 }
 
