@@ -91,7 +91,7 @@ class TripPlannerAI:
                 f"{self.api_base}/chat/completions",
                 headers=headers,
                 json=data,
-                timeout=30
+                timeout=90  # 增加到 90 秒，生成详细行程需要更多时间
             )
             
             if response.status_code != 200:
@@ -362,7 +362,7 @@ class TripPlannerAI:
                 f"{self.api_base}/chat/completions",
                 headers=headers,
                 json=data,
-                timeout=30
+                timeout=90  # 增加到 90 秒
             )
             
             if response.status_code != 200:
