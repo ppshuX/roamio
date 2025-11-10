@@ -44,10 +44,10 @@ class TripPlanViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         """根据action设置权限"""
         # 需要登录的操作
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'my_trips']:
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'my_trips', 'like']:
             return [IsAuthenticated()]
         # 公开操作（任何人都可以访问公开内容）
-        if self.action in ['retrieve', 'list', 'stats', 'view', 'like']:
+        if self.action in ['retrieve', 'list', 'stats', 'view']:
             return [AllowAny()]
         # 其他操作
         return [IsAuthenticatedOrReadOnly()]
@@ -78,13 +78,21 @@ class TripPlanViewSet(viewsets.ModelViewSet):
                 )
             return queryset.filter(visibility='public')
         
-        # 公开接口（stats, view, like）：公开的旅行或自己的
-        if self.action in ['stats', 'view', 'like']:
+        # 公开接口（stats, view）：公开的旅行或自己的
+        if self.action in ['stats', 'view']:
             if self.request.user.is_authenticated:
                 return queryset.filter(
                     models.Q(visibility='public') | models.Q(author=self.request.user)
                 )
             return queryset.filter(visibility='public')
+        
+        # 点赞接口：需要登录，公开的或自己的
+        if self.action == 'like':
+            if self.request.user.is_authenticated:
+                return queryset.filter(
+                    models.Q(visibility='public') | models.Q(author=self.request.user)
+                )
+            return queryset.none()
         
         return queryset
     
