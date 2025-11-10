@@ -42,4 +42,15 @@ export default {
 </script>
 
 <style>
+/* 全局样式 - 移除 body 默认边距 */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* 确保 #app 也没有边距 */
+#app {
+  margin: 0;
+  padding: 0;
+}
 </style>
