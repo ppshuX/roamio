@@ -218,16 +218,22 @@ export default {
           (sum, item) => sum + (item.amount || 0), 0
         )
         
+        console.log('💾 准备保存的数据:', JSON.stringify(tripData.value, null, 2))
+        console.log('📊 Overview 内容:', tripData.value.overview)
+        
         if (isEditMode.value) {
-          await updateTripPlan(route.params.slug, tripData.value)
+          const result = await updateTripPlan(route.params.slug, tripData.value)
+          console.log('✅ 更新响应:', result)
           alert('保存成功！')
         } else {
           const result = await createTripPlan(tripData.value)
+          console.log('✅ 创建响应:', result)
           alert('创建成功！')
           router.push(`/editor/${result.slug}`)
         }
       } catch (error) {
-        console.error('保存失败:', error)
+        console.error('❌ 保存失败:', error)
+        console.error('错误详情:', error.response?.data)
         alert('保存失败：' + (error.response?.data?.detail || error.message))
       } finally {
         saving.value = false
@@ -256,16 +262,22 @@ export default {
           (sum, item) => sum + (item.amount || 0), 0
         )
         
+        console.log('📢 准备发布的数据:', JSON.stringify(tripData.value, null, 2))
+        console.log('📊 Overview 内容:', tripData.value.overview)
+        
         if (isEditMode.value) {
-          await updateTripPlan(route.params.slug, tripData.value)
+          const result = await updateTripPlan(route.params.slug, tripData.value)
+          console.log('✅ 发布响应:', result)
         } else {
           const result = await createTripPlan(tripData.value)
+          console.log('✅ 创建并发布响应:', result)
           router.push(`/editor/${result.slug}`)
         }
         
         alert('发布成功！')
       } catch (error) {
-        console.error('发布失败:', error)
+        console.error('❌ 发布失败:', error)
+        console.error('错误详情:', error.response?.data)
         alert('发布失败：' + (error.response?.data?.detail || error.message))
       } finally {
         publishing.value = false
