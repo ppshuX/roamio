@@ -285,10 +285,8 @@ export default {
       }
     }
     
-    // 点赞
+    // 点赞（旅行点赞不需要登录，允许重复点赞）
     const handleLike = async () => {
-      if (!ensureLoggedIn()) return
-      
       try {
         // 立即更新 UI（乐观更新）
         if (!trip.value.stats) {
