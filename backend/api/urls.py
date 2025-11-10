@@ -17,6 +17,7 @@ from .viewsets import (
     TripEventViewSet,
 )
 from .viewsets.ralendar_viewset import RalendarIntegrationViewSet
+from .viewsets.ai_viewset import AIAssistantViewSet
 
 # 创建主路由器
 router = DefaultRouter()
@@ -28,6 +29,7 @@ router.register(r'trips', TripViewSet, basename='trip')  # 旧的SiteStat接口�
 router.register(r'trip-plans', TripPlanViewSet, basename='trip-plan')  # 新的Trip编辑接口
 router.register(r'auth', AuthViewSet, basename='auth')
 router.register(r'ralendar/trips', RalendarIntegrationViewSet, basename='ralendar-trips')  # Ralendar 集成
+router.register(r'ai', AIAssistantViewSet, basename='ai')  # AI 旅行规划助手
 
 # 创建嵌套路由器：/api/v1/trip-plans/{trip_pk}/events/
 trip_plans_router = routers.NestedDefaultRouter(router, r'trip-plans', lookup='trip')

@@ -20,9 +20,11 @@ from ...serializers import (
     QQBindSerializer,
     ResetPasswordSerializer,
 )
-from ...utils.email_service import send_verification_code
-from ...utils.rate_limit import check_email_rate_limit, check_ip_rate_limit, get_client_ip
-from ...utils.qq_oauth import (
+from ...utils.external import send_verification_code
+from ...utils.auth import (
+    check_email_rate_limit,
+    check_ip_rate_limit,
+    get_client_ip,
     get_qq_authorize_url,
     generate_state,
     get_qq_user_info_by_code,
