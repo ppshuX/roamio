@@ -22,6 +22,27 @@
         </div>
       </div>
       
+      <!-- 错误提示 -->
+      <div v-else-if="error" class="row justify-content-center">
+        <div class="col-lg-6 col-xl-5">
+          <div class="error-card">
+            <div class="error-icon">🔒</div>
+            <h3 class="error-title">{{ errorMessage }}</h3>
+            <p class="error-description">
+              {{ errorMessage.includes('不存在') ? '该链接可能已失效，或旅行计划已被删除。' : '如有疑问，请联系旅行计划的作者。' }}
+            </p>
+            <div class="error-actions">
+              <button class="btn btn-primary" @click="goBack">
+                <i class="bi bi-arrow-left me-2"></i>返回首页
+              </button>
+              <button v-if="!userStore.isLoggedIn" class="btn btn-outline-primary ms-2" @click="router.push('/login')">
+                <i class="bi bi-box-arrow-in-right me-2"></i>登录查看
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- 旅行详情 -->
       <div v-else-if="trip" class="row g-4 justify-content-center">
         <!-- 主内容区 -->
@@ -160,6 +181,8 @@ export default {
     const trip = ref(null)
     const comments = ref([])
     const loading = ref(true)
+    const error = ref(false)
+    const errorMessage = ref('')
     const tripConfig = ref(null)
     const tripId = computed(() => parseInt(route.params.id))
     
@@ -225,8 +248,20 @@ export default {
           trip.value.stats.views = statsResponse.views
           trip.value.stats.likes = statsResponse.likes
         }
-      } catch (error) {
-        console.error('获取旅行详情失败:', error)
+      } catch (err) {
+        console.error('获取旅行详情失败:', err)
+        error.value = true
+        // 根据错误类型设置友好提示
+        const status = err.response?.status || err.status
+        if (status === 404) {
+          errorMessage.value = err.response?.data?.detail || '该旅行计划不存在或已被删除'
+        } else if (status === 403) {
+          errorMessage.value = '您没有权限访问该旅行计划'
+        } else if (status === 502 || status === 503) {
+          errorMessage.value = '服务器暂时无法访问，请稍后再试'
+        } else {
+          errorMessage.value = '加载失败，请稍后重试'
+        }
       } finally {
         loading.value = false
       }
@@ -458,6 +493,8 @@ export default {
       tripId,
       comments,
       loading,
+      error,
+      errorMessage,
       tripConfig,
       isAdmin,
       isPlaying,
@@ -498,6 +535,42 @@ export default {
 
 .text-center {
   padding: 3rem 0;
+}
+
+/* 错误提示卡片 */
+.error-card {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.error-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.6;
+}
+
+.error-title {
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.error-description {
+  color: #666;
+  font-size: 1rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.error-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 </style>
 
