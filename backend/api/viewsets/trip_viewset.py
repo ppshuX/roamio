@@ -40,7 +40,7 @@ class TripViewSet(viewsets.ReadOnlyModelViewSet):
             try:
                 return SiteStat.objects.get(page=lookup_value)
             except SiteStat.DoesNotExist:
-                raise NotFound("该旅行计划尚未添加到旅行树，请使用TripPlan API访问")
+                raise NotFound("该旅行计划不存在或已被删除")
         
         # 旅行树页面已排除 tp: 前缀；其余页面如不存在则初始化
         stat, _ = SiteStat.objects.get_or_create(
