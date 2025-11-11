@@ -34,7 +34,14 @@ SECRET_KEY = os.getenv(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True  # Keep enabled for better error messages with Chinese support
 
-ALLOWED_HOSTS = ['47.121.137.60', 'app7508.acapp.acwing.com.cn', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = [
+    'roamio.cn',
+    'www.roamio.cn',
+    '47.121.137.60',
+    'app7508.acapp.acwing.com.cn',  # 保留旧域名，平滑过渡
+    '127.0.0.1',
+    'localhost'
+]
 
 
 # Application definition
@@ -69,6 +76,9 @@ MIDDLEWARE = [
 
 # CSRF配置 - 仅用于 Django Admin 和表单
 CSRF_TRUSTED_ORIGINS = [
+    'https://roamio.cn',
+    'https://www.roamio.cn',
+    'https://app7508.acapp.acwing.com.cn',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     'http://localhost:8080',
@@ -260,10 +270,9 @@ if DEBUG:
 else:
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = [
-        "https://www.roamio.com",
-        "https://roamio.com",
-        "https://m.roamio.com",  # 移动端域名
-        "https://app7508.acapp.acwing.com.cn",
+        "https://roamio.cn",
+        "https://www.roamio.cn",
+        "https://app7508.acapp.acwing.com.cn",  # 保留旧域名
         "http://47.121.137.60",
     ]
 
