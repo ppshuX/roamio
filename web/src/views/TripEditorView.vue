@@ -450,13 +450,14 @@ export default {
 
 .editor-toolbar {
   position: sticky;
-  top: 56px;  /* NavBar 高度 */
+  top: 0;  /* 紧贴顶部，跟随滚动 */
   left: 0;
   right: 0;
   background: white;
   border-bottom: 1px solid #e0e0e0;
-  z-index: 999;  /* 低于 NavBar 的 1020 */
+  z-index: 1000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-top: -1px;  /* 消除可能的空隙 */
 }
 
 .edit-panel :deep(.card) {
