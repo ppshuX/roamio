@@ -445,7 +445,7 @@ export default {
 }
 
 .editor-container {
-  padding-top: 60px;
+  padding-top: 0;
 }
 
 .editor-toolbar {
