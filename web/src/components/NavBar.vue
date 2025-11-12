@@ -39,8 +39,10 @@
           </li>
         </ul>
         
-        <!-- 右侧用户信息 -->
+        <!-- 右侧：天气 + 用户信息 -->
         <div class="d-flex align-items-center">
+          <!-- 天气组件 -->
+          <WeatherWidget />
           <!-- 已登录 -->
           <template v-if="isLoggedIn">
             <div class="dropdown dropdown-end">
@@ -95,9 +97,13 @@
 import { computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
+import WeatherWidget from './WeatherWidget.vue'
 
 export default {
   name: 'NavBar',
+  components: {
+    WeatherWidget
+  },
   
   setup() {
     const router = useRouter()

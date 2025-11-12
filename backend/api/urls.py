@@ -18,6 +18,7 @@ from .viewsets import (
 )
 from .viewsets.ralendar_viewset import RalendarIntegrationViewSet
 from .viewsets.ai_viewset import AIAssistantViewSet
+from .views.external import weather
 
 # 创建主路由器
 router = DefaultRouter()
@@ -46,5 +47,9 @@ urlpatterns = [
     # JWT Token路由
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    # 天气查询API（公开接口）
+    path('weather/', weather.get_weather, name='get_weather'),
+    path('location/', weather.get_location_by_ip, name='get_location'),
 ]
 
