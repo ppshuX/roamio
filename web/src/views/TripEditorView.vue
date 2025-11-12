@@ -486,22 +486,7 @@ export default {
   margin-bottom: 20px;
 }
 
-/* 移动端：减少顶部空隙 */
-@media (max-width: 768px) {
-  .container.py-4 {
-    padding-top: 0.5rem !important;
-    padding-bottom: 1rem !important;
-  }
-  
-  .ai-quick-start {
-    margin-top: 0;
-    margin-bottom: 1rem;
-  }
-  
-  .editor-toolbar {
-    padding: 0.5rem 0 !important;
-  }
-}
+/* 移动端规则已合并到下方统一的 @media 中 */
 
 .btn-ai {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -649,15 +634,21 @@ export default {
     margin-right: 0.375rem !important;
   }
   
-  /* 缩小 AI 按钮并减少顶部间距 */
-  .ai-quick-start {
-    margin-top: 0;
-    margin-bottom: 0.75rem;
-  }
-  
-  /* 减少容器顶部内边距 */
+  /* 减少容器所有内边距 */
   .container.py-4 {
     padding-top: 0 !important;
+    padding-bottom: 0.75rem !important;
+  }
+  
+  /* 缩小 AI 按钮并减少间距 */
+  .ai-quick-start {
+    margin-top: 0 !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* 工具栏内边距 */
+  .editor-toolbar {
+    padding: 0.375rem 0 !important;
   }
   
   .btn-ai {
