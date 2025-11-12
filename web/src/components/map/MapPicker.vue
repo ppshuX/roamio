@@ -229,15 +229,19 @@ export default defineComponent({
       }
       
       geocodeTimer = setTimeout(() => {
-        const geocoder = new window.AMap.Geocoder()
-        geocoder.getAddress(lnglat, (status, result) => {
-          if (status === 'complete' && result.info === 'OK') {
-            selectedLocation.value = {
-              name: result.regeocode.formattedAddress,
-              lat: lnglat.lat,
-              lng: lnglat.lng
+        window.AMap.plugin('AMap.Geocoder', () => {
+          const geocoder = new window.AMap.Geocoder()
+          geocoder.getAddress(lnglat, (status, result) => {
+            if (status === 'complete' && result.info === 'OK') {
+              selectedLocation.value = {
+                name: result.regeocode.formattedAddress,
+                lat: lnglat.lat,
+                lng: lnglat.lng
+              }
+            } else {
+              console.error('高德地图地理编码失败:', status, result)
             }
-          }
+          })
         })
       }, 500)
     }
