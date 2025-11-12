@@ -471,6 +471,17 @@ export default {
   margin-bottom: 20px;
 }
 
+/* 移动端：减少顶部空隙 */
+@media (max-width: 768px) {
+  .container.py-4 {
+    padding-top: 1rem !important;
+  }
+  
+  .ai-quick-start {
+    margin-top: 0;
+  }
+}
+
 .btn-ai {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
