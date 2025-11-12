@@ -32,93 +32,99 @@
         
         <!-- 天气信息 -->
         <div v-else class="weather-detail">
-          <!-- 顶部：城市和天气状况 -->
+          <!-- 顶部：城市、天气和设置按钮 -->
           <div class="weather-header">
-            <div class="weather-main">
-              <i :class="getWeatherIcon(weather.weather)" class="weather-icon-large"></i>
-              <div class="weather-temp">
-                <span class="temp-number">{{ weather.temperature }}</span>
-                <span class="temp-unit">°C</span>
-              </div>
-            </div>
-            <div class="weather-info">
-              <h6 class="city-name">{{ weather.city }}</h6>
+            <div class="header-left">
+              <h5 class="city-name">
+                <i class="bi bi-geo-alt-fill me-1"></i>{{ weather.city }}
+              </h5>
               <p class="weather-desc">{{ weather.weather }}</p>
+            </div>
+            <button @click="showSettings = !showSettings" class="settings-btn" title="设置默认城市">
+              <i class="bi bi-gear-fill"></i>
+            </button>
+          </div>
+          
+          <!-- 主要天气信息 -->
+          <div class="weather-main">
+            <i :class="getWeatherIcon(weather.weather)" class="weather-icon"></i>
+            <div class="temp-display">
+              <span class="temp-number">{{ weather.temperature }}</span>
+              <span class="temp-unit">°C</span>
             </div>
           </div>
           
-          <!-- 详细数据卡片 -->
+          <!-- 详细数据 -->
           <div class="weather-stats">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="bi bi-wind"></i>
-              </div>
-              <div class="stat-content">
+            <div class="stat-item">
+              <i class="bi bi-wind"></i>
+              <div>
                 <div class="stat-label">风力</div>
                 <div class="stat-value">{{ weather.windDirection }} {{ weather.windPower }}级</div>
               </div>
             </div>
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="bi bi-droplet-fill"></i>
-              </div>
-              <div class="stat-content">
+            <div class="stat-item">
+              <i class="bi bi-droplet-fill"></i>
+              <div>
                 <div class="stat-label">湿度</div>
                 <div class="stat-value">{{ weather.humidity }}%</div>
               </div>
             </div>
           </div>
           
-          <!-- 切换城市 -->
-          <div class="city-selector">
-            <div class="selector-header">
-              <div class="selector-label">
-                <i class="bi bi-geo-alt-fill me-1"></i>切换城市
+          <!-- 城市设置面板（点击齿轮后显示） -->
+          <transition name="slide">
+            <div v-if="showSettings" class="settings-panel">
+              <div class="panel-header">
+                <h6><i class="bi bi-geo-alt-fill me-1"></i>设置默认城市</h6>
+                <transition name="fade">
+                  <small v-if="savedNotice" class="saved-badge">
+                    <i class="bi bi-check-circle-fill me-1"></i>已保存
+                  </small>
+                </transition>
               </div>
-              <transition name="fade">
-                <small v-if="savedNotice" class="saved-notice">
-                  <i class="bi bi-check-circle-fill me-1"></i>已设为默认
-                </small>
-              </transition>
+              
+              <!-- 搜索框 -->
+              <div class="search-box">
+                <input 
+                  v-model="customCity"
+                  type="text" 
+                  class="search-input" 
+                  placeholder="输入城市名称..."
+                  @keyup.enter="changeCity(customCity)"
+                />
+                <button 
+                  @click="changeCity(customCity)" 
+                  class="search-button"
+                  :disabled="!customCity.trim()"
+                >
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+              
+              <!-- 热门城市 -->
+              <div class="hot-cities">
+                <small class="hot-label">热门城市</small>
+                <div class="city-grid">
+                  <button 
+                    v-for="city in hotCities" 
+                    :key="city"
+                    :class="['city-tag', { active: weather.city === city }]"
+                    @click="changeCity(city)"
+                  >
+                    {{ city }}
+                  </button>
+                </div>
+              </div>
             </div>
-            
-            <!-- 自定义输入 -->
-            <div class="custom-input">
-              <input 
-                v-model="customCity"
-                type="text" 
-                class="city-input" 
-                placeholder="输入城市名称..."
-                @keyup.enter="changeCity(customCity)"
-              />
-              <button 
-                @click="changeCity(customCity)" 
-                class="search-btn"
-                :disabled="!customCity.trim()"
-              >
-                <i class="bi bi-search"></i>
-              </button>
-            </div>
-            
-            <!-- 热门城市 -->
-            <div class="city-list">
-              <button 
-                v-for="city in hotCities" 
-                :key="city"
-                :class="['city-btn', { active: weather.city === city }]"
-                @click="changeCity(city)"
-              >
-                {{ city }}
-              </button>
-            </div>
-          </div>
+          </transition>
           
           <!-- 底部：更新时间和刷新按钮 -->
           <div class="weather-footer">
             <small class="update-time">
               <i class="bi bi-clock me-1"></i>{{ weather.reportTime }}
             </small>
-            <button @click="fetchWeather" class="refresh-btn" title="刷新天气">
+            <button @click="fetchWeather" class="refresh-btn" title="刷新">
               <i class="bi bi-arrow-clockwise"></i>
             </button>
           </div>
@@ -155,6 +161,9 @@ export default {
     
     // 保存成功提示
     const savedNotice = ref(false)
+    
+    // 显示设置面板
+    const showSettings = ref(false)
     
     // 获取天气图标
     const getWeatherIcon = (weatherText) => {
@@ -299,6 +308,7 @@ export default {
       hotCities,
       customCity,
       savedNotice,
+      showSettings,
       getWeatherIcon,
       fetchWeather,
       changeCity
@@ -308,12 +318,12 @@ export default {
 </script>
 
 <style scoped>
-/* 下拉菜单样式 */
+/* 下拉菜单 */
 .weather-dropdown {
   min-width: 320px;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   border: none;
 }
 
@@ -322,239 +332,191 @@ export default {
   padding: 0;
 }
 
-/* 天气详情容器 */
+/* 天气详情容器 - 白色背景 */
 .weather-detail {
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  padding: 1.25rem;
+  background: white;
+  color: #333;
 }
 
-/* 顶部区域 */
+/* 顶部 - 城市和设置按钮 */
 .weather-header {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.weather-main {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-}
-
-.weather-icon-large {
-  font-size: 4rem;
-  color: rgba(255, 255, 255, 0.95);
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
-}
-
-.weather-temp {
-  display: flex;
   align-items: flex-start;
-  gap: 0.25rem;
+  margin-bottom: 1.25rem;
 }
 
-.temp-number {
-  font-size: 3.5rem;
-  font-weight: 700;
-  line-height: 1;
-  color: white;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.temp-unit {
-  font-size: 1.5rem;
-  font-weight: 400;
-  margin-top: 0.5rem;
-  opacity: 0.9;
-}
-
-.weather-info {
-  text-align: left;
+.header-left {
+  flex: 1;
 }
 
 .city-name {
   font-size: 1.1rem;
   font-weight: 600;
+  color: #667eea;
   margin-bottom: 0.25rem;
-  color: white;
+  display: flex;
+  align-items: center;
 }
 
 .weather-desc {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  color: #666;
   margin: 0;
-  opacity: 0.9;
 }
 
-/* 详细数据卡片 */
-.weather-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.stat-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
-}
-
-.stat-icon {
+.settings-btn {
+  background: #f5f5f5;
+  border: none;
+  color: #667eea;
   width: 36px;
   height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  font-size: 1.25rem;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  opacity: 0.85;
-  margin-bottom: 0.125rem;
-}
-
-.stat-value {
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
-/* 底部区域 */
-.weather-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.update-time {
-  font-size: 0.75rem;
-  opacity: 0.8;
-  display: flex;
-  align-items: center;
-}
-
-.refresh-btn {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
-.refresh-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: rotate(180deg);
+.settings-btn:hover {
+  background: #667eea;
+  color: white;
+  transform: rotate(90deg);
 }
 
-/* 城市选择器 */
-.city-selector {
+/* 主要天气显示 */
+.weather-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+  background: linear-gradient(135deg, #667eea15, #764ba215);
+  border-radius: 12px;
   margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.selector-header {
+.weather-icon {
+  font-size: 4rem;
+  color: #667eea;
+}
+
+.temp-display {
+  display: flex;
+  align-items: flex-start;
+}
+
+.temp-number {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #333;
+}
+
+.temp-unit {
+  font-size: 1.2rem;
+  font-weight: 400;
+  margin-top: 0.5rem;
+  color: #666;
+}
+
+/* 详细数据 */
+.weather-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.stat-item i {
+  font-size: 1.5rem;
+  color: #667eea;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #999;
+  margin-bottom: 0.125rem;
+}
+
+.stat-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 设置面板 */
+.settings-panel {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
-.selector-label {
-  font-size: 0.85rem;
-  opacity: 0.9;
+.panel-header h6 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #667eea;
+  margin: 0;
   display: flex;
   align-items: center;
 }
 
-.saved-notice {
+.saved-badge {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.95);
-  background: rgba(76, 175, 80, 0.3);
-  padding: 0.25rem 0.75rem;
+  color: #4caf50;
+  background: #4caf5020;
+  padding: 0.25rem 0.5rem;
   border-radius: 12px;
   display: flex;
   align-items: center;
-  animation: slideIn 0.3s ease;
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-}
-
-/* 自定义城市输入 */
-.custom-input {
+/* 搜索框 */
+.search-box {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
-.city-input {
+.search-input {
   flex: 1;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: white;
+  border: 1px solid #ddd;
   border-radius: 20px;
   padding: 0.5rem 1rem;
-  color: white;
+  color: #333;
   font-size: 0.85rem;
   outline: none;
   transition: all 0.3s ease;
 }
 
-.city-input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+.search-input:focus {
+  border-color: #667eea;
 }
 
-.city-input:focus {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-.search-btn {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+.search-button {
+  background: #667eea;
+  border: none;
   color: white;
   width: 40px;
   height: 40px;
@@ -564,46 +526,113 @@ export default {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 1rem;
 }
 
-.search-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
+.search-button:hover:not(:disabled) {
+  background: #764ba2;
 }
 
-.search-btn:disabled {
-  opacity: 0.5;
+.search-button:disabled {
+  background: #ccc;
   cursor: not-allowed;
 }
 
-.city-list {
-  display: flex;
-  flex-wrap: wrap;
+/* 热门城市 */
+.hot-cities {
+  margin-top: 1rem;
+}
+
+.hot-label {
+  font-size: 0.75rem;
+  color: #999;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.city-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 0.5rem;
 }
 
-.city-btn {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
-  padding: 0.375rem 0.75rem;
-  border-radius: 20px;
+.city-tag {
+  background: white;
+  border: 1px solid #ddd;
+  color: #333;
+  padding: 0.5rem;
+  border-radius: 8px;
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  white-space: nowrap;
+  text-align: center;
 }
 
-.city-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
+.city-tag:hover {
+  border-color: #667eea;
+  color: #667eea;
 }
 
-.city-btn.active {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+.city-tag.active {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
   font-weight: 600;
+}
+
+/* 底部 */
+.weather-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.update-time {
+  font-size: 0.75rem;
+  color: #999;
+  display: flex;
+  align-items: center;
+}
+
+.refresh-btn {
+  background: #f5f5f5;
+  border: none;
+  color: #667eea;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+  background: #667eea;
+  color: white;
+  transform: rotate(180deg);
+}
+
+/* 动画 */
+.slide-enter-active, .slide-leave-active {
+  transition: all 0.3s ease;
+  max-height: 300px;
+  overflow: hidden;
+}
+
+.slide-enter-from, .slide-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>
 
