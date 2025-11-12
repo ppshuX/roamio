@@ -43,7 +43,22 @@ def get_weather(request):
             'message': '请提供城市名称'
         }, status=400)
     
-    # 1. 尝试从缓存获取（缓存5分钟）
+    # 1. IP限流：同一IP每分钟最多5次请求
+    ip = request.META.get('REMOTE_ADDR', 'unknown')
+    rate_limit_key = f'weather_rate_{ip}'
+    request_count = cache.get(rate_limit_key, 0)
+    
+    if request_count >= 5:
+        logger.warning(f'IP限流触发: {ip}')
+        return Response({
+            'success': False,
+            'message': '请求过于频繁，请稍后再试'
+        }, status=429)
+    
+    # 增加请求计数
+    cache.set(rate_limit_key, request_count + 1, 60)  # 60秒后重置
+    
+    # 2. 尝试从缓存获取（缓存5分钟）
     cache_key = f'weather_{location}'
     cached_data = cache.get(cache_key)
     if cached_data:
@@ -143,6 +158,32 @@ def get_location_by_ip(request):
             }
         }
     """
+    # IP限流：同一IP每分钟最多3次定位请求
+    ip = request.META.get('REMOTE_ADDR', 'unknown')
+    rate_limit_key = f'location_rate_{ip}'
+    request_count = cache.get(rate_limit_key, 0)
+    
+    if request_count >= 3:
+        logger.warning(f'定位接口IP限流触发: {ip}')
+        return Response({
+            'success': False,
+            'message': '请求过于频繁'
+        }, status=429)
+    
+    # 增加请求计数
+    cache.set(rate_limit_key, request_count + 1, 60)  # 60秒后重置
+    
+    # 缓存IP定位结果（24小时）- 同一IP不需要重复定位
+    ip_cache_key = f'ip_location_{ip}'
+    cached_location = cache.get(ip_cache_key)
+    if cached_location:
+        logger.info(f'从缓存获取IP定位: {ip}')
+        return Response({
+            'success': True,
+            'data': cached_location,
+            'cached': True
+        })
+    
     api_key = os.environ.get('AMAP_API_KEY', '53b6a185427e97b53e16c8786a272f62')
     
     try:
@@ -166,6 +207,9 @@ def get_location_by_ip(request):
             'adcode': data.get('adcode', ''),
             'province': data.get('province', '')
         }
+        
+        # 缓存IP定位结果（24小时）
+        cache.set(ip_cache_key, location_data, 86400)
         
         return Response({
             'success': True,
