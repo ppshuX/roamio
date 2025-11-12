@@ -453,7 +453,7 @@ export default defineComponent({
         
         if (editingEventId.value) {
           // 编辑模式：通过 Roamio 后端代理更新
-          const response = await fetch(`/api/v1/ralendar/trips/events/${editingEventId.value}/`, {
+          const response = await fetch(`/api/v1/ralendar/trips/events/${editingEventId.value}`, {
             method: 'PUT',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -583,8 +583,8 @@ export default defineComponent({
           return
         }
         
-        // 通过 Roamio 后端代理删除事件
-        const response = await fetch(`/api/v1/ralendar/trips/events/${event.id}/`, {
+        // 通过 Roamio 后端代理删除事件  
+        const response = await fetch(`/api/v1/ralendar/trips/events/${event.id}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
