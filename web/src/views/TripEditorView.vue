@@ -448,10 +448,10 @@ export default {
   padding-top: 0;
 }
 
-/* 移动端需要留出导航栏空间 */
+/* 移动端需要留出导航栏+工具栏空间 */
 @media (max-width: 991px) {
   .editor-container {
-    padding-top: 56px;
+    padding-top: 106px;  /* 导航栏56px + 工具栏50px */
   }
 }
 
@@ -486,7 +486,17 @@ export default {
   margin-bottom: 20px;
 }
 
-/* 移动端规则已合并到下方统一的 @media 中 */
+/* 移动端：减少AI按钮和容器间距 */
+@media (max-width: 768px) {
+  .container.py-4 {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  
+  .ai-quick-start {
+    margin-bottom: 0.75rem !important;
+  }
+}
 
 .btn-ai {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
