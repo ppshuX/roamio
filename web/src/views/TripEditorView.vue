@@ -649,7 +649,12 @@ export default {
     margin-right: 0.375rem !important;
   }
   
-  /* 缩小 AI 按钮 */
+  /* 缩小 AI 按钮并减少顶部间距 */
+  .ai-quick-start {
+    margin-top: -0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
   .btn-ai {
     padding: 12px;
     gap: 10px;
