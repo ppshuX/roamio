@@ -651,8 +651,13 @@ export default {
   
   /* 缩小 AI 按钮并减少顶部间距 */
   .ai-quick-start {
-    margin-top: -0.5rem;
+    margin-top: 0;
     margin-bottom: 0.75rem;
+  }
+  
+  /* 减少容器顶部内边距 */
+  .container.py-4 {
+    padding-top: 0 !important;
   }
   
   .btn-ai {
