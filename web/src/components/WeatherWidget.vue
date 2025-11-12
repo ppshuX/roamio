@@ -40,7 +40,7 @@
               </h5>
               <p class="weather-desc">{{ weather.weather }}</p>
             </div>
-            <button @click="showSettings = !showSettings" class="settings-btn" title="设置默认城市">
+            <button @click.stop="showSettings = !showSettings" class="settings-btn" title="设置默认城市">
               <i class="bi bi-gear-fill"></i>
             </button>
           </div>
@@ -94,7 +94,7 @@
                   @keyup.enter="changeCity(customCity)"
                 />
                 <button 
-                  @click="changeCity(customCity)" 
+                  @click.stop="changeCity(customCity)" 
                   class="search-button"
                   :disabled="!customCity.trim()"
                 >
@@ -110,7 +110,7 @@
                     v-for="city in hotCities" 
                     :key="city"
                     :class="['city-tag', { active: weather.city === city }]"
-                    @click="changeCity(city)"
+                    @click.stop="changeCity(city)"
                   >
                     {{ city }}
                   </button>
@@ -124,7 +124,7 @@
             <small class="update-time">
               <i class="bi bi-clock me-1"></i>{{ weather.reportTime }}
             </small>
-            <button @click="fetchWeather" class="refresh-btn" title="刷新">
+            <button @click.stop="fetchWeather" class="refresh-btn" title="刷新">
               <i class="bi bi-arrow-clockwise"></i>
             </button>
           </div>
@@ -367,9 +367,9 @@ export default {
 }
 
 .settings-btn {
-  background: #f5f5f5;
+  background: #667eea;
   border: none;
-  color: #667eea;
+  color: white;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -379,11 +379,11 @@ export default {
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 .settings-btn:hover {
-  background: #667eea;
-  color: white;
+  background: #764ba2;
   transform: rotate(90deg);
 }
 
