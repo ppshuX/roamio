@@ -449,13 +449,13 @@ export default {
 }
 
 .editor-toolbar {
-  position: fixed;
-  top: 60px;
+  position: sticky;
+  top: 56px;  /* NavBar 高度 */
   left: 0;
   right: 0;
   background: white;
   border-bottom: 1px solid #e0e0e0;
-  z-index: 1000;
+  z-index: 999;  /* 低于 NavBar 的 1020 */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
