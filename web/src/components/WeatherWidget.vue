@@ -123,21 +123,34 @@ export default {
         
         // 2. 如果没有缓存，调用后端IP定位接口获取城市
         if (!city) {
-          const locationRes = await fetch('/api/v1/location/')
-          const locationData = await locationRes.json()
+          try {
+            const locationRes = await fetch('/api/v1/location/')
+            const locationData = await locationRes.json()
+            
+            if (locationData.success && locationData.data.city) {
+              city = locationData.data.city
+              // 缓存位置信息（24小时）
+              localStorage.setItem('weatherCity', city)
+              localStorage.setItem('weatherCacheTime', Date.now().toString())
+            }
+          } catch (err) {
+            console.warn('IP定位失败:', err)
+          }
           
-          if (locationData.success) {
-            city = locationData.data.city
-            // 缓存位置信息（24小时）
+          // 如果定位失败，使用默认城市
+          if (!city) {
+            city = '北京'
             localStorage.setItem('weatherCity', city)
             localStorage.setItem('weatherCacheTime', Date.now().toString())
-          } else {
-            // 定位失败，使用默认城市
-            city = '北京'
           }
         }
         
-        // 3. 调用后端天气接口获取天气信息
+        // 3. 确保 city 不为空
+        if (!city || city.trim() === '') {
+          city = '北京'
+        }
+        
+        // 4. 调用后端天气接口获取天气信息
         const weatherRes = await fetch(`/api/v1/weather/?location=${encodeURIComponent(city)}`)
         const weatherData = await weatherRes.json()
         
@@ -281,4 +294,5 @@ export default {
   color: #764ba2;
 }
 </style>
+
 
