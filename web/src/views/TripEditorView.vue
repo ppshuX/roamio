@@ -611,6 +611,97 @@ export default {
   padding: 0;
 }
 
+/* 移动端全面优化 */
+@media (max-width: 768px) {
+  /* 缩小工具栏按钮 */
+  .d-flex.justify-content-between .btn {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.75rem;
+  }
+  
+  .d-flex.justify-content-between .btn i,
+  .d-flex.justify-content-between .btn svg {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+  }
+  
+  /* 缩小 AI 按钮 */
+  .btn-ai {
+    padding: 12px;
+    gap: 10px;
+  }
+  
+  .ai-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .ai-text strong {
+    font-size: 14px;
+  }
+  
+  .ai-text small {
+    font-size: 11px;
+  }
+  
+  /* 缩小编辑面板 */
+  .edit-panel {
+    font-size: 0.85rem;
+  }
+  
+  .edit-panel :deep(.card) {
+    margin-bottom: 0.75rem;
+  }
+  
+  .edit-panel :deep(.card-header) {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9rem;
+  }
+  
+  .edit-panel :deep(.card-body) {
+    padding: 0.75rem;
+  }
+  
+  .edit-panel :deep(.form-label) {
+    font-size: 0.8rem;
+    margin-bottom: 0.375rem;
+  }
+  
+  .edit-panel :deep(.form-control),
+  .edit-panel :deep(.form-select),
+  .edit-panel :deep(input),
+  .edit-panel :deep(textarea) {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.625rem;
+  }
+  
+  .edit-panel :deep(.btn) {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.625rem;
+  }
+  
+  /* 缩小模态框 */
+  .ai-modal-overlay {
+    padding: 10px;
+  }
+  
+  .ai-modal-header {
+    padding: 12px 16px;
+  }
+  
+  .ai-modal-header h3 {
+    font-size: 16px;
+  }
+  
+  .btn-close-modal {
+    font-size: 20px;
+    width: 28px;
+    height: 28px;
+  }
+}
+
 /* 响应式 */
 @media (max-width: 991px) {
   .editor-container {
