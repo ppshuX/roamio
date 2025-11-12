@@ -474,11 +474,17 @@ export default {
 /* 移动端：减少顶部空隙 */
 @media (max-width: 768px) {
   .container.py-4 {
-    padding-top: 1rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 1rem !important;
   }
   
   .ai-quick-start {
     margin-top: 0;
+    margin-bottom: 1rem;
+  }
+  
+  .editor-toolbar {
+    padding: 0.5rem 0 !important;
   }
 }
 
