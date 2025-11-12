@@ -123,7 +123,7 @@ export default {
         
         // 2. 如果没有缓存，调用后端IP定位接口获取城市
         if (!city) {
-          const locationRes = await fetch('/api/location/')
+          const locationRes = await fetch('/api/v1/location/')
           const locationData = await locationRes.json()
           
           if (locationData.success) {
@@ -138,7 +138,7 @@ export default {
         }
         
         // 3. 调用后端天气接口获取天气信息
-        const weatherRes = await fetch(`/api/weather/?location=${encodeURIComponent(city)}`)
+        const weatherRes = await fetch(`/api/v1/weather/?location=${encodeURIComponent(city)}`)
         const weatherData = await weatherRes.json()
         
         if (weatherData.success) {
