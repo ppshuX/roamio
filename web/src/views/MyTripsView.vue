@@ -372,7 +372,7 @@ export default {
 
 .trip-actions {
   padding: 1rem 1.5rem;
-  background: #f8f9fa;
+  background: white;  /* 改为白色，与上面保持一致 */
   border-top: 1px solid #e0e0e0;
   display: flex;
   gap: 0.5rem;
@@ -392,8 +392,28 @@ export default {
   opacity: 0.5;
 }
 
-/* 响应式 */
+/* 移动端优化 */
 @media (max-width: 768px) {
+  /* 缩小标题和按钮字体到80% */
+  .d-flex.justify-content-between h2 {
+    font-size: 1.4rem;  /* 原来约1.75rem，缩小到80% */
+  }
+  
+  .d-flex.justify-content-between .btn {
+    font-size: 0.8rem;  /* 原来1rem，缩小到80% */
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .d-flex.justify-content-between .btn i {
+    font-size: 0.8rem;
+  }
+  
+  /* 主卡片内边距缩小 */
+  .main-card {
+    padding: 1.25rem;
+  }
+  
+  /* 卡片操作按钮 */
   .trip-actions {
     flex-wrap: wrap;
   }
@@ -401,6 +421,7 @@ export default {
   .trip-actions .btn {
     flex: 1;
     min-width: 80px;
+    font-size: 0.75rem;
   }
 }
 </style>
