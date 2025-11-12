@@ -4,6 +4,20 @@
       <!-- 头部 -->
       <div class="map-header">
         <h6>选择地点</h6>
+        <div class="map-type-selector">
+          <button 
+            :class="['map-type-btn', { active: mapType === 'baidu' }]"
+            @click="switchMapType('baidu')"
+          >
+            百度地图
+          </button>
+          <button 
+            :class="['map-type-btn', { active: mapType === 'amap' }]"
+            @click="switchMapType('amap')"
+          >
+            高德地图
+          </button>
+        </div>
         <button @click="$emit('close')" class="btn-close">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
             <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
@@ -72,13 +86,46 @@ export default defineComponent({
     const mapContainer = ref(null)
     const searchKeyword = ref('')
     const selectedLocation = ref(null)
+    const mapType = ref(localStorage.getItem('preferredMapType') || 'baidu') // 记住用户偏好
     let map = null
     let marker = null
     let searchTimer = null
     
+    // 切换地图类型
+    const switchMapType = (type) => {
+      mapType.value = type
+      localStorage.setItem('preferredMapType', type)
+      selectedLocation.value = null
+      // 销毁旧地图
+      if (map) {
+        if (mapType.value === 'baidu' && map.destroy) {
+          map.destroy()
+        } else if (mapType.value === 'amap' && map.destroy) {
+          map.destroy()
+        }
+        map = null
+        marker = null
+      }
+      // 重新初始化
+      nextTick(() => {
+        initMap()
+      })
+    }
+    
     // 初始化地图
     const initMap = () => {
-      if (!window.BMap || !mapContainer.value) return
+      if (!mapContainer.value) return
+      
+      if (mapType.value === 'baidu') {
+        initBaiduMap()
+      } else {
+        initAmapMap()
+      }
+    }
+    
+    // 初始化百度地图
+    const initBaiduMap = () => {
+      if (!window.BMap) return
       
       // 创建地图实例
       map = new window.BMap.Map(mapContainer.value)
@@ -97,13 +144,32 @@ export default defineComponent({
       // 点击地图选择位置
       map.addEventListener('click', (e) => {
         const point = e.point
-        setMarker(point)
-        getLocationName(point)
+        setMarkerBaidu(point)
+        getLocationNameBaidu(point)
       })
     }
     
-    // 设置标记
-    const setMarker = (point) => {
+    // 初始化高德地图
+    const initAmapMap = () => {
+      if (!window.AMap) return
+      
+      // 创建地图实例
+      map = new window.AMap.Map(mapContainer.value, {
+        zoom: 12,
+        center: [116.404, 39.915], // 默认北京
+        viewMode: '2D'
+      })
+      
+      // 点击地图选择位置
+      map.on('click', (e) => {
+        const lnglat = e.lnglat
+        setMarkerAmap(lnglat)
+        getLocationNameAmap(lnglat)
+      })
+    }
+    
+    // 百度地图：设置标记
+    const setMarkerBaidu = (point) => {
       // 移除旧标记
       if (marker) {
         map.removeOverlay(marker)
@@ -120,16 +186,28 @@ export default defineComponent({
       }, 1000)
     }
     
-    // 获取地点名称（反向地理编码）
-    // 添加防抖，避免频繁调用
+    // 高德地图：设置标记
+    const setMarkerAmap = (lnglat) => {
+      // 移除旧标记
+      if (marker) {
+        map.remove(marker)
+      }
+      
+      // 添加新标记
+      marker = new window.AMap.Marker({
+        position: lnglat,
+        animation: 'AMAP_ANIMATION_DROP'
+      })
+      map.add(marker)
+    }
+    
+    // 百度地图：获取地点名称（反向地理编码）
     let geocodeTimer = null
-    const getLocationName = (point) => {
-      // 清除之前的定时器
+    const getLocationNameBaidu = (point) => {
       if (geocodeTimer) {
         clearTimeout(geocodeTimer)
       }
       
-      // 延迟 500ms 执行，避免频繁调用
       geocodeTimer = setTimeout(() => {
         const gc = new window.BMap.Geocoder()
         gc.getLocation(point, (result) => {
@@ -138,6 +216,26 @@ export default defineComponent({
               name: result.address,
               lat: point.lat,
               lng: point.lng
+            }
+          }
+        })
+      }, 500)
+    }
+    
+    // 高德地图：获取地点名称（反向地理编码）
+    const getLocationNameAmap = (lnglat) => {
+      if (geocodeTimer) {
+        clearTimeout(geocodeTimer)
+      }
+      
+      geocodeTimer = setTimeout(() => {
+        const geocoder = new window.AMap.Geocoder()
+        geocoder.getAddress(lnglat, (status, result) => {
+          if (status === 'complete' && result.info === 'OK') {
+            selectedLocation.value = {
+              name: result.regeocode.formattedAddress,
+              lat: lnglat.lat,
+              lng: lnglat.lng
             }
           }
         })
@@ -153,30 +251,59 @@ export default defineComponent({
       searchTimer = setTimeout(() => {
         if (!searchKeyword.value || !map) return
         
-        const localSearch = new window.BMap.LocalSearch(map, {
-          onSearchComplete: (results) => {
-            if (results && results.getCurrentNumPois() > 0) {
-              const poi = results.getPoi(0)
-              const point = poi.point
-              
-              // 移动地图到搜索结果
-              map.centerAndZoom(point, 15)
-              
-              // 设置标记
-              setMarker(point)
-              
-              // 设置选中位置
-              selectedLocation.value = {
-                name: poi.title,
-                lat: point.lat,
-                lng: point.lng
-              }
+        if (mapType.value === 'baidu') {
+          handleSearchBaidu()
+        } else {
+          handleSearchAmap()
+        }
+      }, 300) // 防抖 300ms
+    }
+    
+    // 百度地图搜索
+    const handleSearchBaidu = () => {
+      const localSearch = new window.BMap.LocalSearch(map, {
+        onSearchComplete: (results) => {
+          if (results && results.getCurrentNumPois() > 0) {
+            const poi = results.getPoi(0)
+            const point = poi.point
+            
+            map.centerAndZoom(point, 15)
+            setMarkerBaidu(point)
+            
+            selectedLocation.value = {
+              name: poi.title,
+              lat: point.lat,
+              lng: point.lng
+            }
+          }
+        }
+      })
+      localSearch.search(searchKeyword.value)
+    }
+    
+    // 高德地图搜索
+    const handleSearchAmap = () => {
+      window.AMap.plugin('AMap.PlaceSearch', () => {
+        const placeSearch = new window.AMap.PlaceSearch({
+          map: map
+        })
+        
+        placeSearch.search(searchKeyword.value, (status, result) => {
+          if (status === 'complete' && result.poiList.pois.length > 0) {
+            const poi = result.poiList.pois[0]
+            const lnglat = poi.location
+            
+            map.setZoomAndCenter(15, lnglat)
+            setMarkerAmap(lnglat)
+            
+            selectedLocation.value = {
+              name: poi.name,
+              lat: lnglat.lat,
+              lng: lnglat.lng
             }
           }
         })
-        
-        localSearch.search(searchKeyword.value)
-      }, 300) // 防抖 300ms
+      })
     }
     
     // 确认选择
@@ -205,6 +332,8 @@ export default defineComponent({
       mapContainer,
       searchKeyword,
       selectedLocation,
+      mapType,
+      switchMapType,
       handleSearch,
       handleConfirm
     }
@@ -252,6 +381,36 @@ export default defineComponent({
 .map-header h6 {
   margin: 0;
   font-size: 18px;
+  font-weight: 600;
+}
+
+/* 地图类型选择器 */
+.map-type-selector {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.map-type-btn {
+  padding: 6px 16px;
+  border: none;
+  background: transparent;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.map-type-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.map-type-btn.active {
+  background: white;
+  color: #667eea;
   font-weight: 600;
 }
 
