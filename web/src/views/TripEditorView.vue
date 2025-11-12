@@ -448,6 +448,13 @@ export default {
   padding-top: 0;
 }
 
+/* 移动端需要留出导航栏空间 */
+@media (max-width: 991px) {
+  .editor-container {
+    padding-top: 56px;
+  }
+}
+
 .editor-toolbar {
   position: sticky;
   top: 0;  /* 紧贴顶部，跟随滚动 */
