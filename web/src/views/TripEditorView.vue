@@ -613,17 +613,40 @@ export default {
 
 /* 移动端全面优化 */
 @media (max-width: 768px) {
+  /* 工具栏整体缩小 */
+  .d-flex.justify-content-between.py-3 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  /* 标题缩小并确保在一行 */
+  .d-flex.justify-content-between h5 {
+    font-size: 0.9rem !important;
+    margin: 0 !important;
+    white-space: nowrap;
+  }
+  
   /* 缩小工具栏按钮 */
   .d-flex.justify-content-between .btn {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.6rem;
   }
   
   .d-flex.justify-content-between .btn i,
   .d-flex.justify-content-between .btn svg {
-    width: 14px;
-    height: 14px;
-    font-size: 14px;
+    width: 12px;
+    height: 12px;
+    font-size: 12px;
+  }
+  
+  /* 返回按钮和标题之间的间距 */
+  .d-flex.justify-content-between .ms-3 {
+    margin-left: 0.5rem !important;
+  }
+  
+  /* 保存和发布按钮之间的间距 */
+  .d-flex.justify-content-between .me-2 {
+    margin-right: 0.375rem !important;
   }
   
   /* 缩小 AI 按钮 */
