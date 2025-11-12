@@ -1,18 +1,5 @@
 <template>
-  <!-- 加载中 -->
-  <a v-if="loading" href="#" class="nav-link" @click.prevent>
-    <i class="bi bi-hourglass-split me-1"></i>
-    加载中...
-  </a>
-  
-  <!-- 加载失败 -->
-  <a v-else-if="error" href="#" class="nav-link" @click.prevent="fetchWeather" title="点击重试">
-    <i class="bi bi-exclamation-circle me-1"></i>
-    天气
-  </a>
-  
-  <!-- 天气信息 -->
-  <div v-else class="dropdown">
+  <div class="dropdown">
     <a
       href="#"
       class="nav-link dropdown-toggle"
@@ -21,14 +8,30 @@
       aria-expanded="false"
       @click.prevent
     >
-      <i :class="getWeatherIcon(weather.weather) + ' me-1'"></i>
-      {{ weather.temperature }}° {{ weather.city }}
+      <i class="bi bi-cloud-sun me-1"></i>
+      查看天气
     </a>
       
     <!-- 详细天气信息下拉菜单 -->
     <ul class="dropdown-menu dropdown-menu-end weather-dropdown" aria-labelledby="dropdownWeather">
       <li>
-        <div class="weather-detail">
+        <!-- 加载中状态 -->
+        <div v-if="loading" class="weather-detail text-center">
+          <i class="bi bi-hourglass-split" style="font-size: 2rem; color: #667eea;"></i>
+          <p class="mt-2 mb-0 text-muted">加载中...</p>
+        </div>
+        
+        <!-- 加载失败状态 -->
+        <div v-else-if="error" class="weather-detail text-center">
+          <i class="bi bi-exclamation-circle" style="font-size: 2rem; color: #dc3545;"></i>
+          <p class="mt-2 mb-2 text-muted">加载失败</p>
+          <button @click="fetchWeather" class="btn btn-sm btn-primary">
+            <i class="bi bi-arrow-clockwise me-1"></i>重试
+          </button>
+        </div>
+        
+        <!-- 天气信息 -->
+        <div v-else class="weather-detail">
           <div class="weather-header">
             <i :class="getWeatherIcon(weather.weather)" class="weather-icon-large"></i>
             <div>
