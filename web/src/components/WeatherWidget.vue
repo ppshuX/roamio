@@ -145,8 +145,8 @@ export default {
           }
         }
         
-        // 3. 确保 city 不为空
-        if (!city || city.trim() === '') {
+        // 3. 确保 city 是有效的字符串
+        if (!city || typeof city !== 'string' || city.trim() === '') {
           city = '北京'
         }
         
