@@ -649,49 +649,128 @@ export default {
   opacity: 0;
 }
 
-/* 移动端优化 - 缩小60% */
+/* 移动端优化 - 全部缩小 */
 @media (max-width: 768px) {
   .weather-dropdown {
-    min-width: 280px;
-    transform: scale(0.9);
-    transform-origin: top center;
+    min-width: 90vw;
+    max-width: 90vw;
+    font-size: 0.85rem;
   }
   
   .weather-detail {
-    padding: 1rem;
+    padding: 0.875rem;
+  }
+  
+  .weather-header {
+    margin-bottom: 0.875rem;
   }
   
   .city-name {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
   
-  .weather-main {
-    padding: 1.25rem 0;
-  }
-  
-  .weather-icon {
-    font-size: 3.5rem;
-  }
-  
-  .temp-number {
-    font-size: 2.5rem;
-  }
-  
-  .temp-unit {
-    font-size: 1rem;
-    margin-top: 0.4rem;
+  .weather-desc {
+    font-size: 0.8rem;
   }
   
   .settings-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
-  }
-  
-  .refresh-btn {
     width: 28px;
     height: 28px;
     font-size: 0.9rem;
+  }
+  
+  .weather-main {
+    padding: 1rem 0;
+    gap: 1rem;
+  }
+  
+  .weather-icon {
+    font-size: 2.5rem;
+  }
+  
+  .temp-number {
+    font-size: 2rem;
+  }
+  
+  .temp-unit {
+    font-size: 0.9rem;
+    margin-top: 0.3rem;
+  }
+  
+  .weather-stats {
+    gap: 0.5rem;
+  }
+  
+  .stat-item {
+    padding: 0.5rem;
+  }
+  
+  .stat-item i {
+    font-size: 1.2rem;
+  }
+  
+  .stat-label {
+    font-size: 0.65rem;
+  }
+  
+  .stat-value {
+    font-size: 0.8rem;
+  }
+  
+  .settings-panel {
+    padding: 0.75rem;
+  }
+  
+  .panel-header h6 {
+    font-size: 0.85rem;
+  }
+  
+  .saved-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .search-box {
+    margin-bottom: 0.75rem;
+  }
+  
+  .search-input {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.875rem;
+  }
+  
+  .search-button {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
+  }
+  
+  .hot-label {
+    font-size: 0.7rem;
+  }
+  
+  .city-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.375rem;
+  }
+  
+  .city-tag {
+    padding: 0.375rem 0.25rem;
+    font-size: 0.7rem;
+  }
+  
+  .weather-footer {
+    padding-top: 0.75rem;
+  }
+  
+  .update-time {
+    font-size: 0.65rem;
+  }
+  
+  .refresh-btn {
+    width: 26px;
+    height: 26px;
+    font-size: 0.85rem;
   }
 }
 </style>
