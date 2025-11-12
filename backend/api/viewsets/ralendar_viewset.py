@@ -157,7 +157,7 @@ class RalendarIntegrationViewSet(ViewSet):
                 'error': f'创建事件失败: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    @action(detail=False, methods=['put'], url_path=r'events/(?P<event_id>\d+)')
+    @action(detail=False, methods=['put'], url_path=r'events/(?P<event_id>[^/.]+)')
     def update_event(self, request, event_id=None):
         """
         更新事件
@@ -196,7 +196,7 @@ class RalendarIntegrationViewSet(ViewSet):
                 'error': f'更新事件失败: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    @action(detail=False, methods=['delete'], url_path=r'events/(?P<event_id>\d+)')
+    @action(detail=False, methods=['delete'], url_path=r'events/(?P<event_id>[^/.]+)')
     def delete_event(self, request, event_id=None):
         """
         删除事件
