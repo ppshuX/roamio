@@ -378,13 +378,20 @@ export default {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.settings-btn i {
+  display: block;
+  line-height: 1;
 }
 
 .settings-btn:hover {
   background: #764ba2;
   transform: rotate(90deg);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 /* 主要天气显示 */
@@ -596,9 +603,9 @@ export default {
 }
 
 .refresh-btn {
-  background: #f5f5f5;
+  background: #667eea;
   border: none;
-  color: #667eea;
+  color: white;
   width: 32px;
   height: 32px;
   border-radius: 8px;
@@ -607,12 +614,19 @@ export default {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  font-size: 1rem;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.2);
+}
+
+.refresh-btn i {
+  display: block;
+  line-height: 1;
 }
 
 .refresh-btn:hover {
-  background: #667eea;
-  color: white;
+  background: #764ba2;
   transform: rotate(180deg);
+  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
 }
 
 /* 动画 */
@@ -633,6 +647,52 @@ export default {
 
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+/* 移动端优化 - 缩小60% */
+@media (max-width: 768px) {
+  .weather-dropdown {
+    min-width: 280px;
+    transform: scale(0.9);
+    transform-origin: top center;
+  }
+  
+  .weather-detail {
+    padding: 1rem;
+  }
+  
+  .city-name {
+    font-size: 1rem;
+  }
+  
+  .weather-main {
+    padding: 1.25rem 0;
+  }
+  
+  .weather-icon {
+    font-size: 3.5rem;
+  }
+  
+  .temp-number {
+    font-size: 2.5rem;
+  }
+  
+  .temp-unit {
+    font-size: 1rem;
+    margin-top: 0.4rem;
+  }
+  
+  .settings-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+  
+  .refresh-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
 }
 </style>
 
