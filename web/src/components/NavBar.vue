@@ -37,12 +37,14 @@
               Ralendar
             </a>
           </li>
+          <!-- 天气导航项 -->
+          <li class="nav-item">
+            <WeatherWidget />
+          </li>
         </ul>
         
-        <!-- 右侧：天气 + 用户信息 -->
+        <!-- 右侧：用户信息 -->
         <div class="d-flex align-items-center">
-          <!-- 天气组件 -->
-          <WeatherWidget />
           <!-- 已登录 -->
           <template v-if="isLoggedIn">
             <div class="dropdown dropdown-end">

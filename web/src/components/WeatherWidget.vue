@@ -1,34 +1,33 @@
 <template>
-  <div class="weather-widget">
-    <!-- 加载中 -->
-    <div v-if="loading" class="weather-btn">
-      <i class="bi bi-hourglass-split"></i>
-      <span class="weather-text">加载中...</span>
-    </div>
-    
-    <!-- 加载失败 -->
-    <div v-else-if="error" class="weather-btn" @click="fetchWeather" title="点击重试">
-      <i class="bi bi-exclamation-circle"></i>
-      <span class="weather-text">天气</span>
-    </div>
-    
-    <!-- 天气信息 -->
-    <div v-else class="dropdown">
-      <a
-        href="#"
-        class="weather-btn dropdown-toggle"
-        id="dropdownWeather"
-        data-bs-toggle="dropdown"
-        aria-expanded="false"
-        @click.prevent
-      >
-        <i :class="getWeatherIcon(weather.weather)"></i>
-        <span class="weather-text">{{ weather.temperature }}°</span>
-        <span class="weather-city d-none d-md-inline">{{ weather.city }}</span>
-      </a>
+  <!-- 加载中 -->
+  <a v-if="loading" href="#" class="nav-link" @click.prevent>
+    <i class="bi bi-hourglass-split me-1"></i>
+    加载中...
+  </a>
+  
+  <!-- 加载失败 -->
+  <a v-else-if="error" href="#" class="nav-link" @click.prevent="fetchWeather" title="点击重试">
+    <i class="bi bi-exclamation-circle me-1"></i>
+    天气
+  </a>
+  
+  <!-- 天气信息 -->
+  <div v-else class="dropdown">
+    <a
+      href="#"
+      class="nav-link dropdown-toggle"
+      id="dropdownWeather"
+      data-bs-toggle="dropdown"
+      aria-expanded="false"
+      @click.prevent
+    >
+      <i :class="getWeatherIcon(weather.weather) + ' me-1'"></i>
+      {{ weather.temperature }}° {{ weather.city }}
+    </a>
       
-      <!-- 详细天气信息下拉菜单 -->
-      <div class="dropdown-menu dropdown-menu-end weather-dropdown" aria-labelledby="dropdownWeather">
+    <!-- 详细天气信息下拉菜单 -->
+    <ul class="dropdown-menu dropdown-menu-end weather-dropdown" aria-labelledby="dropdownWeather">
+      <li>
         <div class="weather-detail">
           <div class="weather-header">
             <i :class="getWeatherIcon(weather.weather)" class="weather-icon-large"></i>
@@ -72,8 +71,8 @@
             </button>
           </div>
         </div>
-      </div>
-    </div>
+      </li>
+    </ul>
   </div>
 </template>
 
@@ -195,52 +194,13 @@ export default {
 </script>
 
 <style scoped>
-.weather-widget {
-  margin-right: 1rem;
-}
-
-.weather-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 25px;
-  padding: 0.5rem 1rem;
-  color: white;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.weather-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
-  color: white;
-}
-
-.weather-btn i {
-  font-size: 1.2rem;
-}
-
-.weather-text {
-  font-weight: 500;
-  font-size: 1rem;
-}
-
-.weather-city {
-  opacity: 0.9;
-  margin-left: 0.25rem;
-}
-
 /* 下拉菜单样式 */
 .weather-dropdown {
   min-width: 280px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  border: none;
-  margin-top: 0.5rem;
-  padding: 0;
+}
+
+.weather-dropdown > li {
+  list-style: none;
 }
 
 .weather-detail {
@@ -316,31 +276,6 @@ export default {
 
 .weather-footer .btn-link:hover {
   color: #764ba2;
-}
-
-/* 移动端优化 */
-@media (max-width: 991px) {
-  .weather-widget {
-    margin-right: 0.5rem;
-  }
-  
-  .weather-btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.9rem;
-  }
-  
-  .weather-btn i {
-    font-size: 1rem;
-  }
-  
-  .weather-text {
-    font-size: 0.9rem;
-  }
-  
-  .weather-dropdown {
-    min-width: 260px;
-    max-width: calc(100vw - 30px);
-  }
 }
 </style>
 
