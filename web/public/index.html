@@ -10,10 +10,10 @@
   <title>
     <%= htmlWebpackPlugin.options.title %>
   </title>
-  <!-- 百度地图 API (使用 Ralendar 团队提供的 Key) -->
-  <script src="https://api.map.baidu.com/api?v=3.0&ak=i8UmOotWSekjTJlPbydOk1xQZuUeGeE1"></script>
+  <!-- 百度地图 API -->
+  <script src="https://api.map.baidu.com/api?v=3.0&ak=<%= process.env.VUE_APP_BAIDU_MAP_KEY %>"></script>
   <!-- 高德地图 API -->
-  <script src="https://webapi.amap.com/maps?v=2.0&key=53b6a185427e97b53e16c8786a272f62"></script>
+  <script src="https://webapi.amap.com/maps?v=2.0&key=<%= process.env.VUE_APP_AMAP_KEY %>"></script>
   <style>
     /* 全局重置 - 移除浏览器默认边距 */
     * {
