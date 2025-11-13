@@ -93,8 +93,13 @@ class TripPlanViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
     
     def retrieve(self, request, *args, **kwargs):
-        """重写retrieve方法，添加访问控制"""
-        instance = self.get_object()
+        """重写retrieve方法，添加访问控制和查询优化"""
+        # 优化：使用 select_related 预加载作者信息，减少数据库查询
+        slug = kwargs.get('slug')
+        try:
+            instance = Trip.objects.select_related('author').get(slug=slug)
+        except Trip.DoesNotExist:
+            raise NotFound("该旅行计划不存在")
         
         # 检查访问权限：必须是公开的或是作者本人
         if instance.visibility != 'public' and instance.author != request.user:

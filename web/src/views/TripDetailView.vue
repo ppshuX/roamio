@@ -15,10 +15,32 @@
     <audio ref="audioPlayer" :src="musicSrc || ''" preload="auto" loop></audio>
     
     <div class="container-fluid py-5">
-      <!-- Loading状态 -->
-      <div v-if="loading" class="text-center">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">加载中...</span>
+      <!-- 骨架屏加载状态 -->
+      <div v-if="loading" class="row g-4 justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+          <div class="skeleton-loading">
+            <!-- 标题骨架 -->
+            <div class="skeleton-title"></div>
+            <div class="skeleton-subtitle"></div>
+            
+            <!-- 进度条骨架 -->
+            <div class="skeleton-progress"></div>
+            
+            <!-- 内容区域骨架 -->
+            <div class="skeleton-card">
+              <div class="skeleton-text"></div>
+              <div class="skeleton-text"></div>
+              <div class="skeleton-text short"></div>
+            </div>
+            
+            <div class="skeleton-card">
+              <div class="skeleton-text"></div>
+              <div class="skeleton-text"></div>
+            </div>
+            
+            <!-- 图片骨架 -->
+            <div class="skeleton-image"></div>
+          </div>
         </div>
       </div>
       
@@ -539,6 +561,89 @@ export default {
 
 .text-center {
   padding: 3rem 0;
+}
+
+/* 骨架屏加载动画 */
+.skeleton-loading {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-title,
+.skeleton-subtitle,
+.skeleton-progress,
+.skeleton-text,
+.skeleton-image,
+.skeleton-card {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: 8px;
+}
+
+.skeleton-title {
+  height: 48px;
+  width: 70%;
+  margin-bottom: 1rem;
+}
+
+.skeleton-subtitle {
+  height: 24px;
+  width: 90%;
+  margin-bottom: 2rem;
+}
+
+.skeleton-progress {
+  height: 60px;
+  width: 100%;
+  margin-bottom: 2rem;
+  border-radius: 12px;
+}
+
+.skeleton-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.skeleton-text {
+  height: 16px;
+  width: 100%;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: 4px;
+}
+
+.skeleton-text.short {
+  width: 60%;
+}
+
+.skeleton-text:last-child {
+  margin-bottom: 0;
+}
+
+.skeleton-image {
+  height: 300px;
+  width: 100%;
+  margin-bottom: 1.5rem;
+  border-radius: 16px;
 }
 
 /* 错误提示卡片 */
