@@ -639,16 +639,15 @@ export default {
     margin-right: 0.375rem !important;
   }
   
-  /* 减少容器所有内边距 */
+  /* 减少容器内边距 */
   .container.py-4 {
-    padding-top: 0 !important;
+    padding-top: 1rem !important;  /* 给AI按钮一些呼吸空间 */
     padding-bottom: 0.75rem !important;
   }
   
-  /* 缩小 AI 按钮并减少间距 */
+  /* AI 按钮间距 */
   .ai-quick-start {
-    margin-top: 0 !important;
-    margin-bottom: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
   }
   
   /* 工具栏内边距 */
@@ -734,7 +733,7 @@ export default {
 /* 响应式 */
 @media (max-width: 991px) {
   .editor-container {
-    padding-top: 120px;
+    padding-top: 90px;  /* 导航栏(56px) + 工具栏(~34px) = 90px */
   }
   
   .ai-modal-content {
