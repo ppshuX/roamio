@@ -2,7 +2,7 @@
 
 ## 📋 迁移背景
 
-**问题**：`roamio.cn` 域名备案在腾讯云（81.71.138.122），但实际运行在阿里云（47.121.137.60），违反工信部备案规定。
+**问题**：域名备案在腾讯云（[IP_B]），但实际运行在阿里云（[IP_A]），违反工信部备案规定。
 
 **解决方案**：服务器对调
 - ✅ 利用Docker容器化优势，快速迁移
@@ -15,14 +15,14 @@
 
 ### 现状
 ```
-阿里云 47.121.137.60  →  Roamio (roamio.cn)
-腾讯云 81.71.138.122  →  Ralendar (app7626.acapp.acwing.com.cn)
+阿里云 [IP_A]  →  Roamio (YOUR_DOMAIN)
+腾讯云 [IP_B]  →  Ralendar
 ```
 
 ### 迁移后
 ```
-阿里云 47.121.137.60  →  Ralendar (app7626.acapp.acwing.com.cn)
-腾讯云 81.71.138.122  →  Roamio (roamio.cn) ✅ 符合备案要求
+阿里云 [IP_A]  →  Ralendar
+腾讯云 [IP_B]  →  Roamio (YOUR_DOMAIN) ✅ 符合备案要求
 ```
 
 ---
@@ -31,13 +31,13 @@
 
 ### 1. 确认服务器配置
 
-**阿里云 (47.121.137.60)**
+**阿里云 ([IP_A])**
 - [ ] 操作系统版本
 - [ ] Docker 版本
 - [ ] 磁盘空间（至少10GB可用）
 - [ ] 内存（建议2GB+）
 
-**腾讯云 (81.71.138.122)**
+**腾讯云 ([IP_B])**
 - [ ] 操作系统版本
 - [ ] Docker 版本
 - [ ] 磁盘空间（至少10GB可用）
@@ -94,9 +94,9 @@ ls -lh roamio*.tar
 
 # 5. 上传到临时存储（方式1：使用阿里云OSS）
 # 或者直接通过scp传输到腾讯云（方式2）
-scp roamio_image.tar root@81.71.138.122:/tmp/
-scp roamio_db.tar root@81.71.138.122:/tmp/
-scp roamio_backup_*.sql root@81.71.138.122:/tmp/
+scp roamio_image.tar user@[TARGET_IP]:/tmp/
+scp roamio_db.tar user@[TARGET_IP]:/tmp/
+scp roamio_backup_*.sql user@[TARGET_IP]:/tmp/
 ```
 
 #### 在腾讯云上（Ralendar）
@@ -114,9 +114,9 @@ docker commit ralendar-db ralendar-db:migration-$(date +%Y%m%d)
 docker save ralendar-db:migration-$(date +%Y%m%d) -o ralendar_db.tar
 
 # 4. 上传到阿里云
-scp ralendar_image.tar root@47.121.137.60:/tmp/
-scp ralendar_db.tar root@47.121.137.60:/tmp/
-scp ralendar_backup_*.sql root@47.121.137.60:/tmp/
+scp ralendar_image.tar user@[TARGET_IP]:/tmp/
+scp ralendar_db.tar user@[TARGET_IP]:/tmp/
+scp ralendar_backup_*.sql user@[TARGET_IP]:/tmp/
 ```
 
 ---
@@ -212,19 +212,19 @@ docker-compose logs -f
 
 #### 修改DNS记录
 
-**roamio.cn**
+**YOUR_DOMAIN**
 ```
 类型: A
 主机记录: @
-记录值: 81.71.138.122  (从 47.121.137.60 改为腾讯云IP)
+记录值: [IP_B]  (从 [IP_A] 改为腾讯云IP)
 TTL: 600 (10分钟)
 ```
 
-**app7626.acapp.acwing.com.cn**
+**RALENDAR_DOMAIN**
 ```
 类型: A
-主机记录: app7626
-记录值: 47.121.137.60  (从 81.71.138.122 改为阿里云IP)
+主机记录: [subdomain]
+记录值: [IP_A]  (从 [IP_B] 改为阿里云IP)
 TTL: 600
 ```
 
@@ -237,20 +237,20 @@ TTL: 600
 #### 在腾讯云上（Roamio）
 
 ```bash
-# 1. 配置Nginx for roamio.cn
-cat > /etc/nginx/sites-available/roamio.cn.conf << 'EOF'
+# 1. 配置Nginx for YOUR_DOMAIN
+cat > /etc/nginx/sites-available/your-domain.conf << 'EOF'
 server {
     listen 80;
-    server_name roamio.cn www.roamio.cn;
+    server_name YOUR_DOMAIN www.YOUR_DOMAIN;
     return 301 https://$server_name$request_uri;
 }
 
 server {
     listen 443 ssl http2;
-    server_name roamio.cn www.roamio.cn;
+    server_name YOUR_DOMAIN www.YOUR_DOMAIN;
 
-    ssl_certificate /etc/nginx/ssl/roamio.cn.crt;
-    ssl_certificate_key /etc/nginx/ssl/roamio.cn.key;
+    ssl_certificate /etc/nginx/ssl/YOUR_DOMAIN.crt;
+    ssl_certificate_key /etc/nginx/ssl/YOUR_DOMAIN.key;
 
     location / {
         proxy_pass http://127.0.0.1:8000;
@@ -261,17 +261,17 @@ server {
     }
 
     location /static/ {
-        alias /home/acs/roamio/staticfiles/;
+        alias /home/[USER]/roamio/staticfiles/;
     }
 
     location /media/ {
-        alias /home/acs/roamio/media/;
+        alias /home/[USER]/roamio/media/;
     }
 }
 EOF
 
 # 2. 启用配置
-ln -s /etc/nginx/sites-available/roamio.cn.conf /etc/nginx/sites-enabled/
+ln -s /etc/nginx/sites-available/your-domain.conf /etc/nginx/sites-enabled/
 nginx -t
 systemctl reload nginx
 ```
@@ -279,7 +279,7 @@ systemctl reload nginx
 #### 在阿里云上（Ralendar）
 
 ```bash
-# 配置Nginx for app7626.acapp.acwing.com.cn
+# 配置Nginx for RALENDAR_DOMAIN
 # (类似的配置)
 ```
 
@@ -289,8 +289,8 @@ systemctl reload nginx
 
 ### 功能测试
 
-**Roamio (roamio.cn - 腾讯云)**
-- [ ] 网站可以访问（https://roamio.cn）
+**Roamio (YOUR_DOMAIN - 腾讯云)**
+- [ ] 网站可以访问（https://YOUR_DOMAIN）
 - [ ] 用户可以登录
 - [ ] 旅行列表正常显示
 - [ ] 可以创建新旅行
@@ -300,7 +300,7 @@ systemctl reload nginx
 - [ ] 天气查询正常
 - [ ] 备案号正确显示
 
-**Ralendar (app7626... - 阿里云)**
+**Ralendar (RALENDAR_DOMAIN - 阿里云)**
 - [ ] API可以访问
 - [ ] 事件创建/编辑/删除正常
 - [ ] 与Roamio的集成正常
@@ -310,13 +310,13 @@ systemctl reload nginx
 
 ```bash
 # 测试响应时间
-curl -w "\nTotal time: %{time_total}s\n" https://roamio.cn
+curl -w "\nTotal time: %{time_total}s\n" https://YOUR_DOMAIN
 
 # 测试SSL
-openssl s_client -connect roamio.cn:443 -servername roamio.cn
+openssl s_client -connect YOUR_DOMAIN:443 -servername YOUR_DOMAIN
 
 # 测试API
-curl -X GET https://roamio.cn/api/v1/trips/
+curl -X GET https://YOUR_DOMAIN/api/v1/trips/
 ```
 
 ---
@@ -329,8 +329,8 @@ curl -X GET https://roamio.cn/api/v1/trips/
 
 ```bash
 # 1. 恢复DNS到原来的IP
-roamio.cn → 47.121.137.60 (阿里云)
-app7626... → 81.71.138.122 (腾讯云)
+YOUR_DOMAIN → [IP_A] (阿里云)
+RALENDAR_DOMAIN → [IP_B] (腾讯云)
 
 # 2. 在原服务器重启服务
 # 阿里云
@@ -362,15 +362,15 @@ docker-compose up -d
 ## 📞 联系方式
 
 **Roamio团队**
-- 负责人：吕文潇
-- 服务器：腾讯云 81.71.138.122 (目标)
-- 域名：roamio.cn
-- 备案号：滇ICP备2025073012号-1
+- 负责人：[YOUR_NAME]
+- 服务器：腾讯云 [IP_B] (目标)
+- 域名：YOUR_DOMAIN
+- 备案号：[YOUR_FILING_NUMBER]
 
 **Ralendar团队**
 - 负责人：[待填写]
-- 服务器：阿里云 47.121.137.60 (目标)
-- 域名：app7626.acapp.acwing.com.cn
+- 服务器：阿里云 [IP_A] (目标)
+- 域名：RALENDAR_DOMAIN
 
 ---
 

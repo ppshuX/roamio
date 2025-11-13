@@ -8,11 +8,11 @@
 
 ## 📋 迁移需求背景
 
-我们的 **Roamio** 项目（roamio.cn）目前遇到一个备案合规问题：
+我们的 **Roamio** 项目目前遇到一个备案合规问题：
 
-- **备案服务器**：腾讯云 `81.71.138.122`（当前运行Ralendar）
-- **实际运行**：阿里云 `47.121.137.60`（当前运行Roamio）
-- **备案号**：滇ICP备2025073012号-1 / 滇公网安备53032202530385号
+- **备案服务器**：腾讯云 `[IP_B]`（当前运行Ralendar）
+- **实际运行**：阿里云 `[IP_A]`（当前运行Roamio）
+- **备案号**：[YOUR_ICP_NUMBER] / [YOUR_PUBLIC_SECURITY_NUMBER]
 
 根据工信部规定，域名实际运行的服务器IP必须与备案IP一致。为避免备案被注销，我们需要进行服务器对调。
 
@@ -26,12 +26,12 @@
 
 ```
 【现在】
-阿里云 47.121.137.60  →  Roamio (roamio.cn)
-腾讯云 81.71.138.122  →  Ralendar
+阿里云 [IP_A]  →  Roamio (YOUR_DOMAIN)
+腾讯云 [IP_B]  →  Ralendar
 
 【对调后】
-阿里云 47.121.137.60  →  Ralendar ⬅️ 你们移动到这里
-腾讯云 81.71.138.122  →  Roamio  ⬅️ 我们移动到这里（符合备案）
+阿里云 [IP_A]  →  Ralendar ⬅️ 你们移动到这里
+腾讯云 [IP_B]  →  Roamio  ⬅️ 我们移动到这里（符合备案）
 ```
 
 ---
@@ -116,7 +116,7 @@ docker commit ralendar-web ralendar:migration
 docker save ralendar:migration -o ralendar_image.tar
 
 # 传输到阿里云
-scp ralendar_image.tar root@47.121.137.60:/tmp/
+scp ralendar_image.tar user@[TARGET_IP]:/tmp/
 ```
 
 ### 4. 在阿里云上部署
@@ -137,9 +137,9 @@ docker-compose up -d
 ## 📞 联系方式
 
 **Roamio团队**
-- **负责人**：吕文潇
-- **微信/手机**：[请提供]
-- **目标服务器**：腾讯云 81.71.138.122
+- **负责人**：[YOUR_NAME]
+- **微信/手机**：[YOUR_CONTACT]
+- **目标服务器**：腾讯云 [IP_B]
 
 **迁移协调**
 - 建议使用微信群或钉钉群实时沟通

@@ -11,7 +11,7 @@ echo ""
 # 配置
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="/tmp/roamio_migration_${DATE}"
-TARGET_SERVER="81.71.138.122"  # 腾讯云IP
+TARGET_SERVER="YOUR_TARGET_SERVER_IP"  # 目标服务器IP（腾讯云）
 
 mkdir -p ${BACKUP_DIR}
 cd ${BACKUP_DIR}
