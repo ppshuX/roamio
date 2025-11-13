@@ -1,11 +1,6 @@
 <template>
   <div id="app">
-    <!-- 使用 keep-alive 缓存页面，提升返回速度 -->
-    <router-view v-slot="{ Component }">
-      <keep-alive :include="['TripListView', 'TripDetailView', 'MyTripsView']">
-        <component :is="Component" />
-      </keep-alive>
-    </router-view>
+    <router-view/>
     
     <!-- 全局 Ralendar 悬浮窗（仅移动端，且用户已开启） -->
     <!-- 电脑端不显示悬浮窗 -->
