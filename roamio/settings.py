@@ -37,7 +37,8 @@ DEBUG = True  # Keep enabled for better error messages with Chinese support
 ALLOWED_HOSTS = [
     'roamio.cn',
     'www.roamio.cn',
-    '47.121.137.60',
+    '81.71.138.122',  # 腾讯云（新服务器）
+    '47.121.137.60',  # 阿里云（保留兼容）
     'app7508.acapp.acwing.com.cn',  # 保留旧域名，平滑过渡
     '127.0.0.1',
     'localhost'
@@ -273,7 +274,8 @@ else:
         "https://roamio.cn",
         "https://www.roamio.cn",
         "https://app7508.acapp.acwing.com.cn",  # 保留旧域名
-        "http://47.121.137.60",
+        "http://81.71.138.122",  # 腾讯云（新服务器）
+        "http://47.121.137.60",  # 阿里云（保留兼容）
     ]
 
 # 允许的请求方法
@@ -301,6 +303,20 @@ CORS_ALLOW_HEADERS = [
 
 # 允许携带 Cookie（用于 Session 认证，如果使用 JWT 可以关闭）
 CORS_ALLOW_CREDENTIALS = True
+
+# ==================== CSRF配置 ====================
+# 允许的来源（与CORS保持一致）
+CSRF_TRUSTED_ORIGINS = [
+    'https://roamio.cn',
+    'https://www.roamio.cn',
+    'https://app7508.acapp.acwing.com.cn',
+    'http://81.71.138.122',  # 腾讯云
+    'http://47.121.137.60',  # 阿里云（兼容）
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+]
 
 # 安全头部
 SECURE_BROWSER_XSS_FILTER = True
