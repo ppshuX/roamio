@@ -117,9 +117,9 @@ DATABASES = {
         'NAME': 'roamio_production',
         'USER': 'roamio_user',
         'PASSWORD': 'Roamio@2025!Pass',
-        'HOST': '172.16.0.11',  # ⭐ 腾讯云 MySQL 内网地址（极速！）
+        'HOST': 'gz-cdb-k9ylziyr.sql.tencentcdb.com',  # ⭐ 腾讯云 MySQL 外网地址
         # 旧地址（迁移前）：rm-wz91m3g4wa6io3dfi8o.mysql.rds.aliyuncs.com
-        'PORT': '3306',
+        'PORT': '23768',  # ⭐ 腾讯云外网端口（不是3306！）
         'OPTIONS': {
             'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
