@@ -7,7 +7,7 @@
       </a>
       <span class="separator">|</span>
       <a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=53032202530385" target="_blank" rel="noopener noreferrer" class="gongan-beian">
-        <img src="http://www.beian.gov.cn/img/ghs.png" alt="公安备案" class="beian-icon">
+        <span class="beian-icon">🛡️</span>
         滇公网安备53032202530385号
       </a>
     </p>
@@ -65,9 +65,9 @@ export default {
 }
 
 .site-footer .beian-info .beian-icon {
-  width: 16px;
-  height: 16px;
+  font-size: 14px;
   vertical-align: middle;
+  margin-right: 2px;
 }
 
 /* 响应式 - 移动端 */
@@ -84,8 +84,7 @@ export default {
   }
   
   .site-footer .beian-icon {
-    width: 14px;
-    height: 14px;
+    font-size: 12px;
   }
 }
 </style>
