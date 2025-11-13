@@ -76,19 +76,7 @@
     </div>
     
     <!-- 页脚 -->
-    <div class="footer">
-      <p>&copy; 2025 Roamio 旅行计划平台 | All Rights Reserved</p>
-      <p class="beian-info">
-        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
-          滇ICP备2025073012号-1
-        </a>
-        <span class="separator">|</span>
-        <a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=53032202530385" target="_blank" rel="noopener noreferrer" class="gongan-beian">
-          <img src="http://www.beian.gov.cn/img/ghs.png" alt="公安备案" class="beian-icon">
-          滇公网安备53032202530385号
-        </a>
-      </p>
-    </div>
+    <Footer />
   </div>
 </template>
 
@@ -97,12 +85,14 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getTripList, getTripStats, getTripPlanStats } from '@/api/trip'
 import NavBar from '@/components/NavBar.vue'
+import Footer from '@/components/Footer.vue'
 
 export default {
   name: 'TripListView',
   
   components: {
-    NavBar
+    NavBar,
+    Footer
   },
   
   setup() {
@@ -406,55 +396,6 @@ export default {
   transform: translate(20%, -6px) scale(1.08);
 }
 
-/* 页脚 */
-.footer {
-  text-align: center;
-  color: #aaa;
-  font-size: 0.98rem;
-  margin-top: 60px;
-  padding-bottom: 18px;
-  line-height: 1.8;
-}
-
-.footer p {
-  margin: 8px 0;
-  line-height: 1.6;
-}
-
-.footer .beian-info {
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.footer .beian-info a {
-  color: #999;
-  text-decoration: none;
-  transition: color 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.footer .beian-info a:hover {
-  color: #667eea;
-  text-decoration: underline;
-}
-
-.footer .beian-info .separator {
-  color: #ccc;
-  margin: 0 4px;
-}
-
-.footer .beian-info .beian-icon {
-  width: 16px;
-  height: 16px;
-  vertical-align: middle;
-}
-
 /* 响应式设计 - 移动端 */
 @media (max-width: 600px) {
   .main-header .title {
@@ -543,11 +484,6 @@ export default {
   
   .fruit:hover .desc {
     color: #2c3e50;
-  }
-
-  .footer {
-    font-size: 0.85rem;
-    margin-top: 30px;
   }
 }
 </style>

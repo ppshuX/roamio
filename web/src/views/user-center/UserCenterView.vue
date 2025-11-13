@@ -232,6 +232,9 @@
         </div>
       </div>
     </div>
+    
+    <!-- 页脚 -->
+    <Footer />
   </div>
   </div>
 </template>
@@ -240,6 +243,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
+import Footer from '@/components/Footer.vue'
 import { getUserStats, updateProfile, updateUser, uploadAvatar, deleteUser } from '@/api/user'
 import NavBar from '@/components/NavBar.vue'
 import UserProfileCard from './UserProfileCard.vue'
@@ -255,6 +259,7 @@ export default {
     NavBar,
     UserProfileCard,
     UserStats,
+    Footer,
     AdvancedSettingsModal,
     EmailBindingEditor,
     BasicInfoEditor

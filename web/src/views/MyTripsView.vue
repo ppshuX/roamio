@@ -109,6 +109,9 @@
       @close="closeModal"
       @confirm="confirmDeleteTrip"
     />
+    
+    <!-- 页脚 -->
+    <Footer />
   </div>
 </template>
 
@@ -116,6 +119,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
+import Footer from '@/components/Footer.vue'
 import { getMyTrips, deleteTripPlan, addTripToTree, removeTripFromTree } from '@/api/tripPlan'
 import { getTripList } from '@/api/trip'
 import NavBar from '@/components/NavBar.vue'
@@ -126,7 +130,8 @@ export default {
   
   components: {
     NavBar,
-    AdvancedSettingsModal
+    AdvancedSettingsModal,
+    Footer
   },
   
   setup() {

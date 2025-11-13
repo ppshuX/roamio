@@ -128,6 +128,9 @@
         </div>
       </div>
     </div>
+    
+    <!-- 页脚 -->
+    <Footer />
   </div>
 </template>
 
@@ -135,6 +138,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
+import Footer from '@/components/Footer.vue'
 import { getTripDetail, likeTrip, getTripStats, getTripPlanStats, likeTripPlan, viewTripPlan } from '@/api/trip'
 import { getCommentList, createComment, deleteComment, addCommentImage, updateComment, getCommentReplies, likeComment } from '@/api/comment'
 import { getAvatarUrl } from '@/config/api'
@@ -169,7 +173,8 @@ export default {
     TripTips,
     TripStats,
     TripActionButtons,
-    CommentSection
+    CommentSection,
+    Footer
   },
   
   setup() {
