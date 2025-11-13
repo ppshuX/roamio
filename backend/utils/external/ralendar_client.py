@@ -243,15 +243,21 @@ class RalendarClient:
         """
         url = f"{self.base_url}/fusion/events/{event_id}/"
         headers = self.get_headers(user_token)
-        params = {'unionid': unionid} if unionid else {}
+        
+        # ⚠️ 重要：unionid 必须放在请求体中，不是 URL 参数
+        request_data = event_data.copy()
+        if unionid:
+            request_data['unionid'] = unionid
         
         try:
-            response = requests.put(url, json=event_data, headers=headers, params=params, timeout=self.timeout)
+            response = requests.put(url, json=request_data, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             logger.info(f"Updated event {event_id}")
             return response.json()
         except requests.exceptions.RequestException as e:
             logger.error(f"Update event failed: {e}")
+            if hasattr(e.response, 'text'):
+                logger.error(f"Response: {e.response.text}")
             raise
     
     def delete_event(self, user_token, event_id, unionid=None):
@@ -271,14 +277,21 @@ class RalendarClient:
         """
         url = f"{self.base_url}/fusion/events/{event_id}/"
         headers = self.get_headers(user_token)
-        params = {'unionid': unionid} if unionid else {}
+        
+        # ⚠️ 重要：unionid 必须放在请求体中，不是 URL 参数
+        request_data = {}
+        if unionid:
+            request_data['unionid'] = unionid
         
         try:
-            response = requests.delete(url, headers=headers, params=params, timeout=self.timeout)
+            # DELETE请求也可以有body
+            response = requests.delete(url, json=request_data if request_data else None, headers=headers, timeout=self.timeout)
             response.raise_for_status()
             logger.info(f"Deleted event {event_id}")
             return True
         except requests.exceptions.RequestException as e:
             logger.error(f"Delete event failed: {e}")
+            if hasattr(e.response, 'text'):
+                logger.error(f"Response: {e.response.text}")
             raise
 
