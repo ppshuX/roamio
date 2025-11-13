@@ -82,6 +82,11 @@
         <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
           滇ICP备2025073012号-1
         </a>
+        <span class="separator">|</span>
+        <a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=53032202530385" target="_blank" rel="noopener noreferrer" class="gongan-beian">
+          <img src="http://www.beian.gov.cn/img/ghs.png" alt="公安备案" class="beian-icon">
+          滇公网安备53032202530385号
+        </a>
       </p>
     </div>
   </div>
@@ -418,17 +423,36 @@ export default {
 
 .footer .beian-info {
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .footer .beian-info a {
   color: #999;
   text-decoration: none;
   transition: color 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .footer .beian-info a:hover {
   color: #667eea;
   text-decoration: underline;
+}
+
+.footer .beian-info .separator {
+  color: #ccc;
+  margin: 0 4px;
+}
+
+.footer .beian-info .beian-icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
 }
 
 /* 响应式设计 - 移动端 */
