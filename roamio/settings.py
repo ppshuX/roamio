@@ -135,11 +135,27 @@ DATABASES = {
 # }
 
 # Cache configuration
-# 使用数据库缓存，支持多进程环境（uWSGI）
+# 使用 Redis 缓存，支持多进程环境（uWSGI）
+REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_DB = int(os.getenv('REDIS_DB', 0))
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', '')
+
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'django_cache_table',
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'PASSWORD': REDIS_PASSWORD if REDIS_PASSWORD else None,
+            'SOCKET_CONNECT_TIMEOUT': 5,
+            'SOCKET_TIMEOUT': 5,
+            'RETRY_ON_TIMEOUT': True,
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 50,
+                'retry_on_timeout': True,
+            }
+        }
     }
 }
 
