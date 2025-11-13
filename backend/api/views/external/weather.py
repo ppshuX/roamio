@@ -43,12 +43,12 @@ def get_weather(request):
             'message': '请提供城市名称'
         }, status=400)
     
-    # 1. IP限流：同一IP每分钟最多5次请求
+    # 1. IP限流：同一IP每分钟最多20次请求
     ip = request.META.get('REMOTE_ADDR', 'unknown')
     rate_limit_key = f'weather_rate_{ip}'
     request_count = cache.get(rate_limit_key, 0)
     
-    if request_count >= 5:
+    if request_count >= 20:
         logger.warning(f'IP限流触发: {ip}')
         return Response({
             'success': False,
