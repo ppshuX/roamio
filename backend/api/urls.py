@@ -19,6 +19,7 @@ from .viewsets import (
 from .viewsets.ralendar_viewset import RalendarIntegrationViewSet
 from .viewsets.ai_viewset import AIAssistantViewSet
 from .views.external import weather
+from .views.ralendar_events import RalendarEventDetailView
 
 # 创建主路由器
 router = DefaultRouter()
@@ -51,5 +52,8 @@ urlpatterns = [
     # 天气查询API（公开接口）
     path('weather/', weather.get_weather, name='get_weather'),
     path('location/', weather.get_location_by_ip, name='get_location'),
+    
+    # Ralendar 单个事件操作（支持 PUT/DELETE）
+    path('ralendar/events/<int:event_id>/', RalendarEventDetailView.as_view(), name='ralendar-event-detail'),
 ]
 
