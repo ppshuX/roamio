@@ -452,15 +452,15 @@ export default defineComponent({
         }
         
         if (editingEventId.value) {
-          // 编辑模式：通过 Roamio 后端代理更新
-          const response = await fetch(`/api/v1/ralendar/trips/events/${editingEventId.value}`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(eventData)
-          })
+      // 编辑模式：通过 Roamio 后端代理更新
+      const response = await fetch(`/api/v1/ralendar/trips/events/${editingEventId.value}/`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(eventData)
+      })
           
           if (!response.ok) {
             throw new Error('更新失败')
@@ -583,13 +583,13 @@ export default defineComponent({
           return
         }
         
-        // 通过 Roamio 后端代理删除事件  
-        const response = await fetch(`/api/v1/ralendar/trips/events/${event.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
+    // 通过 Roamio 后端代理删除事件
+    const response = await fetch(`/api/v1/ralendar/trips/events/${event.id}/`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
         
         if (!response.ok) {
           throw new Error('删除失败')
