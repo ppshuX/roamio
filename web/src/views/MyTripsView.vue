@@ -384,6 +384,10 @@ export default {
   justify-content: space-between;
 }
 
+.trip-actions .btn {
+  font-size: 0.75rem;  /* 缩小按钮文字 */
+}
+
 /* 空状态 */
 .empty-state {
   background: white;
