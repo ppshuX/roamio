@@ -326,12 +326,26 @@ export default {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
+/* 确保所有列等高 */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.row > [class*='col-'] {
+  display: flex;
+  flex-direction: column;
+}
+
 .trip-card {
   background: white;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;  /* 确保卡片填满容器高度 */
 }
 
 .trip-card:hover {
@@ -352,6 +366,9 @@ export default {
 
 .trip-body {
   padding: 1.5rem;
+  flex: 1;  /* 自动填充剩余空间 */
+  display: flex;
+  flex-direction: column;
 }
 
 .trip-title {
@@ -368,11 +385,14 @@ export default {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  flex: 1;  /* 允许描述填充空间 */
+  min-height: 2.7rem;  /* 确保至少2行的高度 */
 }
 
 .trip-info {
   border-top: 1px solid #e0e0e0;
   padding-top: 0.75rem;
+  margin-top: auto;  /* 推到底部 */
 }
 
 .trip-actions {
