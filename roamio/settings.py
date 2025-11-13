@@ -134,6 +134,15 @@ DATABASES = {
 #     }
 # }
 
+# Cache configuration
+# 使用数据库缓存，支持多进程环境（uWSGI）
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'django_cache_table',
+    }
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
