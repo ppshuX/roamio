@@ -185,15 +185,26 @@ class RalendarIntegrationViewSet(ViewSet):
             logger.error(f"Failed to get UnionID: {e}")
         
         event_data = request.data.copy()
+        
+        # 添加详细日志
+        logger.info(f"准备更新事件 {event_id}")
+        logger.info(f"请求数据: {event_data}")
+        logger.info(f"UnionID: {unionid}")
+        
         client = RalendarClient()
         
         try:
             result = client.update_event(user_token, event_id, event_data, unionid=unionid)
+            logger.info(f"更新成功: {result}")
             return Response(result, status=status.HTTP_200_OK)
         except Exception as e:
+            import traceback
+            error_trace = traceback.format_exc()
             logger.error(f"更新事件失败: {e}")
+            logger.error(f"完整错误堆栈:\n{error_trace}")
             return Response({
-                'error': f'更新事件失败: {str(e)}'
+                'error': f'更新事件失败: {str(e)}',
+                'detail': error_trace if request.user.is_staff else None
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=False, methods=['delete'], url_path=r'events/(?P<event_id>[^/.]+)')
