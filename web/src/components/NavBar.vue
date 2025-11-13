@@ -170,10 +170,15 @@ export default {
   width: 36px;
   object-fit: contain;
   transition: transform 0.3s ease;
+  background: white;
+  border-radius: 50%;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .navbar-brand:hover .brand-logo {
   transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .brand-text {
@@ -305,6 +310,7 @@ export default {
   .brand-logo {
     height: 30px;
     width: 30px;
+    padding: 3px;
   }
   
   .brand-text {
