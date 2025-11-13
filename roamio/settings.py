@@ -117,7 +117,8 @@ DATABASES = {
         'NAME': 'roamio_production',
         'USER': 'roamio_user',
         'PASSWORD': 'Roamio@2025!Pass',
-        'HOST': 'rm-wz91m3g4wa6io3dfi8o.mysql.rds.aliyuncs.com',
+        'HOST': '172.16.0.11',  # ⭐ 腾讯云 MySQL 内网地址（极速！）
+        # 旧地址（迁移前）：rm-wz91m3g4wa6io3dfi8o.mysql.rds.aliyuncs.com
         'PORT': '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
