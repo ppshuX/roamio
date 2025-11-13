@@ -448,13 +448,6 @@ export default {
   padding-top: 0;
 }
 
-/* 移动端需要留出导航栏+工具栏空间 */
-@media (max-width: 991px) {
-  .editor-container {
-    padding-top: 120px;  /* 导航栏56px + 工具栏64px */
-  }
-}
-
 .editor-toolbar {
   position: sticky;
   top: 0;
@@ -639,9 +632,9 @@ export default {
     margin-right: 0.375rem !important;
   }
   
-  /* 减少容器内边距 */
+  /* 减少容器内边距（工具栏是sticky，会占据空间，所以这里不需要太多padding） */
   .container.py-4 {
-    padding-top: 1rem !important;  /* 给AI按钮一些呼吸空间 */
+    padding-top: 0.5rem !important;  /* 只需要一点点间距 */
     padding-bottom: 0.75rem !important;
   }
   
@@ -733,7 +726,7 @@ export default {
 /* 响应式 */
 @media (max-width: 991px) {
   .editor-container {
-    padding-top: 90px;  /* 导航栏(56px) + 工具栏(~34px) = 90px */
+    padding-top: 56px;  /* 只需要为固定定位的导航栏留空间，工具栏是sticky会自然占据空间 */
   }
   
   .ai-modal-content {
