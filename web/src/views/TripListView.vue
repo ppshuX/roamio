@@ -77,8 +77,12 @@
     
     <!-- 页脚 -->
     <div class="footer">
-      &copy; 2025 旅行计划平台 | 旅行社区<br>
-      技术支持：Vue 3 + Django REST Framework
+      <p>&copy; 2025 Roamio 旅行计划平台 | All Rights Reserved</p>
+      <p class="beian-info">
+        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
+          滇ICP备2025073012号-1
+        </a>
+      </p>
     </div>
   </div>
 </template>
@@ -405,6 +409,26 @@ export default {
   margin-top: 60px;
   padding-bottom: 18px;
   line-height: 1.8;
+}
+
+.footer p {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.footer .beian-info {
+  font-size: 0.9rem;
+}
+
+.footer .beian-info a {
+  color: #999;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer .beian-info a:hover {
+  color: #667eea;
+  text-decoration: underline;
 }
 
 /* 响应式设计 - 移动端 */
