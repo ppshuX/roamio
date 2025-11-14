@@ -112,6 +112,7 @@ class VerifyCodeSerializer(serializers.Serializer):
             ('login', '登录验证'),
             ('reset_password', '重置密码'),
             ('bind_email', '绑定邮箱'),
+            ('change_email', '更改邮箱'),
         ],
         required=True,
         error_messages={'required': '请选择验证类型'}
