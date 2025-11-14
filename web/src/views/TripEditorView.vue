@@ -461,15 +461,28 @@ export default {
       let hasValidDate = false
       let startDate = null
       
-      // 检查 tripData 中的日期
-      if (tripData.value.start_date && 
+      // 优先检查 AI 数据中的日期范围（如果用户选择了日期范围）
+      if (aiPlan.date_type === 'range' && aiPlan.date_range) {
+        if (aiPlan.date_range.start_date && 
+            aiPlan.date_range.start_date !== 'YYYY-MM-DD' && 
+            /^\d{4}-\d{2}-\d{2}$/.test(aiPlan.date_range.start_date)) {
+          startDate = aiPlan.date_range.start_date
+          hasValidDate = true
+          // 同时更新 tripData 的日期
+          tripData.value.start_date = aiPlan.date_range.start_date
+          tripData.value.end_date = aiPlan.date_range.end_date
+        }
+      }
+      
+      // 如果 AI 数据中没有日期范围，检查 tripData 中的日期
+      if (!hasValidDate && tripData.value.start_date && 
           tripData.value.start_date !== 'YYYY-MM-DD' && 
           /^\d{4}-\d{2}-\d{2}$/.test(tripData.value.start_date)) {
         startDate = tripData.value.start_date
         hasValidDate = true
       } 
-      // 检查 AI 数据中的日期
-      else if (aiPlan.days_detail?.[0]?.date) {
+      // 检查 AI 数据中第一天的日期
+      else if (!hasValidDate && aiPlan.days_detail?.[0]?.date) {
         const firstDayDate = aiPlan.days_detail[0].date
         if (firstDayDate !== 'YYYY-MM-DD' && /^\d{4}-\d{2}-\d{2}/.test(firstDayDate)) {
           startDate = firstDayDate.includes('T') ? firstDayDate.split('T')[0] : firstDayDate
@@ -477,7 +490,7 @@ export default {
         }
       }
       
-      // 如果没有有效日期，显示日期选择器
+      // 如果没有有效日期（用户选择了天数但没有选择日期），显示日期选择器
       if (!hasValidDate) {
         // 关闭 AI 生成弹窗，打开日期选择器
         showAIGenerator.value = false

@@ -10,8 +10,65 @@
       
       <div class="preferences">
         <div class="pref-row">
-          <label>天数：<input type="number" v-model.number="preferences.days" min="1" max="30" /></label>
-          <label>预算：
+          <label>日期选择：</label>
+          <div class="date-type-selector">
+            <label class="radio-label">
+              <input 
+                type="radio" 
+                name="dateType" 
+                value="range" 
+                v-model="dateType"
+              />
+              <span>日期范围</span>
+            </label>
+            <label class="radio-label">
+              <input 
+                type="radio" 
+                name="dateType" 
+                value="days" 
+                v-model="dateType"
+              />
+              <span>天数</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- 日期范围选择 -->
+        <div v-if="dateType === 'range'" class="pref-row date-range-row">
+          <label>
+            <span>出发日期：</span>
+            <input 
+              type="date" 
+              v-model="dateRange.start_date"
+              :min="minDate"
+            />
+          </label>
+          <label>
+            <span>返回日期：</span>
+            <input 
+              type="date" 
+              v-model="dateRange.end_date"
+              :min="dateRange.start_date || minDate"
+            />
+          </label>
+        </div>
+        
+        <!-- 天数选择 -->
+        <div v-if="dateType === 'days'" class="pref-row">
+          <label>
+            <span>天数：</span>
+            <input 
+              type="number" 
+              v-model.number="preferences.days" 
+              min="1" 
+              max="30"
+            />
+          </label>
+        </div>
+        
+        <div class="pref-row">
+          <label>
+            <span>预算：</span>
             <select v-model="preferences.budget_level">
               <option value="low">经济型</option>
               <option value="medium">中等</option>
@@ -67,12 +124,46 @@ import { generateTripPlan, getUsageStats } from '@/api/ai'
 const emit = defineEmits(['apply', 'sync-to-calendar'])
 
 const userPrompt = ref('')
+const dateType = ref('days') // 'range' 或 'days'
+const dateRange = ref({
+  start_date: '',
+  end_date: ''
+})
 const preferences = ref({ days: 5, budget_level: 'medium', travel_style: 'leisure' })
 const isGenerating = ref(false)
 const generatedTrip = ref(null)
 const usageStats = ref(null)
 
-const canGenerate = computed(() => userPrompt.value.trim().length >= 10)
+// 最小日期（今天）
+const today = new Date()
+const year = today.getFullYear()
+const month = String(today.getMonth() + 1).padStart(2, '0')
+const day = String(today.getDate()).padStart(2, '0')
+const minDate = `${year}-${month}-${day}`
+
+// 计算天数（从日期范围）
+const calculatedDays = computed(() => {
+  if (dateType.value === 'range' && dateRange.value.start_date && dateRange.value.end_date) {
+    const start = new Date(dateRange.value.start_date)
+    const end = new Date(dateRange.value.end_date)
+    const diffTime = Math.abs(end - start)
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1 // 包含首尾两天
+    return diffDays > 0 ? diffDays : 1
+  }
+  return preferences.value.days || 5
+})
+
+const canGenerate = computed(() => {
+  if (userPrompt.value.trim().length < 10) return false
+  
+  // 如果选择日期范围，必须选择开始和结束日期
+  if (dateType.value === 'range') {
+    return dateRange.value.start_date && dateRange.value.end_date
+  }
+  
+  // 如果选择天数，必须大于0
+  return preferences.value.days > 0
+})
 
 const loadUsageStats = async () => {
   try {
@@ -85,19 +176,65 @@ const loadUsageStats = async () => {
 
 const generateTrip = async () => {
   if (!canGenerate.value) {
-    alert('请详细描述你的旅行想法（至少10个字）')
+    if (userPrompt.value.trim().length < 10) {
+      alert('请详细描述你的旅行想法（至少10个字）')
+    } else if (dateType.value === 'range' && (!dateRange.value.start_date || !dateRange.value.end_date)) {
+      alert('请选择出发日期和返回日期')
+    } else if (dateType.value === 'days' && preferences.value.days <= 0) {
+      alert('请选择有效的天数')
+    }
     return
   }
 
   isGenerating.value = true
   try {
+    // 构建偏好设置，包含日期信息
+    const prefs = {
+      ...preferences.value,
+      days: calculatedDays.value
+    }
+    
+    // 如果选择日期范围，添加到偏好设置中
+    if (dateType.value === 'range') {
+      prefs.date_range = {
+        start_date: dateRange.value.start_date,
+        end_date: dateRange.value.end_date
+      }
+    }
+    
     const response = await generateTripPlan({
       prompt: userPrompt.value,
-      preferences: preferences.value
+      preferences: prefs
     })
 
     if (response.code === 200) {
-      generatedTrip.value = response.data.trip_plan
+      const tripPlan = response.data.trip_plan
+      
+      // 如果选择日期范围，将日期信息添加到生成的行程中
+      if (dateType.value === 'range' && dateRange.value.start_date && dateRange.value.end_date) {
+        tripPlan.date_range = {
+          start_date: dateRange.value.start_date,
+          end_date: dateRange.value.end_date
+        }
+        tripPlan.date_type = 'range'
+        // 更新每一天的日期
+        if (tripPlan.days_detail && tripPlan.days_detail.length > 0) {
+          const start = new Date(dateRange.value.start_date)
+          tripPlan.days_detail.forEach((dayItem, index) => {
+            const currentDate = new Date(start)
+            currentDate.setDate(start.getDate() + index)
+            const year = currentDate.getFullYear()
+            const month = String(currentDate.getMonth() + 1).padStart(2, '0')
+            const dayNum = String(currentDate.getDate()).padStart(2, '0')
+            dayItem.date = `${year}-${month}-${dayNum}`
+          })
+        }
+      } else {
+        tripPlan.date_type = 'days'
+        tripPlan.days = calculatedDays.value
+      }
+      
+      generatedTrip.value = tripPlan
       alert('✅ 行程生成成功！')
       await loadUsageStats()
     } else {
@@ -166,6 +303,56 @@ onMounted(() => {
   display: flex;
   gap: 20px;
   margin-bottom: 15px;
+  align-items: center;
+}
+
+.pref-row > label:first-child {
+  min-width: 80px;
+  font-weight: 600;
+  color: #333;
+}
+
+.date-type-selector {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.radio-label input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.radio-label span {
+  font-size: 14px;
+  color: #666;
+}
+
+.date-range-row {
+  margin-left: 80px;
+  margin-top: 10px;
+}
+
+.date-range-row label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.date-range-row label span {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
 }
 
 .pref-row label {
@@ -175,12 +362,30 @@ onMounted(() => {
   gap: 10px;
 }
 
-.pref-row input,
+.pref-row label span {
+  min-width: 60px;
+  font-weight: 500;
+  color: #666;
+}
+
+.pref-row input[type="number"],
+.pref-row input[type="date"],
 .pref-row select {
   flex: 1;
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 6px;
+  font-size: 14px;
+}
+
+.pref-row input[type="date"] {
+  cursor: pointer;
+}
+
+.pref-row input:focus,
+.pref-row select:focus {
+  outline: none;
+  border-color: #667eea;
 }
 
 .btn-generate {
