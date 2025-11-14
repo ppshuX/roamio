@@ -224,13 +224,26 @@ class RalendarIntegrationViewSet(ViewSet):
             if social_account:
                 openid = social_account.uid
                 unionid = social_account.unionid
+                logger.info(f"找到 QQ 社交账号 - openid: {openid[:10] if openid else 'None'}..., unionid: {unionid[:10] if unionid else 'None'}...")
             else:
                 openid = None
                 unionid = None
+                logger.warning(f"用户 {request.user.username} 没有绑定 QQ 账号")
         except Exception as e:
             logger.error(f"Failed to get QQ info: {e}")
             openid = None
             unionid = None
+        
+        # 如果没有 openid 和 unionid，提前返回友好错误
+        if not openid and not unionid:
+            return Response(
+                {
+                    'error': '需要 QQ 登录',
+                    'detail': '同步到 Ralendar 需要使用 QQ 登录。请先退出登录，然后使用 QQ 账号重新登录。',
+                    'code': 'QQ_LOGIN_REQUIRED'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         # 验证请求数据
         events = request.data.get('events', [])
