@@ -252,21 +252,50 @@ class RalendarClient:
             result = response.json()
             
             # 记录完整的响应以便调试
-            logger.debug(f"Ralendar API full response: {result}")
+            logger.info(f"Ralendar API full response: {result}")
+            logger.info(f"Ralendar API response keys: {list(result.keys())}")
             
-            # 处理不同的响应格式
-            # 格式1: { "details": { "created": [...], "failed": [...] } }
-            # 格式2: { "created": [...], "failed": [...] } (直接返回)
-            # 格式3: { "created_count": 1, "failed_count": 0, "details": { "created": [...], "failed": [...] } }
+            # 根据文档，Ralendar API 返回格式为：
+            # {
+            #   "success": true,
+            #   "created_count": 1,
+            #   "failed_count": 0,
+            #   "details": {
+            #     "created": [...],
+            #     "failed": []
+            #   }
+            # }
+            # 
+            # 但为了兼容性，也支持直接返回 { "created": [...], "failed": [...] } 的格式
             
-            details = result.get('details', {})
-            created_events = details.get('created', []) if details else result.get('created', [])
-            failed_events = details.get('failed', []) if details else result.get('failed', [])
+            # 优先从 details 中获取（文档中的标准格式）
+            created_events = []
+            failed_events = []
             
-            # 如果 details 为空但 result 中有 created/failed，使用 result 中的
+            if 'details' in result:
+                # 格式1：details 存在（标准格式）
+                details = result.get('details')
+                if isinstance(details, dict):
+                    created_events = details.get('created', [])
+                    failed_events = details.get('failed', [])
+                    logger.info(f"Parsed from details: created={len(created_events)}, failed={len(failed_events)}")
+                else:
+                    logger.warning(f"details is not a dict: {type(details)}, value: {details}")
+            
+            # 如果 details 中没有找到，尝试从顶层获取（兼容其他格式）
             if not created_events and not failed_events:
-                created_events = result.get('created', [])
-                failed_events = result.get('failed', [])
+                if 'created' in result or 'failed' in result:
+                    created_events = result.get('created', [])
+                    failed_events = result.get('failed', [])
+                    logger.info(f"Parsed from top level: created={len(created_events)}, failed={len(failed_events)}")
+            
+            # 确保 created_events 和 failed_events 是列表
+            if not isinstance(created_events, list):
+                logger.warning(f"created_events is not a list: {type(created_events)}, value: {created_events}")
+                created_events = []
+            if not isinstance(failed_events, list):
+                logger.warning(f"failed_events is not a list: {type(failed_events)}, value: {failed_events}")
+                failed_events = []
             
             created_count = len(created_events)
             failed_count = len(failed_events)
