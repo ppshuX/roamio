@@ -69,7 +69,7 @@ class RalendarClient:
         data = {
             "source_app": "roamio",
             "related_trip_slug": "sidebar-todo",  # 侧边栏创建的待办
-            "events": [event_data]  # 单个事件也用数组（包含 unionid 和 openid）
+            "events": [cleaned_event_data]  # 单个事件也用数组（不包含 unionid 和 openid）
         }
         
         # 同时也添加 unionid 和 openid 到顶层（双重保险）
