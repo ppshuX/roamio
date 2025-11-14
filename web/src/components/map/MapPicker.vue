@@ -125,7 +125,12 @@ export default defineComponent({
     
     // 初始化百度地图
     const initBaiduMap = () => {
-      if (!window.BMap) return
+      if (!window.BMap) {
+        console.error('❌ 百度地图 API 未加载，请检查：1) API Key 是否正确 2) Referer 白名单是否配置')
+        return
+      }
+      
+      console.log('✅ 百度地图 API 已加载，开始初始化...')
       
       // 创建地图实例
       map = new window.BMap.Map(mapContainer.value)
@@ -318,10 +323,41 @@ export default defineComponent({
       }
     }
     
+    // 等待百度地图 API 加载
+    const waitForBaiduMap = () => {
+      return new Promise((resolve) => {
+        if (window.BMap) {
+          resolve()
+          return
+        }
+        
+        // 最多等待 5 秒
+        let attempts = 0
+        const maxAttempts = 50
+        const checkInterval = setInterval(() => {
+          attempts++
+          if (window.BMap) {
+            clearInterval(checkInterval)
+            resolve()
+          } else if (attempts >= maxAttempts) {
+            clearInterval(checkInterval)
+            console.error('⚠️ 百度地图 API 加载超时')
+            resolve()
+          }
+        }, 100)
+      })
+    }
+    
     // 监听显示状态
     watch(() => props.show, async (newVal) => {
       if (newVal) {
         await nextTick()
+        
+        // 如果是百度地图，等待 API 加载
+        if (mapType.value === 'baidu') {
+          await waitForBaiduMap()
+        }
+        
         initMap()
         
         // 如果有默认地点，搜索它
