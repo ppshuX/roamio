@@ -625,14 +625,14 @@ export default {
     }
     
     // 执行同步流程
-    const proceedWithSync = (aiPlan, startDate) => {
+    const proceedWithSync = async (aiPlan, startDate) => {
       // 保存 AI 生成的原始数据
       aiGeneratedPlan.value = aiPlan
       
       const tripTitle = tripData.value.title || aiPlan.trip_title || '旅行'
       
       try {
-        const events = convertAITripToEvents(aiPlan, tripTitle, startDate)
+        const events = await convertAITripToEvents(aiPlan, tripTitle, startDate)
         
         if (events.length === 0) {
           // 诊断问题
@@ -765,7 +765,7 @@ export default {
         const startDate = tripData.value.start_date || aiGeneratedPlan.value.days_detail?.[0]?.date || null
         const tripTitle = tripData.value.title || aiGeneratedPlan.value.trip_title || '旅行'
         
-        const events = convertAITripToEvents(aiGeneratedPlan.value, tripTitle, startDate)
+        const events = await convertAITripToEvents(aiGeneratedPlan.value, tripTitle, startDate)
         
         if (events.length === 0) {
           alert('❌ 没有可同步的行程事件，请检查行程数据')

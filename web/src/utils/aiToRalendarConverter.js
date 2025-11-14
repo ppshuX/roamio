@@ -4,6 +4,8 @@
  * 将 AI 生成的旅行计划数据转换为 Ralendar 日历事件格式
  */
 
+import { geocode } from './mapService'
+
 /**
  * 解析持续时间字符串（如 "2小时"、"3.5小时"、"120分钟"）
  * @param {string} duration - 持续时间字符串
@@ -146,7 +148,7 @@ function combineDateTime(date, time) {
  * @param {string} startDate - 开始日期 (YYYY-MM-DD)，可选
  * @returns {Array} Ralendar 事件数组
  */
-export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) {
+export async function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) {
   if (!aiPlan || !aiPlan.days_detail || !Array.isArray(aiPlan.days_detail)) {
     throw new Error('AI 行程数据格式不正确')
   }
@@ -207,7 +209,8 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
   usedStartDate = finalStartDate
   
   // 遍历每一天的行程
-  aiPlan.days_detail.forEach((day, dayIndex) => {
+  for (let dayIndex = 0; dayIndex < aiPlan.days_detail.length; dayIndex++) {
+    const day = aiPlan.days_detail[dayIndex]
     let dayDate = null
     
     // 计算日期（usedStartDate 应该已经在前面验证过，所以这里直接使用）
@@ -303,7 +306,8 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
     }
     
     // 遍历当天的活动
-    day.activities.forEach((activity, activityIndex) => {
+    for (let activityIndex = 0; activityIndex < day.activities.length; activityIndex++) {
+      const activity = day.activities[activityIndex]
         try {
           // 构建事件标题: {trip_title} - {day_title}: {location}
           let eventTitle = `${tripTitle || aiPlan.trip_title || '旅行'}`.trim()
@@ -401,6 +405,26 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
             longitude = activity.coordinates.lng || activity.coordinates.longitude
           }
           
+          // 🌟 如果没有坐标但有地点，尝试自动获取坐标
+          if (!latitude && !longitude && activity.location) {
+            try {
+              // 构建地址字符串（优先使用详细地址）
+              const addressToGeocode = activity.address || activity.location
+              
+              // 调用地理编码 API（使用高德地图）
+              const geoResult = await geocode(addressToGeocode)
+              
+              if (geoResult && geoResult.lat && geoResult.lng) {
+                latitude = geoResult.lat
+                longitude = geoResult.lng
+                console.info(`✅ 自动获取坐标: ${activity.location} -> (${latitude}, ${longitude})`)
+              }
+            } catch (error) {
+              // 地理编码失败，不影响事件创建，只记录日志
+              console.warn(`⚠️ 无法获取坐标: ${activity.location}，错误: ${error.message}`)
+            }
+          }
+          
           // 构建地点信息（优先使用详细地址，其次使用地点名称）
           let location = activity.location || '未指定地点'
           if (activity.address) {
@@ -437,8 +461,8 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
           console.error(`转换活动失败 (Day ${dayIndex + 1}, Activity ${activityIndex + 1}):`, error, activity)
           // 继续处理下一个活动，不中断整个转换过程
         }
-      })
-  })
+      }
+  }
   
   // 如果有警告，记录到控制台
   if (warnings.length > 0) {
