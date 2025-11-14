@@ -251,24 +251,45 @@ class RalendarClient:
             response.raise_for_status()
             result = response.json()
             
-            # 记录详细的响应信息
-            created_count = len(result.get('created', []))
-            failed_count = len(result.get('failed', []))
+            # 记录完整的响应以便调试
+            logger.debug(f"Ralendar API full response: {result}")
+            
+            # 处理不同的响应格式
+            # 格式1: { "details": { "created": [...], "failed": [...] } }
+            # 格式2: { "created": [...], "failed": [...] } (直接返回)
+            # 格式3: { "created_count": 1, "failed_count": 0, "details": { "created": [...], "failed": [...] } }
+            
+            details = result.get('details', {})
+            created_events = details.get('created', []) if details else result.get('created', [])
+            failed_events = details.get('failed', []) if details else result.get('failed', [])
+            
+            # 如果 details 为空但 result 中有 created/failed，使用 result 中的
+            if not created_events and not failed_events:
+                created_events = result.get('created', [])
+                failed_events = result.get('failed', [])
+            
+            created_count = len(created_events)
+            failed_count = len(failed_events)
+            
             logger.info(f"Ralendar API response: created={created_count}, failed={failed_count}")
             
             # 如果有失败的事件，记录详细信息
             if failed_count > 0:
-                failed_events = result.get('failed', [])
                 logger.warning(f"Failed events: {failed_events}")
                 for failed_event in failed_events:
                     logger.warning(f"Failed event details: {failed_event}")
             
             # 如果创建成功的事件，记录详细信息
             if created_count > 0:
-                created_events = result.get('created', [])
                 logger.info(f"Created events IDs: {[e.get('id') for e in created_events if e.get('id')]}")
             
-            return result
+            # 返回统一格式，确保包含 created 和 failed 数组
+            return {
+                'created': created_events,
+                'failed': failed_events,
+                'created_count': created_count,
+                'failed_count': failed_count
+            }
         except requests.exceptions.HTTPError as e:
             # 处理 HTTP 错误（包括 502）
             logger.error(f"Ralendar API HTTP error: {e}")

@@ -938,7 +938,8 @@ export default {
   
   /* 移动端：为固定工具栏留出空间，消除间隙 */
   .editor-main-content {
-    margin-top: 48px; /* 工具栏高度，使用 margin 而不是 padding */
+    margin-top: 0 !important; /* 移除顶部边距，紧贴工具栏 */
+    padding-top: 0 !important;
   }
   
   .editor-toolbar .container-fluid {
@@ -949,6 +950,24 @@ export default {
   .editor-toolbar-content {
     padding: 0.5rem 0.75rem;
     gap: 0.5rem;
+  }
+  
+  /* 移动端：确保容器和内容紧贴工具栏，无间隙 */
+  .editor-main-content .container {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+  
+  /* 移动端：确保第一个卡片（基本信息）紧贴容器顶部 */
+  .editor-main-content > .container > .row > div:first-child > .card:first-child {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* 移动端：基本信息卡片头部紧贴容器顶部 */
+  .editor-main-content .card-header:first-child {
+    margin-top: 0 !important;
+    border-top: none !important;
   }
   
   .editor-toolbar-left {
@@ -1348,6 +1367,29 @@ export default {
   .editor-container {
     padding-top: 56px;  /* 只需要为固定定位的导航栏留空间 */
     padding-bottom: 0;
+    margin: 0;
+  }
+  
+  /* 移动端：编辑器主内容区域紧贴工具栏 */
+  .editor-main-content {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  /* 移动端：容器无内边距，内容紧贴边缘 */
+  .editor-main-content .container.py-4 {
+    padding-top: 0 !important;
+    padding-bottom: 1rem !important;
+    margin-top: 0 !important;
+  }
+  
+  /* 移动端：移除第一行和第一列的上边距 */
+  .editor-main-content .container .row {
+    margin-top: 0 !important;
+  }
+  
+  .editor-main-content .container .row > div {
+    padding-top: 0 !important;
   }
   
   .ai-modal-content {
