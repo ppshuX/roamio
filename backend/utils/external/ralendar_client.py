@@ -61,27 +61,29 @@ class RalendarClient:
         url = f"{self.base_url}/fusion/events/batch/"
         headers = self.get_headers(user_token)
         
-        # 获取 unionid 和 openid（如果存在），并从 event_data 中移除（避免重复）
+        # 获取用户标识（如果存在），并从 event_data 中移除（避免重复）
         unionid = event_data.get('unionid', None)
         openid = event_data.get('openid', None)
+        email = event_data.get('email', None)
         
-        # 从事件数据中移除 unionid 和 openid（只放在顶层）
+        # 从事件数据中移除用户标识（只放在顶层）
         cleaned_event_data = {k: v for k, v in event_data.items() 
-                              if k not in ['unionid', 'openid']}
+                              if k not in ['unionid', 'openid', 'email']}
         
         # 构造批量创建的数据格式
         data = {
             "source_app": "roamio",
             "related_trip_slug": "sidebar-todo",  # 侧边栏创建的待办
-            "events": [cleaned_event_data]  # 单个事件也用数组（不包含 unionid 和 openid）
+            "events": [cleaned_event_data]  # 单个事件也用数组（不包含用户标识）
         }
         
-        # 只在顶层添加 unionid 和 openid
+        # 只在顶层添加用户标识（优先级：unionid > openid > email）
         if unionid:
             data['unionid'] = unionid
-        
         if openid:
             data['openid'] = openid
+        if email:
+            data['email'] = email
         
         try:
             response = requests.post(url, json=data, headers=headers, timeout=self.timeout)
@@ -112,7 +114,7 @@ class RalendarClient:
             logger.error(f"Ralendar API request failed: {e}")
             raise
     
-    def batch_create_events(self, user_token, events_list, trip_slug, unionid=None, openid=None):
+    def batch_create_events(self, user_token, events_list, trip_slug, unionid=None, openid=None, email=None):
         """
         批量创建多个事件
         
@@ -120,8 +122,9 @@ class RalendarClient:
             user_token (str): 用户的 JWT Token
             events_list (list): 事件列表
             trip_slug (str): 旅行计划的 slug
-            unionid (str, optional): UnionID，用于用户匹配
-            openid (str, optional): OpenID，用于用户匹配
+            unionid (str, optional): UnionID，用于用户匹配（优先级最高）
+            openid (str, optional): OpenID，用于用户匹配（优先级次之）
+            email (str, optional): 用户邮箱，用于用户匹配（优先级最低）
         
         Returns:
             dict: {"created": [...], "failed": [...]}
@@ -225,14 +228,18 @@ class RalendarClient:
             "related_trip_slug": trip_slug
         }
         
-        # 同时在顶层添加 unionid 和 openid（双重保险）
+        # 添加用户标识（优先级：unionid > openid > email）
         if unionid:
             data['unionid'] = unionid
         if openid:
             data['openid'] = openid
+        if email:
+            data['email'] = email
         
         try:
-            logger.info(f"Sending batch create request: {len(cleaned_events)} events, trip_slug={trip_slug}")
+            # 记录用户标识方式
+            user_id_method = 'unionid' if unionid else ('openid' if openid else ('email' if email else 'none'))
+            logger.info(f"Sending batch create request: {len(cleaned_events)} events, trip_slug={trip_slug}, user_id_method={user_id_method}")
             logger.debug(f"Request data keys: {list(data.keys())}")
             logger.debug(f"First event sample: {cleaned_events[0] if cleaned_events else 'No events'}")
             
@@ -334,6 +341,48 @@ class RalendarClient:
                 # 对于 502，提供更友好的错误信息
                 if e.response.status_code == 502:
                     raise Exception("Ralendar API 服务暂时不可用，请稍后重试")
+            raise
+    
+    def check_email_exists(self, email):
+        """
+        检查邮箱在 Ralendar 是否已存在
+        
+        Args:
+            email (str): 待检测邮箱
+        
+        Returns:
+            dict: {
+                "exists": bool,
+                "owner": {...},    # Ralendar 返回的用户信息
+                "provider": "qq" / "acwing" / ...,
+                "match_type": "email" / "unionid" / ...
+            }
+        """
+        normalized_email = (email or '').strip().lower()
+        if not normalized_email:
+            raise ValueError("email is required for check_email_exists")
+        
+        url = f"{self.base_url}/fusion/users/check-email/"
+        payload = {"email": normalized_email}
+        headers = {'Content-Type': 'application/json'}
+        
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=self.timeout)
+            if response.status_code == 404:
+                # 视作不存在
+                return {"exists": False, "owner": None}
+            
+            response.raise_for_status()
+            result = response.json()
+            
+            return {
+                "exists": bool(result.get('exists')),
+                "owner": result.get('owner'),
+                "provider": result.get('provider'),
+                "match_type": result.get('match_type')
+            }
+        except requests.exceptions.RequestException as exc:
+            logger.warning(f"Ralendar email check failed: {exc}")
             raise
         except requests.exceptions.RequestException as e:
             logger.error(f"Batch create failed: {e}")

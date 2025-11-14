@@ -111,8 +111,13 @@ class RalendarIntegrationViewSet(ViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
-        # 获取用户的 OpenID 和 UnionID
+        # 获取用户标识信息（优先级：unionid > openid > email）
         from backend.models import SocialAccount
+        openid = None
+        unionid = None
+        user_email = None
+        
+        # 1. 尝试获取 QQ 社交账号信息
         try:
             social_account = SocialAccount.objects.filter(
                 user=request.user,
@@ -122,24 +127,26 @@ class RalendarIntegrationViewSet(ViewSet):
             if social_account:
                 openid = social_account.uid
                 unionid = social_account.unionid
-            else:
-                openid = None
-                unionid = None
         except Exception as e:
             logger.error(f"Failed to get QQ info: {e}")
-            openid = None
-            unionid = None
+        
+        # 2. 如果没有 QQ 信息，使用邮箱
+        if not openid and not unionid:
+            if request.user.email:
+                user_email = request.user.email
+                logger.info(f"用户 {request.user.username} 使用邮箱进行识别: {user_email}")
         
         # 获取事件数据
         event_data = request.data.copy()
         event_data['source_app'] = 'roamio'
         
-        # 添加 unionid 和 openid（Ralendar 的三层匹配需要）
+        # 添加用户标识（优先级：unionid > openid > email）
         if unionid:
             event_data['unionid'] = unionid
-        
         if openid:
             event_data['openid'] = openid
+        if user_email:
+            event_data['email'] = user_email
         
         # 调用 Ralendar API
         client = RalendarClient()
@@ -213,8 +220,13 @@ class RalendarIntegrationViewSet(ViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
-        # 获取用户的 OpenID 和 UnionID
+        # 获取用户标识信息（优先级：unionid > openid > email）
         from backend.models import SocialAccount
+        openid = None
+        unionid = None
+        user_email = None
+        
+        # 1. 尝试获取 QQ 社交账号信息
         try:
             social_account = SocialAccount.objects.filter(
                 user=request.user,
@@ -225,25 +237,24 @@ class RalendarIntegrationViewSet(ViewSet):
                 openid = social_account.uid
                 unionid = social_account.unionid
                 logger.info(f"找到 QQ 社交账号 - openid: {openid[:10] if openid else 'None'}..., unionid: {unionid[:10] if unionid else 'None'}...")
-            else:
-                openid = None
-                unionid = None
-                logger.warning(f"用户 {request.user.username} 没有绑定 QQ 账号")
         except Exception as e:
             logger.error(f"Failed to get QQ info: {e}")
-            openid = None
-            unionid = None
         
-        # 如果没有 openid 和 unionid，提前返回友好错误
+        # 2. 如果没有 QQ 信息，尝试使用邮箱
         if not openid and not unionid:
-            return Response(
-                {
-                    'error': '需要 QQ 登录',
-                    'detail': '同步到 Ralendar 需要使用 QQ 登录。请先退出登录，然后使用 QQ 账号重新登录。',
-                    'code': 'QQ_LOGIN_REQUIRED'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            if request.user.email:
+                user_email = request.user.email
+                logger.info(f"用户 {request.user.username} 没有绑定 QQ，使用邮箱进行识别: {user_email}")
+            else:
+                # 如果连邮箱也没有，返回友好错误
+                return Response(
+                    {
+                        'error': '需要绑定邮箱或 QQ 登录',
+                        'detail': '同步到 Ralendar 需要绑定邮箱，或使用 QQ 账号登录。请先在个人中心绑定邮箱。',
+                        'code': 'EMAIL_OR_QQ_REQUIRED'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         
         # 验证请求数据
         events = request.data.get('events', [])
@@ -258,13 +269,14 @@ class RalendarIntegrationViewSet(ViewSet):
         client = RalendarClient()
         
         try:
-            # 传递 unionid 和 openid 到批量创建方法
+            # 传递用户标识到批量创建方法（优先级：unionid > openid > email）
             result = client.batch_create_events(
                 user_token, 
                 events, 
                 trip.slug,
                 unionid=unionid,
-                openid=openid
+                openid=openid,
+                email=user_email
             )
             
             # 处理返回结果

@@ -7,6 +7,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -22,8 +23,10 @@ from ...serializers import (
     QQLoginSerializer,
     QQBindSerializer,
     ResetPasswordSerializer,
+    EmailCheckSerializer,
 )
 from ...utils.external import send_verification_code
+from ...utils.email_availability import check_email_availability
 from ...utils.auth import (
     check_email_rate_limit,
     check_ip_rate_limit,
@@ -46,11 +49,34 @@ class AuthViewSet(viewsets.GenericViewSet):
     """认证相关ViewSet"""
     permission_classes = [AllowAny]
     
+    def _assert_email_available(self, email, current_user=None, include_remote=True):
+        """
+        检查邮箱是否可用，不可用则抛出 ValidationError
+        """
+        availability = check_email_availability(
+            email,
+            current_user=current_user,
+            include_remote=include_remote
+        )
+        
+        if not availability.get('available', False):
+            raise ValidationError({
+                'email': ['该邮箱已被使用或已在 Ralendar 绑定'],
+                'detail': availability
+            })
+        
+        return availability
+    
     @action(detail=False, methods=['post'])
     def register(self, request):
         """用户注册"""
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        
+        email = serializer.validated_data.get('email')
+        if email:
+            self._assert_email_available(email)
+        
         user = serializer.save()
         
         # 生成JWT Token
@@ -140,12 +166,13 @@ class AuthViewSet(viewsets.GenericViewSet):
                 'remaining_seconds': remaining_seconds
             }, status=status.HTTP_429_TOO_MANY_REQUESTS)
         
-        # 对于注册类型，检查邮箱是否已注册
+        # 对于注册类型，检查邮箱是否已注册或已在 Ralendar 使用
         if verification_type == 'register':
-            from django.contrib.auth.models import User
-            if User.objects.filter(email=email).exists():
+            availability = check_email_availability(email)
+            if not availability.get('available', False):
                 return Response({
-                    'error': '该邮箱已被注册'
+                    'error': '该邮箱已被使用或已在 Ralendar 绑定',
+                    'detail': availability
                 }, status=status.HTTP_400_BAD_REQUEST)
         
         # 对于重置密码类型，检查邮箱是否已注册
@@ -230,6 +257,26 @@ class AuthViewSet(viewsets.GenericViewSet):
             'verification_token': temp_token,  # 临时token，用于后续注册
             'expires_in': 300  # 5分钟（秒）
         }, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['post'], url_path='check-email')
+    def check_email(self, request):
+        """
+        检查邮箱是否可用（本地 + Ralendar）
+        """
+        serializer = EmailCheckSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        email = serializer.validated_data['email']
+        include_remote = serializer.validated_data.get('include_remote', True)
+        current_user = request.user if request.user.is_authenticated else None
+        
+        availability = check_email_availability(
+            email,
+            current_user=current_user,
+            include_remote=include_remote
+        )
+        
+        return Response(availability, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['get'])
     def qq_login_url(self, request):

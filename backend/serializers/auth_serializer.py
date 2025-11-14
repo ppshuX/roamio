@@ -194,3 +194,9 @@ class ResetPasswordSerializer(serializers.Serializer):
         
         return attrs
 
+
+class EmailCheckSerializer(serializers.Serializer):
+    """邮箱可用性检查"""
+    email = serializers.EmailField(required=True, error_messages={'required': '请输入邮箱地址'})
+    include_remote = serializers.BooleanField(required=False, default=True)
+

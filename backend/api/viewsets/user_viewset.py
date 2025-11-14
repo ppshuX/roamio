@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticate
 from django.contrib.auth.models import User
 
 from ...models import Comment
+from ...utils.email_availability import check_email_availability
 from ...serializers import (
     UserSerializer,
     UserProfileSerializer,
@@ -258,10 +259,12 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet,
                 'error': '验证token类型错误'
             }, status=400)
         
-        # 检查新邮箱是否已被其他用户使用
-        if User.objects.exclude(pk=request.user.pk).filter(email=new_email).exists():
+        # 检查邮箱可用性（包括 Ralendar）
+        availability = check_email_availability(new_email, current_user=request.user)
+        if not availability.get('available', False):
             return Response({
-                'error': '该邮箱已被其他用户使用'
+                'error': '该邮箱已被其他账号使用或已在 Ralendar 绑定',
+                'detail': availability
             }, status=400)
         
         # 保存旧邮箱（用于日志）
