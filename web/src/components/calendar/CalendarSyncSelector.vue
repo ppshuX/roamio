@@ -63,7 +63,18 @@
               </div>
               <div class="detail-row">
                 <span class="detail-label">📍 地点:</span>
-                <span class="detail-value">{{ event.location }}</span>
+                <span class="detail-value">
+                  <strong>{{ event.location_name || event.location }}</strong>
+                  <span v-if="event.location_address" class="address-text">（{{ event.location_address }}）</span>
+                  <span v-if="event.location_type" class="location-type-badge">{{ event.location_type }}</span>
+                </span>
+              </div>
+              <div v-if="event.latitude && event.longitude" class="detail-row">
+                <span class="detail-label">🗺️ 坐标:</span>
+                <span class="detail-value">
+                  {{ event.latitude.toFixed(6) }}, {{ event.longitude.toFixed(6) }}
+                  <button class="btn-map" @click="viewOnMap(event)" title="查看地图">🗺️</button>
+                </span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">🔔 提醒:</span>
@@ -218,6 +229,14 @@ export default {
       return text.substring(0, maxLength) + '...'
     }
     
+    const viewOnMap = (event) => {
+      if (event.latitude && event.longitude) {
+        // 打开百度地图或高德地图（根据坐标）
+        const mapUrl = `https://api.map.baidu.com/marker?location=${event.latitude},${event.longitude}&title=${encodeURIComponent(event.location_name || event.location)}&content=${encodeURIComponent(event.location_address || '')}&output=html&src=roamio`
+        window.open(mapUrl, '_blank')
+      }
+    }
+    
     // 监听 props.events 变化，更新内部状态
     watch(() => props.events, (newEvents) => {
       if (newEvents && newEvents.length > 0) {
@@ -242,7 +261,8 @@ export default {
       handleConfirm,
       formatDate,
       formatTime,
-      truncate
+      truncate,
+      viewOnMap
     }
   }
 }
@@ -424,6 +444,41 @@ export default {
 .detail-value {
   color: #333;
   flex: 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.address-text {
+  color: #666;
+  font-size: 13px;
+}
+
+.location-type-badge {
+  display: inline-block;
+  background: #667eea;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.btn-map {
+  background: #f0f0f0;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: 8px;
+}
+
+.btn-map:hover {
+  background: #667eea;
+  color: white;
 }
 
 .empty-state {

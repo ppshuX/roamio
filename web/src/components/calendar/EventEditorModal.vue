@@ -46,12 +46,36 @@
         </div>
         
         <div class="form-group">
-          <label>地点 *</label>
+          <label>地点名称 *</label>
           <input 
             type="text" 
-            v-model="localEvent.location" 
+            v-model="locationName" 
             placeholder="例如：故宫博物院"
           />
+        </div>
+        
+        <div class="form-group">
+          <label>详细地址</label>
+          <input 
+            type="text" 
+            v-model="localEvent.location_address" 
+            placeholder="例如：北京市东城区景山前街4号"
+          />
+          <small class="help-text">完整地址有助于地图导航和提醒定位</small>
+        </div>
+        
+        <div class="form-group">
+          <label>地点类型</label>
+          <select v-model="localEvent.location_type">
+            <option value="">未分类</option>
+            <option value="景点">景点</option>
+            <option value="餐厅">餐厅</option>
+            <option value="住宿">住宿</option>
+            <option value="交通">交通</option>
+            <option value="购物">购物</option>
+            <option value="娱乐">娱乐</option>
+            <option value="其他">其他</option>
+          </select>
         </div>
         
         <div class="form-group">
@@ -147,13 +171,48 @@ export default {
     const localEvent = ref({
       title: props.event.title || '',
       description: props.event.description || '',
-      location: props.event.location || '',
+      location: props.event.location || props.event.location_name || '',
+      location_name: props.event.location_name || props.event.location || '',
+      location_address: props.event.location_address || null,
+      location_type: props.event.location_type || null,
       start_time: props.event.start_time || '',
       end_time: props.event.end_time || '',
       latitude: props.event.latitude || null,
       longitude: props.event.longitude || null,
       reminder_minutes: props.event.reminder_minutes || 30,
       email_reminder: props.event.email_reminder !== undefined ? props.event.email_reminder : true
+    })
+    
+    // 地点名称的计算属性
+    const locationName = computed({
+      get: () => localEvent.value.location_name || localEvent.value.location || '',
+      set: (value) => {
+        localEvent.value.location_name = value
+        // 同时更新 location（用于兼容）
+        if (!localEvent.value.location_address) {
+          localEvent.value.location = value
+        } else {
+          localEvent.value.location = `${value}（${localEvent.value.location_address}）`
+        }
+      }
+    })
+    
+    // 监听地址变化，更新完整地点
+    watch(() => localEvent.value.location_address, (newAddress) => {
+      if (newAddress && localEvent.value.location_name) {
+        localEvent.value.location = `${localEvent.value.location_name}（${newAddress}）`
+      } else if (localEvent.value.location_name) {
+        localEvent.value.location = localEvent.value.location_name
+      }
+    })
+    
+    // 监听地点名称变化
+    watch(locationName, (newName) => {
+      if (localEvent.value.location_address) {
+        localEvent.value.location = `${newName}（${localEvent.value.location_address}）`
+      } else {
+        localEvent.value.location = newName
+      }
     })
     
     // 日期和时间分离处理
@@ -226,7 +285,10 @@ export default {
       localEvent.value = {
         title: newEvent.title || '',
         description: newEvent.description || '',
-        location: newEvent.location || '',
+        location: newEvent.location || newEvent.location_name || '',
+        location_name: newEvent.location_name || newEvent.location || '',
+        location_address: newEvent.location_address || null,
+        location_type: newEvent.location_type || null,
         start_time: newEvent.start_time || '',
         end_time: newEvent.end_time || '',
         latitude: newEvent.latitude || null,
@@ -238,9 +300,18 @@ export default {
     
     const handleSave = () => {
       // 验证必填字段
-      if (!localEvent.value.title || !localEvent.value.location || !localEvent.value.start_time || !localEvent.value.end_time) {
-        alert('请填写所有必填字段（标题、地点、开始时间、结束时间）')
+      if (!localEvent.value.title || !localEvent.value.location_name || !localEvent.value.start_time || !localEvent.value.end_time) {
+        alert('请填写所有必填字段（标题、地点名称、开始时间、结束时间）')
         return
+      }
+      
+      // 确保 location 字段正确（用于兼容）
+      if (!localEvent.value.location) {
+        if (localEvent.value.location_address) {
+          localEvent.value.location = `${localEvent.value.location_name}（${localEvent.value.location_address}）`
+        } else {
+          localEvent.value.location = localEvent.value.location_name
+        }
       }
       
       // 验证时间
@@ -269,6 +340,7 @@ export default {
     
     return {
       localEvent,
+      locationName,
       eventDate,
       startTime,
       endTime,
@@ -390,6 +462,14 @@ export default {
   font-size: 12px;
   color: #999;
   margin-top: 4px;
+}
+
+.help-text {
+  display: block;
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+  font-style: italic;
 }
 
 .form-row {

@@ -163,8 +163,10 @@ class TripPlannerAI:
         {{
           "time": "HH:MM",
           "duration": "X小时",
-          "location": "具体地点名称",
+          "location": "具体地点名称（必填）",
           "location_type": "景点/餐厅/住宿/交通",
+          "address": "详细地址（省市区街道门牌号，必填）",
+          "coordinates": {{"lat": 纬度, "lng": 经度}},
           "description": "活动描述（50-100字，生动具体）",
           "estimated_cost": 预估费用,
           "tips": "实用提示"
@@ -199,11 +201,12 @@ class TripPlannerAI:
 }}
 
 【要求】
-1. 地点真实存在，推荐热门景点
-2. 时间安排合理，预算符合{budget_desc}
-3. 风格匹配{style_desc}
-4. 严格遵守 JSON 格式，数字不加引号
-5. 日期 YYYY-MM-DD，时间 HH:MM
+1. **地点真实存在**：所有地点必须真实存在，优先推荐热门景点和口碑餐厅
+2. **详细地址**：每个地点必须提供详细地址（省市区街道门牌号），方便导航和定位
+3. **地理坐标**：每个地点必须提供准确的地理坐标（经纬度），确保地图显示和导航准确
+4. **时间安排合理**：考虑交通时间、排队时间、体力消耗，预算符合{budget_desc}
+5. **风格匹配**：符合旅行风格（{style_desc}）
+6. **严格遵守 JSON 格式**：数字不加引号，日期 YYYY-MM-DD，时间 HH:MM
 """
     
     def _build_user_prompt(self, user_prompt, preferences, user):

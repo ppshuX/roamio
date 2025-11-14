@@ -309,13 +309,23 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
             longitude = activity.coordinates.lng || activity.coordinates.longitude
           }
           
+          // 构建地点信息（优先使用详细地址，其次使用地点名称）
+          let location = activity.location || '未指定地点'
+          if (activity.address) {
+            // 如果地址存在，组合地点名称和地址
+            location = `${location}（${activity.address}）`
+          }
+          
           // 构建事件对象
           const event = {
             title: eventTitle,
             description: description.trim(),
             start_time: startTime,
             end_time: endTime,
-            location: activity.location || '未指定地点',
+            location: location, // 完整地点信息（名称+地址）
+            location_name: activity.location || '未指定地点', // 地点名称
+            location_address: activity.address || null, // 详细地址
+            location_type: activity.location_type || null, // 地点类型
             reminder_minutes: 30, // 固定提前 30 分钟提醒
             email_reminder: true // 启用邮件提醒
           }
