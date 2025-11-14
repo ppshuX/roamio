@@ -92,6 +92,24 @@ class TripPlanViewSet(viewsets.ModelViewSet):
         """创建时自动设置作者"""
         serializer.save(author=self.request.user)
     
+    def create(self, request, *args, **kwargs):
+        """重写create方法，返回完整数据（包括slug）"""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        
+        # 获取创建后的对象
+        instance = serializer.instance
+        
+        # 清除预取缓存，确保获取最新数据
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+        
+        # 返回完整数据（使用TripDetailSerializer）
+        detail_serializer = TripDetailSerializer(instance)
+        headers = self.get_success_headers(detail_serializer.data)
+        return Response(detail_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
     def retrieve(self, request, *args, **kwargs):
         """重写retrieve方法，添加访问控制"""
         instance = self.get_object()
@@ -109,6 +127,30 @@ class TripPlanViewSet(viewsets.ModelViewSet):
         if trip.author != self.request.user and not self.request.user.is_superuser:
             raise PermissionError("无权修改他人的旅行计划")
         instance = serializer.save()
+    
+    def update(self, request, *args, **kwargs):
+        """重写update方法，返回完整数据（包括slug）"""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        # 重新获取更新后的对象（因为serializer.save()可能返回新的实例）
+        updated_instance = serializer.instance
+        
+        # 清除预取缓存，确保获取最新数据
+        if getattr(updated_instance, '_prefetched_objects_cache', None):
+            updated_instance._prefetched_objects_cache = {}
+        
+        # 返回完整数据（使用TripDetailSerializer）
+        detail_serializer = TripDetailSerializer(updated_instance)
+        return Response(detail_serializer.data)
+    
+    def partial_update(self, request, *args, **kwargs):
+        """重写partial_update方法，返回完整数据（包括slug）"""
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
     
     def perform_destroy(self, instance):
         """删除旅行计划：若在旅行树中，连同对应SiteStat一起删除"""

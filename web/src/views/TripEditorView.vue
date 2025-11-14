@@ -17,6 +17,17 @@
             </div>
             <div>
               <button 
+                v-if="isEditMode && tripData.start_date"
+                class="btn btn-outline-success me-2" 
+                @click="handleSyncToRalendarFromEditor"
+                :disabled="syncingToCalendar"
+                title="将行程同步到 Ralendar 日历"
+              >
+                <span v-if="syncingToCalendar" class="spinner-border spinner-border-sm me-1"></span>
+                <i v-else class="bi bi-calendar-check me-1"></i>
+                {{ syncingToCalendar ? '同步中...' : '同步到日历' }}
+              </button>
+              <button 
                 class="btn btn-outline-primary me-2" 
                 @click="handleSave"
                 :disabled="saving"
@@ -131,6 +142,7 @@ import { useUserStore } from '@/stores'
 import { getTripPlan, createTripPlan, updateTripPlan } from '@/api/tripPlan'
 import { syncTripToCalendar } from '@/api/ralendar'
 import { convertAITripToEvents, validateEvents } from '@/utils/aiToRalendarConverter'
+import { convertTripToRalendarEvents, validateTripEvents } from '@/utils/tripToRalendarConverter'
 import NavBar from '@/components/NavBar.vue'
 import BasicInfoEditor from '@/components/editor/BasicInfoEditor.vue'
 import ModuleSelector from '@/components/editor/ModuleSelector.vue'
@@ -292,14 +304,24 @@ export default {
           (sum, item) => sum + (item.amount || 0), 0
         )
         
+        let tripSlug = null
         if (isEditMode.value) {
-          await updateTripPlan(route.params.slug, tripData.value)
+          // 编辑模式：更新现有行程
+          const result = await updateTripPlan(route.params.slug, tripData.value)
+          tripSlug = result.slug || route.params.slug
         } else {
+          // 新建模式：创建新行程
           const result = await createTripPlan(tripData.value)
-          router.push(`/editor/${result.slug}`)
+          tripSlug = result.slug
         }
         
-        alert('发布成功！')
+        // 发布成功后跳转到旅行详情页面
+        if (tripSlug) {
+          alert('发布成功！')
+          router.push(`/trip/${tripSlug}/`)
+        } else {
+          alert('发布成功！但无法获取行程标识，请手动刷新页面')
+        }
       } catch (error) {
         console.error('❌ 发布失败:', error)
         console.error('错误详情:', error.response?.data)
@@ -447,7 +469,59 @@ export default {
       }
     }
     
-    // 处理"同步到日历"按钮点击
+    // 从编辑页面同步到 Ralendar（使用已保存的行程数据）
+    const handleSyncToRalendarFromEditor = () => {
+      // 检查是否有行程数据
+      if (!tripData.value || !tripData.value.overview || !tripData.value.overview.itinerary) {
+        alert('❌ 请先添加行程内容')
+        return
+      }
+      
+      // 检查是否有开始日期
+      if (!tripData.value.start_date || tripData.value.start_date === 'YYYY-MM-DD') {
+        alert('❌ 请先设置行程的开始日期')
+        return
+      }
+      
+      // 检查是否有 tripId（已保存的行程）
+      if (!tripId.value) {
+        alert('❌ 请先保存行程，然后再同步到日历')
+        return
+      }
+      
+      try {
+        // 转换行程数据为 Ralendar 事件
+        const events = convertTripToRalendarEvents(tripData.value)
+        
+        if (events.length === 0) {
+          alert('❌ 无法从行程中提取事件，请检查行程内容')
+          return
+        }
+        
+        // 验证事件
+        const { valid, invalid } = validateTripEvents(events)
+        
+        if (invalid.length > 0) {
+          console.warn('部分事件无效:', invalid)
+          if (valid.length === 0) {
+            alert('❌ 所有事件都无效，请检查行程内容')
+            return
+          }
+        }
+        
+        // 设置日历事件列表
+        calendarEvents.value = valid
+        
+        // 打开日历同步选择界面
+        showCalendarSync.value = true
+        
+      } catch (error) {
+        console.error('转换行程事件失败:', error)
+        alert('❌ 转换行程事件失败：' + error.message)
+      }
+    }
+    
+    // 处理"同步到日历"按钮点击（AI生成后直接同步，保留此功能但建议使用上面的方法）
     const handleSyncToCalendar = (aiPlan) => {
       if (!aiPlan || !aiPlan.days_detail || aiPlan.days_detail.length === 0) {
         alert('❌ 没有可同步的行程数据')
@@ -764,6 +838,7 @@ export default {
       goBack,
       handleAIApply,
       handleSyncToCalendar,
+      handleSyncToRalendarFromEditor,
       handleDateSelected,
       handleCalendarSyncConfirm,
       syncToRalendar,

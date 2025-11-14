@@ -35,11 +35,36 @@ function parseDuration(duration) {
  */
 function isValidDate(date) {
   if (!date || typeof date !== 'string') return false
+  
+  // 排除占位符
+  if (date === 'YYYY-MM-DD') return false
+  
+  // 验证格式：YYYY-MM-DD
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/
   if (!dateRegex.test(date)) return false
   
-  const dateObj = new Date(date + 'T00:00:00')
-  return !isNaN(dateObj.getTime()) && dateObj.toISOString().startsWith(date)
+  // 解析日期
+  const [year, month, day] = date.split('-').map(Number)
+  
+  // 验证范围
+  if (year < 1900 || year > 2100) return false
+  if (month < 1 || month > 12) return false
+  if (day < 1 || day > 31) return false
+  
+  // 创建日期对象验证（使用本地时区）
+  const dateObj = new Date(year, month - 1, day)
+  
+  // 验证日期对象是否有效
+  if (isNaN(dateObj.getTime())) return false
+  
+  // 验证日期是否正确（防止无效日期如 2月30日）
+  if (dateObj.getFullYear() !== year || 
+      dateObj.getMonth() !== month - 1 || 
+      dateObj.getDate() !== day) {
+    return false
+  }
+  
+  return true
 }
 
 /**
@@ -127,89 +152,101 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
   const warnings = []
   
   // 检查并处理开始日期
-  // 如果日期是占位符或无效，设置为 null
-  if (!startDate || startDate === 'YYYY-MM-DD' || !isValidDate(startDate)) {
-    startDate = null
+  let finalStartDate = null
+  
+  // 1. 检查传入的 startDate（如果提供）
+  if (startDate && isValidDate(startDate)) {
+    finalStartDate = startDate
   }
   
-  // 如果没有提供开始日期，尝试从第一天获取或使用今天
-  if (!startDate) {
-    // 尝试从第一天的日期获取
-    if (aiPlan.days_detail.length > 0) {
-      const firstDay = aiPlan.days_detail[0]
-      if (firstDay.date) {
-        const dateStr = firstDay.date.includes('T') ? firstDay.date.split('T')[0] : firstDay.date
-        if (dateStr !== 'YYYY-MM-DD' && isValidDate(dateStr)) {
-          startDate = dateStr
-        }
+  // 2. 如果没有有效日期，尝试从第一天的日期获取
+  if (!finalStartDate && aiPlan.days_detail && aiPlan.days_detail.length > 0) {
+    const firstDay = aiPlan.days_detail[0]
+    if (firstDay.date) {
+      // 处理各种日期格式
+      let dateStr = firstDay.date
+      
+      // 如果是 ISO 格式，提取日期部分
+      if (dateStr.includes('T')) {
+        dateStr = dateStr.split('T')[0]
+      }
+      
+      // 如果是占位符，跳过
+      if (dateStr !== 'YYYY-MM-DD' && isValidDate(dateStr)) {
+        finalStartDate = dateStr
       }
     }
-    
-    // 如果仍然没有有效日期，使用今天
-    if (!startDate) {
-      const today = new Date()
-      const year = today.getFullYear()
-      const month = String(today.getMonth() + 1).padStart(2, '0')
-      const day = String(today.getDate()).padStart(2, '0')
-      startDate = `${year}-${month}-${day}`
-      warnings.push('未提供有效开始日期，使用今天作为默认开始日期')
-    }
   }
   
-  usedStartDate = startDate
+  // 3. 如果仍然没有有效日期，使用今天作为默认值
+  if (!finalStartDate) {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    finalStartDate = `${year}-${month}-${day}`
+    
+    // 验证生成的日期（应该总是有效的）
+    if (!isValidDate(finalStartDate)) {
+      throw new Error('无法生成有效的默认日期')
+    }
+    
+    warnings.push(`未提供有效开始日期，使用今天（${finalStartDate}）作为默认开始日期`)
+    console.info(`未提供有效开始日期，使用今天（${finalStartDate}）作为默认开始日期`)
+  }
+  
+  // 最终验证（应该总是通过）
+  if (!isValidDate(finalStartDate)) {
+    throw new Error(`开始日期无效: ${finalStartDate}`)
+  }
+  
+  usedStartDate = finalStartDate
   
   // 遍历每一天的行程
   aiPlan.days_detail.forEach((day, dayIndex) => {
     let dayDate = null
     
-    // 计算日期
-    if (usedStartDate) {
-      // 如果提供了开始日期，从开始日期计算
-      try {
-        // 验证开始日期格式（排除占位符）
-        if (!usedStartDate || usedStartDate === 'YYYY-MM-DD' || !isValidDate(usedStartDate)) {
-          // 如果日期无效，尝试使用默认值（今天）
-          const today = new Date()
-          const year = today.getFullYear()
-          const month = String(today.getMonth() + 1).padStart(2, '0')
-          const day = String(today.getDate()).padStart(2, '0')
-          usedStartDate = `${year}-${month}-${day}`
-          warnings.push(`开始日期无效，使用今天（${usedStartDate}）作为默认开始日期`)
-          console.warn(`开始日期无效，使用今天作为默认开始日期`)
-        }
-        
-        // 再次验证
-        if (!isValidDate(usedStartDate)) {
-          warnings.push(`开始日期格式无效: ${usedStartDate}，跳过第 ${dayIndex + 1} 天`)
-          console.warn(`开始日期格式无效: ${usedStartDate}，跳过第 ${dayIndex + 1} 天`)
-          return
-        }
-        
-        // 解析开始日期
-        const [year, month, dayNum] = usedStartDate.split('-').map(Number)
-        const start = new Date(year, month - 1, dayNum)
-        
-        if (isNaN(start.getTime())) {
-          warnings.push(`开始日期无效: ${usedStartDate}，跳过第 ${dayIndex + 1} 天`)
-          console.warn(`开始日期无效: ${usedStartDate}，跳过第 ${dayIndex + 1} 天`)
-          return
-        }
-        
-        // 计算当前天的日期
-        const current = new Date(start)
-        current.setDate(start.getDate() + dayIndex)
-        
-        // 格式化为 YYYY-MM-DD
-        const yearStr = current.getFullYear()
-        const monthStr = String(current.getMonth() + 1).padStart(2, '0')
-        const dayStr = String(current.getDate()).padStart(2, '0')
-        dayDate = `${yearStr}-${monthStr}-${dayStr}`
-      } catch (error) {
-        warnings.push(`计算日期失败 (Day ${dayIndex + 1}): ${error.message}`)
-        console.error(`计算日期失败 (Day ${dayIndex + 1}):`, error)
+    // 计算日期（usedStartDate 应该已经在前面验证过，所以这里直接使用）
+    try {
+      // 解析开始日期
+      const [year, month, dayNum] = usedStartDate.split('-').map(Number)
+      const start = new Date(year, month - 1, dayNum)
+      
+      // 验证日期对象（双重检查）
+      if (isNaN(start.getTime()) || 
+          start.getFullYear() !== year || 
+          start.getMonth() !== month - 1 || 
+          start.getDate() !== dayNum) {
+        warnings.push(`开始日期解析失败: ${usedStartDate}，跳过第 ${dayIndex + 1} 天`)
+        console.warn(`开始日期解析失败: ${usedStartDate}，跳过第 ${dayIndex + 1} 天`)
         return
       }
-    } else if (day.date) {
+      
+      // 计算当前天的日期
+      const current = new Date(start)
+      current.setDate(start.getDate() + dayIndex)
+      
+      // 验证计算后的日期
+      if (isNaN(current.getTime())) {
+        warnings.push(`计算日期失败 (Day ${dayIndex + 1})，跳过`)
+        console.warn(`计算日期失败 (Day ${dayIndex + 1})，跳过`)
+        return
+      }
+      
+      // 格式化为 YYYY-MM-DD
+      const yearStr = current.getFullYear()
+      const monthStr = String(current.getMonth() + 1).padStart(2, '0')
+      const dayStr = String(current.getDate()).padStart(2, '0')
+      dayDate = `${yearStr}-${monthStr}-${dayStr}`
+      
+    } catch (error) {
+      warnings.push(`计算日期失败 (Day ${dayIndex + 1}): ${error.message}`)
+      console.error(`计算日期失败 (Day ${dayIndex + 1}):`, error)
+      return
+    }
+    
+    // 如果仍然没有日期，尝试使用 day.date（备用方案）
+    if (!dayDate && day.date) {
       // 使用 day.date，但需要验证格式
       const dateStr = day.date
       
