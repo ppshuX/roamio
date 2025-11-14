@@ -215,7 +215,22 @@ class TripPlannerAI:
         days = preferences.get('days', '未指定')
         budget = preferences.get('budget_level', 'medium')
         style = preferences.get('travel_style', 'leisure')
-        start_date = preferences.get('start_date', '')
+        
+        # 处理日期信息（支持 date_range 或 start_date）
+        date_info = ''
+        if 'date_range' in preferences and isinstance(preferences['date_range'], dict):
+            date_range = preferences['date_range']
+            start_date = date_range.get('start_date', '')
+            end_date = date_range.get('end_date', '')
+            if start_date and end_date:
+                date_info = f"{start_date} 至 {end_date}"
+        elif 'start_date' in preferences:
+            start_date = preferences.get('start_date', '')
+            if start_date:
+                date_info = start_date
+        
+        if not date_info:
+            date_info = '待定'
         
         # 用户历史偏好（可选）
         user_context = ""
@@ -240,7 +255,7 @@ class TripPlannerAI:
         prompt = f"""生成旅行计划：
 
 需求：{user_prompt}
-天数：{days}天 | 预算：{budget} | 风格：{style} | 日期：{start_date if start_date else '待定'}
+天数：{days}天 | 预算：{budget} | 风格：{style} | 日期：{date_info}
 {user_context}
 
 要求：每天2-4个活动，包含交通和餐饮建议，返回完整 JSON。
@@ -263,15 +278,42 @@ class TripPlannerAI:
                 f"实际{len(trip_plan['days_detail'])}天"
             )
         
-        # 3. 日期补全
-        start_date_str = preferences.get('start_date')
+        # 3. 日期补全（支持 date_range 或 start_date）
+        start_date_str = None
+        
+        # 优先使用 date_range
+        if 'date_range' in preferences and isinstance(preferences['date_range'], dict):
+            date_range = preferences['date_range']
+            start_date_str = date_range.get('start_date')
+            # 如果提供了 date_range，也更新天数
+            if start_date_str and 'end_date' in date_range:
+                try:
+                    start_date = date.fromisoformat(start_date_str)
+                    end_date = date.fromisoformat(date_range['end_date'])
+                    calculated_days = (end_date - start_date).days + 1
+                    if calculated_days > 0:
+                        preferences['days'] = calculated_days
+                        # 如果生成的天数不匹配，更新行程天数
+                        if len(trip_plan['days_detail']) != calculated_days:
+                            logger.info(f"根据日期范围调整天数: {calculated_days} 天")
+                            trip_plan['days'] = calculated_days
+                except ValueError as e:
+                    logger.warning(f"Invalid date_range: {e}")
+        
+        # 如果没有 date_range，使用 start_date（向后兼容）
+        if not start_date_str:
+            start_date_str = preferences.get('start_date')
+        
+        # 填充每一天的日期
         if start_date_str:
             try:
                 start_date = date.fromisoformat(start_date_str)
                 for i, day in enumerate(trip_plan['days_detail']):
-                    day['date'] = (start_date + timedelta(days=i)).isoformat()
-            except ValueError:
-                logger.warning(f"Invalid start_date: {start_date_str}")
+                    day_date = start_date + timedelta(days=i)
+                    day['date'] = day_date.isoformat()
+                logger.info(f"已填充日期: {start_date} 开始，共 {len(trip_plan['days_detail'])} 天")
+            except ValueError as e:
+                logger.warning(f"Invalid start_date: {start_date_str}, error: {e}")
         
         # 4. 预算合理性检查
         total_budget = trip_plan.get('total_budget', 0)
