@@ -412,9 +412,27 @@ export default {
         if (aiTripPlan.days_detail && aiTripPlan.days_detail.length > 0) {
           tripData.value.overview.itinerary = aiTripPlan.days_detail.map(day => {
             // 将 activities 数组转换为文本描述
-            const contentText = day.activities.map(activity => 
-              `${activity.time} - ${activity.location}\n${activity.description}`
-            ).join('\n\n')
+            // 格式：09:00-11:00 故宫 → 14:00-16:00 天安门
+            const contentText = day.activities.map(activity => {
+              // 计算结束时间
+              let timeRange = activity.time || '09:00'
+              if (activity.duration) {
+                // 解析持续时间（如 "2小时"、"1.5小时"）
+                const durationMatch = activity.duration.match(/(\d+\.?\d*)\s*小时/)
+                if (durationMatch) {
+                  const hours = parseFloat(durationMatch[1])
+                  const [startHour, startMin] = timeRange.split(':').map(Number)
+                  let endHour = startHour + Math.floor(hours)
+                  let endMin = startMin + Math.round((hours % 1) * 60)
+                  if (endMin >= 60) {
+                    endHour += Math.floor(endMin / 60)
+                    endMin = endMin % 60
+                  }
+                  timeRange = `${timeRange}-${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`
+                }
+              }
+              return `${timeRange} ${activity.location}`
+            }).join(' → ')
             
             // 提取当天亮点（第一个景点活动）
             const mainActivity = day.activities.find(a => 

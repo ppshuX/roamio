@@ -166,30 +166,30 @@ function extractLocationFromContent(content) {
  */
 function splitActivities(content) {
     if (!content) return []
-    
+
     const activities = []
-    
+
     // 按箭头或换行符分割
     const parts = content.split(/[→\n]/).map(p => p.trim()).filter(p => p.length > 0)
-    
+
     for (const part of parts) {
         // 尝试提取时间和地点
         // 格式：09:00-11:00 故宫 - 参观紫禁城
         const timeMatch = part.match(/(\d{1,2}:\d{2})\s*[-~至]\s*(\d{1,2}:\d{2})/)
-        
+
         if (timeMatch) {
             const timeRange = `${timeMatch[1]}-${timeMatch[2]}`
-            
+
             // 移除时间部分，提取地点和描述
             let afterTime = part.substring(timeMatch[0].length).trim()
-            
+
             // 移除可能的前导符号
             afterTime = afterTime.replace(/^[-~→\s]+/, '').trim()
-            
+
             // 分割地点和描述（如果有的话）
             let location = afterTime
             let description = ''
-            
+
             // 尝试按冒号、破折号等分割
             const descMatch = afterTime.match(/^([^：:：\-—]+?)\s*[：:：\-—]\s*(.+)$/)
             if (descMatch) {
@@ -199,10 +199,10 @@ function splitActivities(content) {
                 // 如果没有描述，整个作为地点
                 location = afterTime
             }
-            
+
             // 验证地点有效性
-            if (location && 
-                location.length > 1 && 
+            if (location &&
+                location.length > 1 &&
                 location.length < 50 &&
                 !/^\d+$/.test(location)) {
                 activities.push({
@@ -213,7 +213,7 @@ function splitActivities(content) {
             }
         }
     }
-    
+
     return activities
 }
 
