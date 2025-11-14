@@ -222,12 +222,12 @@ export function convertTripToRalendarEvents(tripData) {
 
         // 直接使用 UTC+8 时间，不需要转换
         // Ralendar API 期望的是 UTC+8 时区的时间字符串
-        
+
         // 处理结束时间可能跨天的情况
         let endYear = year
         let endMonth = month
         let endDay = dayNum
-        
+
         // 如果结束时间小于开始时间，说明跨天了
         if (endHour < startHour || (endHour === startHour && endMin < startMin)) {
             endDay += 1
