@@ -110,9 +110,37 @@ function combineDateTime(date, time) {
     throw new Error(`无效的日期: ${date}`)
   }
   
-  // 创建 UTC 时间（减去8小时偏移，因为我们要表示的是 UTC+8 时区的时间）
+  // 正确的方法：将 UTC+8 时间转换为 UTC 时间
   // 例如：2025-11-15 09:00 UTC+8 = 2025-11-15 01:00 UTC
-  const utcDate = new Date(Date.UTC(year, month - 1, day, hours - 8, mins, 0, 0))
+  // 例如：2025-11-15 07:00 UTC+8 = 2025-11-14 23:00 UTC（需要调整日期）
+  
+  // 计算 UTC 时间（减去 8 小时）
+  let utcYear = year
+  let utcMonth = month - 1  // JavaScript Date 月份从 0 开始
+  let utcDay = day
+  let utcHours = hours - 8
+  let utcMins = mins
+  
+  // 处理负数小时（需要调整到前一天）
+  if (utcHours < 0) {
+    utcHours += 24
+    utcDay -= 1
+    
+    // 处理跨月的情况
+    if (utcDay < 1) {
+      utcMonth -= 1
+      if (utcMonth < 0) {
+        utcMonth = 11
+        utcYear -= 1
+      }
+      // 获取上个月的最后一天
+      const lastDayOfPrevMonth = new Date(utcYear, utcMonth + 1, 0).getDate()
+      utcDay = lastDayOfPrevMonth
+    }
+  }
+  
+  // 创建 UTC 时间
+  const utcDate = new Date(Date.UTC(utcYear, utcMonth, utcDay, utcHours, utcMins, 0, 0))
   
   // 验证日期对象是否有效
   if (isNaN(utcDate.getTime())) {

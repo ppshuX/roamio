@@ -220,10 +220,56 @@ export function convertTripToRalendarEvents(tripData) {
         const [startHour, startMin] = timeRange.start.split(':').map(Number)
         const [endHour, endMin] = timeRange.end.split(':').map(Number)
 
-        // 创建 UTC+8 时间的 Date 对象（使用 UTC 方法并减去8小时偏移）
+        // 正确的方法：将 UTC+8 时间转换为 UTC 时间
         // 例如：2025-11-15 09:00 UTC+8 = 2025-11-15 01:00 UTC
-        const startTimeUTC = new Date(Date.UTC(year, month, dayNum, startHour - 8, startMin, 0, 0))
-        const endTimeUTC = new Date(Date.UTC(year, month, dayNum, endHour - 8, endMin, 0, 0))
+        // 例如：2025-11-15 07:00 UTC+8 = 2025-11-14 23:00 UTC（需要调整日期）
+
+        // 计算开始时间的 UTC 时间
+        let startUtcYear = year
+        let startUtcMonth = month
+        let startUtcDay = dayNum
+        let startUtcHour = startHour - 8
+        let startUtcMin = startMin
+
+        // 处理负数小时（需要调整到前一天）
+        if (startUtcHour < 0) {
+            startUtcHour += 24
+            startUtcDay -= 1
+            if (startUtcDay < 1) {
+                startUtcMonth -= 1
+                if (startUtcMonth < 0) {
+                    startUtcMonth = 11
+                    startUtcYear -= 1
+                }
+                const lastDayOfPrevMonth = new Date(Date.UTC(startUtcYear, startUtcMonth + 1, 0)).getUTCDate()
+                startUtcDay = lastDayOfPrevMonth
+            }
+        }
+
+        // 计算结束时间的 UTC 时间
+        let endUtcYear = year
+        let endUtcMonth = month
+        let endUtcDay = dayNum
+        let endUtcHour = endHour - 8
+        let endUtcMin = endMin
+
+        // 处理负数小时（需要调整到前一天）
+        if (endUtcHour < 0) {
+            endUtcHour += 24
+            endUtcDay -= 1
+            if (endUtcDay < 1) {
+                endUtcMonth -= 1
+                if (endUtcMonth < 0) {
+                    endUtcMonth = 11
+                    endUtcYear -= 1
+                }
+                const lastDayOfPrevMonth = new Date(Date.UTC(endUtcYear, endUtcMonth + 1, 0)).getUTCDate()
+                endUtcDay = lastDayOfPrevMonth
+            }
+        }
+
+        const startTimeUTC = new Date(Date.UTC(startUtcYear, startUtcMonth, startUtcDay, startUtcHour, startUtcMin, 0, 0))
+        const endTimeUTC = new Date(Date.UTC(endUtcYear, endUtcMonth, endUtcDay, endUtcHour, endUtcMin, 0, 0))
 
         if (isNaN(startTimeUTC.getTime()) || isNaN(endTimeUTC.getTime())) {
             console.warn(`第 ${dayIndex + 1} 天时间无效，跳过`)

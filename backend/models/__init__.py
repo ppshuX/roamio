@@ -9,6 +9,8 @@ from .trip import Trip
 from .social_auth import SocialAccount
 from .email_verification import EmailVerificationCode
 from .event import TripEvent
+from .subscription import Subscription
+from .payment import TripCreationOrder, SubscriptionOrder
 
 __all__ = [
     'UserProfile',
@@ -18,5 +20,8 @@ __all__ = [
     'SocialAccount',
     'EmailVerificationCode',
     'TripEvent',
+    'Subscription',
+    'TripCreationOrder',
+    'SubscriptionOrder',
 ]
 
