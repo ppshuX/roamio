@@ -49,6 +49,10 @@ class Trip(models.Model):
     theme_color = models.CharField(max_length=20, default='#f0e68c', help_text='主题颜色')
     background_music = models.CharField(max_length=100, blank=True, help_text='背景音乐URL')
     
+    # Ralendar 同步状态（可选）
+    ralendar_synced_at = models.DateTimeField(null=True, blank=True, help_text='同步到 Ralendar 的时间')
+    ralendar_event_ids = models.JSONField(default=list, blank=True, help_text='Ralendar 事件 IDs')
+    
     # 时间戳
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -107,4 +111,9 @@ class Trip(models.Model):
     def is_public(self):
         """是否公开"""
         return self.visibility == 'public'
+    
+    @property
+    def is_synced_to_ralendar(self):
+        """是否已同步到 Ralendar"""
+        return self.ralendar_synced_at is not None and len(self.ralendar_event_ids) > 0
 

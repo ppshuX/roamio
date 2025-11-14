@@ -94,8 +94,22 @@
           <button class="btn-close-modal" @click="showAIGenerator = false">✕</button>
         </div>
         <div class="ai-modal-body">
-          <TripGenerator @apply="handleAIApply" />
+          <TripGenerator 
+            @apply="handleAIApply" 
+            @sync-to-calendar="handleSyncToCalendar"
+          />
         </div>
+      </div>
+    </div>
+    
+    <!-- 同步到日历选择界面 -->
+    <div v-if="showCalendarSync" class="calendar-sync-overlay" @click.self="showCalendarSync = false">
+      <div class="calendar-sync-container">
+        <CalendarSyncSelector
+          :events="calendarEvents"
+          @close="showCalendarSync = false"
+          @confirm="handleCalendarSyncConfirm"
+        />
       </div>
     </div>
   </div>
@@ -106,12 +120,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
 import { getTripPlan, createTripPlan, updateTripPlan } from '@/api/tripPlan'
+import { syncTripToCalendar } from '@/api/ralendar'
+import { convertAITripToEvents, validateEvents } from '@/utils/aiToRalendarConverter'
 import NavBar from '@/components/NavBar.vue'
 import BasicInfoEditor from '@/components/editor/BasicInfoEditor.vue'
 import ModuleSelector from '@/components/editor/ModuleSelector.vue'
 import ContentEditor from '@/components/editor/ContentEditor.vue'
 import EditorSidebar from '@/components/editor/EditorSidebar.vue'
 import TripGenerator from '@/components/ai/TripGeneratorSimple.vue'
+import CalendarSyncSelector from '@/components/calendar/CalendarSyncSelector.vue'
 
 export default {
   name: 'TripEditorView',
@@ -122,7 +139,8 @@ export default {
     ModuleSelector,
     ContentEditor,
     EditorSidebar,
-    TripGenerator
+    TripGenerator,
+    CalendarSyncSelector
   },
   
   setup() {
@@ -133,6 +151,10 @@ export default {
     const saving = ref(false)
     const publishing = ref(false)
     const showAIGenerator = ref(false)
+    const showCalendarSync = ref(false)
+    const syncingToCalendar = ref(false)
+    const aiGeneratedPlan = ref(null) // 保存 AI 生成的原始数据，用于同步
+    const calendarEvents = ref([]) // 准备同步到日历的事件列表
     const tripId = computed(() => route.params.id ? parseInt(route.params.id) : null)
     
     // 可用模块
@@ -399,6 +421,9 @@ export default {
           'basicInfo', 'highlights', 'itinerary', 'budget', 'tips'
         ]
         
+        // 保存 AI 生成的原始数据，用于后续同步到日历
+        aiGeneratedPlan.value = aiTripPlan
+        
         // 关闭弹窗
         showAIGenerator.value = false
         
@@ -406,6 +431,206 @@ export default {
       } catch (error) {
         console.error('应用 AI 数据失败:', error)
         alert('❌ 应用失败，请重试')
+      }
+    }
+    
+    // 处理"同步到日历"按钮点击
+    const handleSyncToCalendar = (aiPlan) => {
+      if (!aiPlan || !aiPlan.days_detail || aiPlan.days_detail.length === 0) {
+        alert('❌ 没有可同步的行程数据')
+        return
+      }
+      
+      // 保存 AI 生成的原始数据
+      aiGeneratedPlan.value = aiPlan
+      
+      // 转换为日历事件格式
+      const startDate = tripData.value.start_date || aiPlan.days_detail?.[0]?.date || null
+      const tripTitle = tripData.value.title || aiPlan.trip_title || '旅行'
+      
+      try {
+        const events = convertAITripToEvents(aiPlan, tripTitle, startDate)
+        
+        if (events.length === 0) {
+          alert('❌ 没有可同步的行程事件，请检查行程数据')
+          return
+        }
+        
+        // 设置日历事件列表
+        calendarEvents.value = events
+        
+        // 关闭 AI 生成弹窗，打开日历同步选择界面
+        showAIGenerator.value = false
+        showCalendarSync.value = true
+        
+      } catch (error) {
+        console.error('转换行程事件失败:', error)
+        alert('❌ 转换行程事件失败：' + error.message)
+      }
+    }
+    
+    // 处理日历同步确认
+    const handleCalendarSyncConfirm = async (selectedEvents) => {
+      if (!selectedEvents || selectedEvents.length === 0) {
+        alert('请至少选择一个行程')
+        return
+      }
+      
+      syncingToCalendar.value = true
+      
+      try {
+        // 验证事件数据
+        const { valid, invalid } = validateEvents(selectedEvents)
+        
+        if (invalid.length > 0) {
+          console.warn('部分事件数据无效:', invalid)
+          if (valid.length === 0) {
+            alert('❌ 所有事件数据都无效，无法同步')
+            return
+          }
+          const continueSync = confirm(`⚠️ 发现 ${invalid.length} 个无效事件，是否继续同步 ${valid.length} 个有效事件？`)
+          if (!continueSync) {
+            return
+          }
+        }
+        
+        // 获取旅行计划的 slug（如果已创建）
+        let tripSlug = route.params.slug
+        
+        // 如果还没有创建旅行计划，先保存
+        if (!tripSlug) {
+          if (!tripData.value.title) {
+            alert('❌ 请先填写旅行标题，才能同步到日历')
+            return
+          }
+          
+          // 先保存为草稿
+          const result = await createTripPlan({
+            ...tripData.value,
+            status: 'draft'
+          })
+          tripSlug = result.slug
+          
+          // 更新路由（不刷新页面）
+          router.replace(`/editor/${tripSlug}`)
+        }
+        
+        // 调用后端 API 同步到 Ralendar
+        const response = await syncTripToCalendar(tripSlug, valid)
+        
+        if (response.code === 200) {
+          const { synced_count, failed_count } = response.data
+          if (failed_count === 0) {
+            alert(`✅ 同步成功！已将 ${synced_count} 个行程事件同步到 Ralendar 日历。\n\n📅 行程事件将在开始前 ${valid[0]?.reminder_minutes || 30} 分钟提醒你。`)
+          } else {
+            alert(`⚠️ 部分同步成功：${synced_count} 个成功，${failed_count} 个失败。`)
+          }
+          
+          // 关闭选择界面
+          showCalendarSync.value = false
+          
+          // 清除数据
+          aiGeneratedPlan.value = null
+          calendarEvents.value = []
+        } else {
+          throw new Error(response.message || '同步失败')
+        }
+        
+      } catch (error) {
+        console.error('同步到日历失败:', error)
+        const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || '同步失败，请重试'
+        alert(`❌ 同步失败：${errorMsg}`)
+      } finally {
+        syncingToCalendar.value = false
+      }
+    }
+    
+    // 同步到 Ralendar 日历（保留原有功能，用于编辑器中的按钮）
+    const syncToRalendar = async () => {
+      if (!aiGeneratedPlan.value) {
+        alert('❌ 请先使用 AI 生成行程，才能同步到日历')
+        return
+      }
+      
+      // 确认同步
+      const confirmMsg = `确定要将所有行程同步到 Ralendar 日历吗？\n\n将创建 ${aiGeneratedPlan.value.days_detail?.length || 0} 天的行程事件，每项活动会提前 30 分钟提醒。`
+      if (!confirm(confirmMsg)) {
+        return
+      }
+      
+      syncingToCalendar.value = true
+      
+      try {
+        // 1. 转换 AI 数据为 Ralendar 事件格式
+        const startDate = tripData.value.start_date || aiGeneratedPlan.value.days_detail?.[0]?.date || null
+        const tripTitle = tripData.value.title || aiGeneratedPlan.value.trip_title || '旅行'
+        
+        const events = convertAITripToEvents(aiGeneratedPlan.value, tripTitle, startDate)
+        
+        if (events.length === 0) {
+          alert('❌ 没有可同步的行程事件，请检查行程数据')
+          return
+        }
+        
+        // 2. 验证事件数据
+        const { valid, invalid } = validateEvents(events)
+        
+        if (invalid.length > 0) {
+          console.warn('部分事件数据无效:', invalid)
+          if (valid.length === 0) {
+            alert('❌ 所有事件数据都无效，无法同步')
+            return
+          }
+          const continueSync = confirm(`⚠️ 发现 ${invalid.length} 个无效事件，是否继续同步 ${valid.length} 个有效事件？`)
+          if (!continueSync) {
+            return
+          }
+        }
+        
+        // 3. 获取旅行计划的 slug（如果已创建）
+        let tripSlug = route.params.slug
+        
+        // 如果还没有创建旅行计划，先保存
+        if (!tripSlug) {
+          if (!tripData.value.title) {
+            alert('❌ 请先填写旅行标题，才能同步到日历')
+            return
+          }
+          
+          // 先保存为草稿
+          const result = await createTripPlan({
+            ...tripData.value,
+            status: 'draft'
+          })
+          tripSlug = result.slug
+          
+          // 更新路由（不刷新页面）
+          router.replace(`/editor/${tripSlug}`)
+        }
+        
+        // 4. 调用后端 API 同步到 Ralendar
+        const response = await syncTripToCalendar(tripSlug, valid)
+        
+        if (response.code === 200) {
+          const { synced_count, failed_count } = response.data
+          if (failed_count === 0) {
+            alert(`✅ 同步成功！已将 ${synced_count} 个行程事件同步到 Ralendar 日历。\n\n📅 行程事件将在开始前 30 分钟提醒你。`)
+          } else {
+            alert(`⚠️ 部分同步成功：${synced_count} 个成功，${failed_count} 个失败。`)
+          }
+          
+          // 清除 AI 生成数据（表示已同步）
+          aiGeneratedPlan.value = null
+        } else {
+          throw new Error(response.message || '同步失败')
+        }
+        
+      } catch (error) {
+        console.error('同步到日历失败:', error)
+        const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || '同步失败，请重试'
+        alert(`❌ 同步失败：${errorMsg}`)
+      } finally {
+        syncingToCalendar.value = false
       }
     }
     
@@ -424,15 +649,22 @@ export default {
       saving,
       publishing,
       showAIGenerator,
-      isEditMode,
-      canPublish,
-      daysCount,
-      availableModules,
-      toggleModule,
+      syncingToCalendar,
+      aiGeneratedPlan,
+      showCalendarSync,
+      calendarEvents,
       handleSave,
       handlePublish,
+      goBack,
       handleAIApply,
-      goBack
+      handleSyncToCalendar,
+      handleCalendarSyncConfirm,
+      syncToRalendar,
+      availableModules,
+      toggleModule,
+      daysCount,
+      canPublish,
+      isEditMode
     }
   }
 }
@@ -723,6 +955,30 @@ export default {
   }
 }
 
+/* 日历同步弹窗样式 */
+.calendar-sync-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.calendar-sync-container {
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* 响应式 */
 @media (max-width: 991px) {
   .editor-container {
@@ -730,6 +986,15 @@ export default {
   }
   
   .ai-modal-content {
+    max-height: 95vh;
+  }
+  
+  .calendar-sync-overlay {
+    padding: 10px;
+  }
+  
+  .calendar-sync-container {
+    max-width: 100%;
     max-height: 95vh;
   }
 }

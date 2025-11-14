@@ -38,6 +38,7 @@
       <div class="preview-header">
         <h3>{{ generatedTrip.trip_title }}</h3>
         <div>
+          <button class="btn-sync-calendar" @click="syncToCalendar">🗓️ 同步到日历</button>
           <button class="btn-apply" @click="applyTrip">✅ 应用</button>
           <button class="btn-regenerate" @click="regenerate">🔄 重新生成</button>
         </div>
@@ -63,7 +64,7 @@ import { ref, computed, onMounted } from 'vue'
 import { generateTripPlan, getUsageStats } from '@/api/ai'
 
 // eslint-disable-next-line no-undef
-const emit = defineEmits(['apply'])
+const emit = defineEmits(['apply', 'sync-to-calendar'])
 
 const userPrompt = ref('')
 const preferences = ref({ days: 5, budget_level: 'medium', travel_style: 'leisure' })
@@ -117,6 +118,10 @@ const generateTrip = async () => {
 const applyTrip = () => {
   emit('apply', generatedTrip.value)
   alert('✅ 已应用到行程')
+}
+
+const syncToCalendar = () => {
+  emit('sync-to-calendar', generatedTrip.value)
 }
 
 const regenerate = () => {
@@ -247,6 +252,17 @@ onMounted(() => {
   border-radius: 6px;
   cursor: pointer;
   margin-left: 10px;
+}
+
+.btn-sync-calendar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+}
+
+.btn-sync-calendar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .btn-apply {
