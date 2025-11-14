@@ -108,7 +108,7 @@ class RalendarClient:
             logger.error(f"Ralendar API request failed: {e}")
             raise
     
-    def batch_create_events(self, user_token, events_list, trip_slug):
+    def batch_create_events(self, user_token, events_list, trip_slug, unionid=None, openid=None):
         """
         批量创建多个事件
         
@@ -116,6 +116,8 @@ class RalendarClient:
             user_token (str): 用户的 JWT Token
             events_list (list): 事件列表
             trip_slug (str): 旅行计划的 slug
+            unionid (str, optional): UnionID，用于用户匹配
+            openid (str, optional): OpenID，用于用户匹配
         
         Returns:
             dict: {"created": [...], "failed": [...]}
@@ -126,20 +128,86 @@ class RalendarClient:
         url = f"{self.base_url}/fusion/events/batch/"
         headers = self.get_headers(user_token)
         
+        # 清理事件数据，移除 Ralendar API 不支持的字段
+        cleaned_events = []
+        for event in events_list:
+            # 只保留 Ralendar API 支持的字段
+            # 注意：title, start_time 是必填字段
+            cleaned_event = {
+                'title': event.get('title', ''),
+                'description': event.get('description', ''),
+                'start_time': event.get('start_time'),
+                'end_time': event.get('end_time'),
+            }
+            
+            # location 处理：优先使用 location，如果没有则使用 location_name
+            location = event.get('location') or event.get('location_name') or ''
+            if location:
+                cleaned_event['location'] = location
+            
+            # 坐标处理（可选）
+            if event.get('latitude') is not None:
+                cleaned_event['latitude'] = float(event.get('latitude'))
+            if event.get('longitude') is not None:
+                cleaned_event['longitude'] = float(event.get('longitude'))
+            
+            # 提醒设置
+            cleaned_event['reminder_minutes'] = event.get('reminder_minutes', 30)
+            if event.get('email_reminder') is not None:
+                cleaned_event['email_reminder'] = bool(event.get('email_reminder'))
+            
+            # 添加 unionid 和 openid（如果存在）
+            if unionid:
+                cleaned_event['unionid'] = unionid
+            if openid:
+                cleaned_event['openid'] = openid
+            
+            # 验证必填字段
+            if not cleaned_event.get('title'):
+                logger.warning(f"Event missing title, skipping: {event}")
+                continue
+            if not cleaned_event.get('start_time'):
+                logger.warning(f"Event missing start_time, skipping: {event}")
+                continue
+            
+            cleaned_events.append(cleaned_event)
+        
+        # 如果清理后没有有效事件，抛出异常
+        if not cleaned_events:
+            error_msg = "没有有效的事件数据（所有事件都缺少必填字段）"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
         data = {
-            "events": events_list,
+            "events": cleaned_events,
             "source_app": "roamio",
             "related_trip_slug": trip_slug
         }
         
+        # 同时在顶层添加 unionid 和 openid（双重保险）
+        if unionid:
+            data['unionid'] = unionid
+        if openid:
+            data['openid'] = openid
+        
         try:
+            logger.info(f"Sending batch create request: {len(cleaned_events)} events, trip_slug={trip_slug}")
+            logger.debug(f"Request data: {data}")
             response = requests.post(url, json=data, headers=headers, timeout=self.timeout)
+            
+            # 记录响应详情以便调试
+            if response.status_code != 200:
+                logger.error(f"Ralendar API returned {response.status_code}: {response.text}")
+            
             response.raise_for_status()
             result = response.json()
-            logger.info(f"Batch created {len(result.get('created', []))} events")
+            logger.info(f"Batch created {len(result.get('created', []))} events, failed: {len(result.get('failed', []))}")
             return result
         except requests.exceptions.RequestException as e:
             logger.error(f"Batch create failed: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                logger.error(f"Response status: {e.response.status_code}")
+                logger.error(f"Response body: {e.response.text}")
             raise
     
     def list_events(self, user_token, unionid=None):

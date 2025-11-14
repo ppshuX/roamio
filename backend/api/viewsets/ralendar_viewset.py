@@ -240,22 +240,19 @@ class RalendarIntegrationViewSet(ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # 为每个事件添加 unionid 和 openid
-        events_with_auth = []
-        for event in events:
-            event_data = event.copy()
-            event_data['source_app'] = 'roamio'
-            if unionid:
-                event_data['unionid'] = unionid
-            if openid:
-                event_data['openid'] = openid
-            events_with_auth.append(event_data)
-        
         # 调用 Ralendar API 批量创建事件
+        # 注意：事件数据会在 RalendarClient 中清理，移除不支持的字段
         client = RalendarClient()
         
         try:
-            result = client.batch_create_events(user_token, events_with_auth, trip.slug)
+            # 传递 unionid 和 openid 到批量创建方法
+            result = client.batch_create_events(
+                user_token, 
+                events, 
+                trip.slug,
+                unionid=unionid,
+                openid=openid
+            )
             
             # 处理返回结果
             created_events = result.get('created', [])
