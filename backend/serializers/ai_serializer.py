@@ -17,7 +17,6 @@ class TripGenerationRequestSerializer(serializers.Serializer):
     preferences = serializers.DictField(
         required=False,
         default=dict,
-        child=serializers.CharField(),
         help_text="偏好设置"
     )
     
@@ -29,6 +28,9 @@ class TripGenerationRequestSerializer(serializers.Serializer):
     
     def validate_preferences(self, value):
         """验证偏好设置"""
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("偏好设置必须是字典格式")
+        
         # 验证天数
         if 'days' in value:
             try:
@@ -41,6 +43,8 @@ class TripGenerationRequestSerializer(serializers.Serializer):
         
         # 验证预算等级
         if 'budget_level' in value:
+            if not isinstance(value['budget_level'], str):
+                raise serializers.ValidationError("预算等级必须是字符串")
             if value['budget_level'] not in ['low', 'medium', 'high']:
                 raise serializers.ValidationError(
                     "预算等级必须是 low/medium/high"
@@ -48,13 +52,42 @@ class TripGenerationRequestSerializer(serializers.Serializer):
         
         # 验证旅行风格
         if 'travel_style' in value:
+            if not isinstance(value['travel_style'], str):
+                raise serializers.ValidationError("旅行风格必须是字符串")
             valid_styles = ['leisure', 'adventure', 'culture', 'food', 'photography']
             if value['travel_style'] not in valid_styles:
                 raise serializers.ValidationError(
                     f"旅行风格必须是 {'/'.join(valid_styles)}"
                 )
         
-        # 验证日期格式
+        # 验证日期范围（新增）
+        if 'date_range' in value:
+            if not isinstance(value['date_range'], dict):
+                raise serializers.ValidationError("日期范围必须是字典格式")
+            
+            date_range = value['date_range']
+            if 'start_date' not in date_range or 'end_date' not in date_range:
+                raise serializers.ValidationError("日期范围必须包含 start_date 和 end_date")
+            
+            from datetime import datetime
+            try:
+                start_date = datetime.fromisoformat(date_range['start_date'])
+                end_date = datetime.fromisoformat(date_range['end_date'])
+                
+                if end_date < start_date:
+                    raise serializers.ValidationError("返回日期不能早于出发日期")
+                
+                # 计算天数
+                days_diff = (end_date - start_date).days + 1
+                if days_diff < 1 or days_diff > 30:
+                    raise serializers.ValidationError("旅行天数必须在 1-30 天之间")
+                    
+            except ValueError:
+                raise serializers.ValidationError(
+                    "日期格式错误，应为 YYYY-MM-DD"
+                )
+        
+        # 验证单个日期格式（向后兼容）
         if 'start_date' in value:
             from datetime import datetime
             try:
