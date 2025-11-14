@@ -159,11 +159,8 @@ class RalendarClient:
             if event.get('email_reminder') is not None:
                 cleaned_event['email_reminder'] = bool(event.get('email_reminder'))
             
-            # 添加 unionid 和 openid（如果存在）
-            if unionid:
-                cleaned_event['unionid'] = unionid
-            if openid:
-                cleaned_event['openid'] = openid
+            # 注意：unionid 和 openid 只放在顶层，不在每个事件对象中
+            # 这样可以避免 Ralendar API 解析错误
             
             # 验证必填字段
             title = cleaned_event.get('title', '').strip()
