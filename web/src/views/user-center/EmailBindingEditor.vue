@@ -8,159 +8,40 @@
     </div>
     
     <div class="card-body">
-      <!-- 当前邮箱显示 -->
-      <div v-if="currentEmail && emailVerified && !isChangingEmail" class="mb-3">
-        <div class="alert alert-success">
-          <strong>已绑定邮箱：</strong> {{ currentEmail }}
-        </div>
-        <button class="btn btn-outline-primary btn-sm" @click="startChangeEmail">
-          🔄 更改邮箱
-        </button>
-      </div>
+      <!-- 邮箱显示组件 -->
+      <EmailDisplay
+        v-if="!isChangingEmail"
+        :email="currentEmail"
+        :verified="emailVerified"
+        @change-request="startChangeEmail"
+      />
       
-      <!-- 未绑定或未验证提示 -->
-      <div v-else-if="!emailVerified" class="mb-3">
-        <div class="alert alert-warning">
-          <strong>⚠️ 邮箱{{ currentEmail ? '未验证' : '未绑定' }}</strong>
-          <p class="mb-0 small">绑定邮箱可以用于找回密码和接收重要通知</p>
-        </div>
-      </div>
-      
-      <!-- 更改邮箱表单 -->
-      <div v-if="isChangingEmail">
-        <div class="alert alert-info">
-          <strong>当前邮箱：</strong> {{ currentEmail }}
-        </div>
-        <form @submit.prevent="handleChangeEmail">
-          <!-- 新邮箱输入 -->
-          <div class="mb-3">
-            <label class="form-label">📧 新邮箱地址 <span class="text-danger">*</span></label>
-            <div class="input-group">
-              <input
-                type="email"
-                class="form-control"
-                v-model="changeEmailForm.newEmail"
-                placeholder="请输入新邮箱地址"
-                required
-              />
-              <button
-                type="button"
-                class="btn btn-outline-primary"
-                :disabled="!changeEmailForm.newEmail || sendingCode || countdown > 0"
-                @click="handleSendChangeCode"
-              >
-                <span v-if="sendingCode" class="spinner-border spinner-border-sm me-1"></span>
-                <span v-else-if="countdown > 0">{{ countdown }}秒</span>
-                <span v-else>发送验证码</span>
-              </button>
-            </div>
-            <small v-if="codeSent" class="text-success">
-              验证码已发送到新邮箱，请查收
-            </small>
-          </div>
-          
-          <!-- 验证码输入 -->
-          <div class="mb-3" v-if="codeSent">
-            <label class="form-label">🔐 验证码 <span class="text-danger">*</span></label>
-            <input
-              type="text"
-              class="form-control"
-              v-model="changeEmailForm.code"
-              placeholder="请输入6位验证码"
-              maxlength="6"
-              required
-            />
-          </div>
-          
-          <!-- 操作按钮 -->
-          <div class="d-flex gap-2" v-if="codeSent">
-            <button
-              type="submit"
-              class="btn btn-primary"
-              :disabled="changing || !changeEmailForm.code || changeEmailForm.code.length !== 6"
-            >
-              <span v-if="changing" class="spinner-border spinner-border-sm me-2"></span>
-              {{ changing ? '更改中...' : '✅ 确认更改' }}
-            </button>
-            <button
-              type="button"
-              class="btn btn-outline-secondary"
-              @click="cancelChangeEmail"
-              :disabled="changing"
-            >
-              取消
-            </button>
-          </div>
-        </form>
-      </div>
+      <!-- 邮箱更改表单 -->
+      <EmailChangeForm
+        v-if="isChangingEmail"
+        :current-email="currentEmail"
+        :sending="sendingCode"
+        :processing="changing"
+        :code-sent="codeSent"
+        :countdown="countdown"
+        @send-code="handleSendChangeCode"
+        @change="handleChangeEmail"
+        @cancel="cancelChangeEmail"
+        @error="handleError"
+      />
       
       <!-- 邮箱绑定表单 -->
-      <div v-if="(!emailVerified || !currentEmail) && !isChangingEmail">
-        <form @submit.prevent="handleBindEmail">
-          <!-- 邮箱输入 -->
-          <div class="mb-3">
-            <label class="form-label">📧 邮箱地址 <span class="text-danger">*</span></label>
-            <div class="input-group">
-              <input
-                type="email"
-                class="form-control"
-                v-model="emailForm.email"
-                :disabled="emailVerified && currentEmail"
-                placeholder="请输入邮箱地址"
-                required
-              />
-              <button
-                v-if="!emailVerified || !currentEmail"
-                type="button"
-                class="btn btn-outline-primary"
-                :disabled="!emailForm.email || sendingCode || countdown > 0 || verifyingCode"
-                @click="handleSendCode"
-              >
-                <span v-if="sendingCode" class="spinner-border spinner-border-sm me-1"></span>
-                <span v-else-if="countdown > 0">{{ countdown }}秒</span>
-                <span v-else>发送验证码</span>
-              </button>
-            </div>
-            <small v-if="codeSent && !emailVerified" class="text-success">
-              验证码已发送，请查收邮箱
-            </small>
-          </div>
-          
-          <!-- 验证码输入 -->
-          <div class="mb-3" v-if="codeSent">
-            <label class="form-label">🔐 验证码 <span class="text-danger">*</span></label>
-            <input
-              type="text"
-              class="form-control"
-              v-model="emailForm.code"
-              :disabled="emailVerified"
-              placeholder="请输入6位验证码"
-              maxlength="6"
-              required
-            />
-          </div>
-          
-          <!-- 操作按钮 -->
-          <div class="d-flex gap-2" v-if="codeSent && !emailVerified">
-            <button
-              type="submit"
-              class="btn btn-primary"
-              :disabled="binding || !emailForm.code || emailForm.code.length !== 6"
-            >
-              <span v-if="binding" class="spinner-border spinner-border-sm me-2"></span>
-              {{ binding ? '绑定中...' : '✅ 绑定邮箱' }}
-            </button>
-            <button
-              type="button"
-              class="btn btn-outline-secondary"
-              @click="handleCancel"
-              :disabled="binding"
-            >
-              取消
-            </button>
-          </div>
-        </form>
-      </div>
+      <EmailBindForm
+        v-if="(!emailVerified || !currentEmail) && !isChangingEmail"
+        :current-email="currentEmail"
+        :sending="sendingCode"
+        :processing="binding"
+        :code-sent="codeSent"
+        :countdown="countdown"
+        @send-code="handleSendCode"
+        @bind="handleBindEmail"
+        @cancel="handleCancel"
+      />
       
       <!-- 错误提示 -->
       <div v-if="errorMessage" class="alert alert-danger mt-3">
@@ -179,9 +60,18 @@
 import { ref } from 'vue'
 import { sendVerificationCode, verifyCode } from '@/api/auth'
 import { bindEmail, changeEmail } from '@/api/user'
+import EmailDisplay from './components/EmailDisplay.vue'
+import EmailBindForm from './components/EmailBindForm.vue'
+import EmailChangeForm from './components/EmailChangeForm.vue'
 
 export default {
   name: 'EmailBindingEditor',
+  
+  components: {
+    EmailDisplay,
+    EmailBindForm,
+    EmailChangeForm
+  },
   
   props: {
     currentEmail: {
@@ -201,16 +91,6 @@ export default {
   emits: ['email-bound', 'update'],
   
   setup(props, { emit }) {
-    const emailForm = ref({
-      email: props.currentEmail || '',
-      code: ''
-    })
-    
-    const changeEmailForm = ref({
-      newEmail: '',
-      code: ''
-    })
-    
     const sendingCode = ref(false)
     const binding = ref(false)
     const changing = ref(false)
@@ -222,137 +102,10 @@ export default {
     
     let countdownTimer = null
     
-    // 发送验证码
-    const handleSendCode = async () => {
-      errorMessage.value = ''
-      successMessage.value = ''
-      
-      if (!emailForm.value.email) {
-        errorMessage.value = '请先输入邮箱地址'
-        return
-      }
-      
-      // 验证邮箱格式
+    // 验证邮箱格式
+    const validateEmail = (email) => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(emailForm.value.email)) {
-        errorMessage.value = '请输入有效的邮箱地址'
-        return
-      }
-      
-      sendingCode.value = true
-      
-      try {
-        await sendVerificationCode({
-          email: emailForm.value.email,
-          type: 'bind_email'
-        })
-        
-        codeSent.value = true
-        countdown.value = 60 // 60秒倒计时
-        startCountdown()
-        successMessage.value = '验证码已发送，请查收邮箱'
-        
-      } catch (error) {
-        console.error('发送验证码失败:', error)
-        if (error.response?.data) {
-          const data = error.response.data
-          if (data.error) {
-            errorMessage.value = data.error
-          } else if (data.email) {
-            errorMessage.value = Array.isArray(data.email) ? data.email[0] : data.email
-          } else {
-            errorMessage.value = '发送验证码失败，请稍后重试'
-          }
-        } else {
-          errorMessage.value = '网络错误，请检查网络连接'
-        }
-      } finally {
-        sendingCode.value = false
-      }
-    }
-    
-    // 绑定邮箱
-    const handleBindEmail = async () => {
-      errorMessage.value = ''
-      successMessage.value = ''
-      
-      if (!emailForm.value.code || emailForm.value.code.length !== 6) {
-        errorMessage.value = '请输入6位验证码'
-        return
-      }
-      
-      binding.value = true
-      
-      try {
-        // 1. 先验证验证码
-        const verifyResponse = await verifyCode({
-          email: emailForm.value.email,
-          code: emailForm.value.code,
-          type: 'bind_email'
-        })
-        
-        if (!verifyResponse.success || !verifyResponse.verification_token) {
-          errorMessage.value = '验证码验证失败，请检查验证码是否正确'
-          binding.value = false
-          return
-        }
-        
-        // 2. 绑定邮箱（使用专门的绑定邮箱API，会自动标记为已验证）
-        await bindEmail({
-          email: emailForm.value.email,
-          verification_token: verifyResponse.verification_token
-        })
-        
-        // 3. 触发更新事件
-        emit('email-bound', {
-          email: emailForm.value.email,
-          verified: true
-        })
-        emit('update')
-        
-        successMessage.value = '邮箱绑定成功！'
-        
-        // 清除表单
-        emailForm.value.code = ''
-        codeSent.value = false
-        if (countdownTimer) {
-          clearInterval(countdownTimer)
-          countdownTimer = null
-          countdown.value = 0
-        }
-        
-      } catch (error) {
-        console.error('绑定邮箱失败:', error)
-        if (error.response?.data) {
-          const data = error.response.data
-          if (data.error) {
-            errorMessage.value = data.error
-          } else if (data.code) {
-            errorMessage.value = Array.isArray(data.code) ? data.code[0] : data.code
-          } else if (data.email) {
-            errorMessage.value = Array.isArray(data.email) ? data.email[0] : data.email
-          } else {
-            errorMessage.value = '绑定邮箱失败，请稍后重试'
-          }
-        } else {
-          errorMessage.value = '网络错误，请检查网络连接'
-        }
-      } finally {
-        binding.value = false
-      }
-    }
-    
-    // 取消绑定
-    const handleCancel = () => {
-      emailForm.value.code = ''
-      codeSent.value = false
-      errorMessage.value = ''
-      successMessage.value = ''
-      if (countdownTimer) {
-        clearInterval(countdownTimer)
-        countdownTimer = null
-        countdown.value = 0
-      }
+      return emailRegex.test(email)
     }
     
     // 倒计时
@@ -371,35 +124,121 @@ export default {
       }, 1000)
     }
     
-    // 开始更改邮箱
-    const startChangeEmail = () => {
-      isChangingEmail.value = true
-      errorMessage.value = ''
-      successMessage.value = ''
-      changeEmailForm.value.newEmail = ''
-      changeEmailForm.value.code = ''
-      codeSent.value = false
+    // 清除倒计时
+    const clearCountdown = () => {
+      if (countdownTimer) {
+        clearInterval(countdownTimer)
+        countdownTimer = null
+        countdown.value = 0
+      }
     }
     
-    // 发送更改邮箱验证码
-    const handleSendChangeCode = async () => {
+    // 重置状态
+    const resetState = () => {
+      codeSent.value = false
+      errorMessage.value = ''
+      successMessage.value = ''
+      clearCountdown()
+    }
+    
+    // 发送绑定邮箱验证码
+    const handleSendCode = async (email) => {
       errorMessage.value = ''
       successMessage.value = ''
       
-      if (!changeEmailForm.value.newEmail) {
-        errorMessage.value = '请先输入新邮箱地址'
-        return
-      }
-      
-      // 验证邮箱格式
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(changeEmailForm.value.newEmail)) {
+      if (!validateEmail(email)) {
         errorMessage.value = '请输入有效的邮箱地址'
         return
       }
       
-      // 检查新邮箱是否与当前邮箱相同
-      if (changeEmailForm.value.newEmail.toLowerCase() === props.currentEmail.toLowerCase()) {
+      sendingCode.value = true
+      
+      try {
+        await sendVerificationCode({
+          email: email,
+          type: 'bind_email'
+        })
+        
+        codeSent.value = true
+        countdown.value = 60
+        startCountdown()
+        successMessage.value = '验证码已发送，请查收邮箱'
+        
+      } catch (error) {
+        console.error('发送验证码失败:', error)
+        errorMessage.value = error.response?.data?.error || '发送验证码失败，请稍后重试'
+      } finally {
+        sendingCode.value = false
+      }
+    }
+    
+    // 绑定邮箱
+    const handleBindEmail = async ({ email, code }) => {
+      errorMessage.value = ''
+      successMessage.value = ''
+      
+      binding.value = true
+      
+      try {
+        // 1. 先验证验证码
+        const verifyResponse = await verifyCode({
+          email: email,
+          code: code,
+          type: 'bind_email'
+        })
+        
+        if (!verifyResponse.success || !verifyResponse.verification_token) {
+          errorMessage.value = '验证码验证失败，请检查验证码是否正确'
+          binding.value = false
+          return
+        }
+        
+        // 2. 绑定邮箱
+        await bindEmail({
+          email: email,
+          verification_token: verifyResponse.verification_token
+        })
+        
+        // 3. 触发更新事件
+        emit('email-bound', {
+          email: email,
+          verified: true
+        })
+        emit('update')
+        
+        successMessage.value = '邮箱绑定成功！'
+        resetState()
+        
+      } catch (error) {
+        console.error('绑定邮箱失败:', error)
+        errorMessage.value = error.response?.data?.error || '绑定邮箱失败，请稍后重试'
+      } finally {
+        binding.value = false
+      }
+    }
+    
+    // 取消绑定
+    const handleCancel = () => {
+      resetState()
+    }
+    
+    // 开始更改邮箱
+    const startChangeEmail = () => {
+      isChangingEmail.value = true
+      resetState()
+    }
+    
+    // 发送更改邮箱验证码
+    const handleSendChangeCode = async (newEmail) => {
+      errorMessage.value = ''
+      successMessage.value = ''
+      
+      if (!validateEmail(newEmail)) {
+        errorMessage.value = '请输入有效的邮箱地址'
+        return
+      }
+      
+      if (newEmail.toLowerCase() === props.currentEmail.toLowerCase()) {
         errorMessage.value = '新邮箱不能与当前邮箱相同'
         return
       }
@@ -408,7 +247,7 @@ export default {
       
       try {
         await sendVerificationCode({
-          email: changeEmailForm.value.newEmail,
+          email: newEmail,
           type: 'change_email'
         })
         
@@ -419,40 +258,24 @@ export default {
         
       } catch (error) {
         console.error('发送验证码失败:', error)
-        if (error.response?.data) {
-          const data = error.response.data
-          if (data.error) {
-            errorMessage.value = data.error
-          } else if (data.email) {
-            errorMessage.value = Array.isArray(data.email) ? data.email[0] : data.email
-          } else {
-            errorMessage.value = '发送验证码失败，请稍后重试'
-          }
-        } else {
-          errorMessage.value = '网络错误，请检查网络连接'
-        }
+        errorMessage.value = error.response?.data?.error || '发送验证码失败，请稍后重试'
       } finally {
         sendingCode.value = false
       }
     }
     
     // 更改邮箱
-    const handleChangeEmail = async () => {
+    const handleChangeEmail = async ({ newEmail, code }) => {
       errorMessage.value = ''
       successMessage.value = ''
-      
-      if (!changeEmailForm.value.code || changeEmailForm.value.code.length !== 6) {
-        errorMessage.value = '请输入6位验证码'
-        return
-      }
       
       changing.value = true
       
       try {
         // 1. 先验证验证码
         const verifyResponse = await verifyCode({
-          email: changeEmailForm.value.newEmail,
-          code: changeEmailForm.value.code,
+          email: newEmail,
+          code: code,
           type: 'change_email'
         })
         
@@ -464,42 +287,24 @@ export default {
         
         // 2. 更改邮箱
         await changeEmail({
-          new_email: changeEmailForm.value.newEmail,
+          new_email: newEmail,
           verification_token: verifyResponse.verification_token
         })
         
         // 3. 触发更新事件
         emit('email-bound', {
-          email: changeEmailForm.value.newEmail,
+          email: newEmail,
           verified: true
         })
         emit('update')
         
         successMessage.value = '邮箱更改成功！'
-        
-        // 清除表单并关闭更改模式
-        changeEmailForm.value.newEmail = ''
-        changeEmailForm.value.code = ''
-        codeSent.value = false
         isChangingEmail.value = false
-        if (countdownTimer) {
-          clearInterval(countdownTimer)
-          countdownTimer = null
-          countdown.value = 0
-        }
+        resetState()
         
       } catch (error) {
         console.error('更改邮箱失败:', error)
-        if (error.response?.data) {
-          const data = error.response.data
-          if (data.error) {
-            errorMessage.value = data.error
-          } else {
-            errorMessage.value = '更改邮箱失败，请稍后重试'
-          }
-        } else {
-          errorMessage.value = '网络错误，请检查网络连接'
-        }
+        errorMessage.value = error.response?.data?.error || '更改邮箱失败，请稍后重试'
       } finally {
         changing.value = false
       }
@@ -508,21 +313,15 @@ export default {
     // 取消更改邮箱
     const cancelChangeEmail = () => {
       isChangingEmail.value = false
-      changeEmailForm.value.newEmail = ''
-      changeEmailForm.value.code = ''
-      codeSent.value = false
-      errorMessage.value = ''
-      successMessage.value = ''
-      if (countdownTimer) {
-        clearInterval(countdownTimer)
-        countdownTimer = null
-        countdown.value = 0
-      }
+      resetState()
+    }
+    
+    // 处理错误
+    const handleError = (message) => {
+      errorMessage.value = message
     }
     
     return {
-      emailForm,
-      changeEmailForm,
       sendingCode,
       binding,
       changing,
@@ -537,7 +336,8 @@ export default {
       startChangeEmail,
       handleSendChangeCode,
       handleChangeEmail,
-      cancelChangeEmail
+      cancelChangeEmail,
+      handleError
     }
   }
 }
@@ -554,41 +354,6 @@ export default {
   padding: 1rem 1.5rem;
 }
 
-.form-label {
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-}
-
-.form-control {
-  border-radius: 12px;
-  border: 2px solid #e9ecef;
-  padding: 0.75rem 1rem;
-  transition: all 0.3s ease;
-}
-
-.form-control:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
-
-.input-group {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.input-group .form-control {
-  flex: 1;
-}
-
-.input-group .btn {
-  white-space: nowrap;
-}
-
-.d-flex.gap-2 {
-  gap: 0.5rem;
-}
-
 .alert {
   border-radius: 12px;
   padding: 1rem;
@@ -600,4 +365,3 @@ export default {
   font-size: 0.85rem;
 }
 </style>
-
