@@ -18,7 +18,7 @@
             </div>
             <div class="editor-toolbar-actions">
               <button 
-                v-if="isEditMode"
+                v-if="tripData.overview.itinerary && tripData.overview.itinerary.length > 0"
                 class="btn btn-outline-success btn-toolbar-action" 
                 @click="handleSyncToRalendarFromEditor"
                 :disabled="syncingToCalendar"
