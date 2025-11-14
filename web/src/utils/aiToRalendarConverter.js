@@ -110,48 +110,24 @@ function combineDateTime(date, time) {
     throw new Error(`无效的日期: ${date}`)
   }
   
-  // 正确的方法：将 UTC+8 时间转换为 UTC 时间
-  // 例如：2025-11-15 09:00 UTC+8 = 2025-11-15 01:00 UTC
-  // 例如：2025-11-15 07:00 UTC+8 = 2025-11-14 23:00 UTC（需要调整日期）
+  // 直接使用 UTC+8 时间，不需要转换
+  // Ralendar API 期望的是 UTC+8 时区的时间字符串
+  // 格式：YYYY-MM-DDTHH:MM:SS+08:00
   
-  // 计算 UTC 时间（减去 8 小时）
-  let utcYear = year
-  let utcMonth = month - 1  // JavaScript Date 月份从 0 开始
-  let utcDay = day
-  let utcHours = hours - 8
-  let utcMins = mins
-  
-  // 处理负数小时（需要调整到前一天）
-  if (utcHours < 0) {
-    utcHours += 24
-    utcDay -= 1
-    
-    // 处理跨月的情况
-    if (utcDay < 1) {
-      utcMonth -= 1
-      if (utcMonth < 0) {
-        utcMonth = 11
-        utcYear -= 1
-      }
-      // 获取上个月的最后一天
-      const lastDayOfPrevMonth = new Date(utcYear, utcMonth + 1, 0).getDate()
-      utcDay = lastDayOfPrevMonth
-    }
-  }
-  
-  // 创建 UTC 时间
-  const utcDate = new Date(Date.UTC(utcYear, utcMonth, utcDay, utcHours, utcMins, 0, 0))
-  
-  // 验证日期对象是否有效
-  if (isNaN(utcDate.getTime())) {
+  // 验证日期对象
+  const dateObj = new Date(year, month - 1, day, hours, mins, 0, 0)
+  if (isNaN(dateObj.getTime())) {
     throw new Error(`无效的日期时间: ${date} ${normalizedTime}`)
   }
   
-  // 格式化为 ISO 8601 字符串 (格式: YYYY-MM-DDTHH:MM:SSZ)
-  const isoString = utcDate.toISOString()
+  // 直接格式化为 UTC+8 格式的 ISO 字符串
+  const yearStr = String(year).padStart(4, '0')
+  const monthStr = String(month).padStart(2, '0')
+  const dayStr = String(day).padStart(2, '0')
+  const hoursStr = String(hours).padStart(2, '0')
+  const minsStr = String(mins).padStart(2, '0')
   
-  // 替换 UTC 时区标识符 Z 为 +08:00（表示 UTC+8）
-  const isoStringWithOffset = isoString.replace('Z', '+08:00')
+  const isoStringWithOffset = `${yearStr}-${monthStr}-${dayStr}T${hoursStr}:${minsStr}:00+08:00`
   
   // 再次验证生成的字符串可以被正确解析
   const testDate = new Date(isoStringWithOffset)
@@ -350,21 +326,54 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
           // 计算结束时间
           const duration = parseDuration(activity.duration || '2小时')
           
-          // 解析开始时间
+          // 解析开始时间（UTC+8 格式）
           const startDateObj = new Date(startTime)
           if (isNaN(startDateObj.getTime())) {
             throw new Error(`无效的开始时间: ${startTime}`)
           }
           
-          // 计算结束时间（毫秒）
-          const endDateObj = new Date(startDateObj.getTime() + duration * 60 * 60 * 1000)
-          
-          if (isNaN(endDateObj.getTime())) {
-            throw new Error(`无效的结束时间（开始时间: ${startTime}, 持续时间: ${duration}小时）`)
+          // 计算结束时间：直接在 UTC+8 时区计算
+          // 从 startTime 字符串中提取日期和时间
+          const startMatch = startTime.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):\d{2}\+08:00$/)
+          if (!startMatch) {
+            throw new Error(`开始时间格式错误: ${startTime}`)
           }
           
-          // 转换为 ISO 8601 格式（UTC+8）
-          const endTime = endDateObj.toISOString().replace('Z', '+08:00')
+          const [, startYear, startMonth, startDay, startHour, startMin] = startMatch.map(Number)
+          
+          // 计算结束时间（小时和分钟）
+          let endHour = startHour + Math.floor(duration)
+          let endMin = startMin + Math.round((duration % 1) * 60)
+          
+          // 处理分钟进位
+          if (endMin >= 60) {
+            endHour += Math.floor(endMin / 60)
+            endMin = endMin % 60
+          }
+          
+          // 处理小时进位（跨天）
+          let endYear = startYear
+          let endMonth = startMonth
+          let endDay = startDay
+          
+          if (endHour >= 24) {
+            endDay += Math.floor(endHour / 24)
+            endHour = endHour % 24
+            
+            // 处理跨月（简化处理，假设每月最多31天）
+            const daysInMonth = new Date(startYear, startMonth, 0).getDate()
+            if (endDay > daysInMonth) {
+              endMonth += 1
+              endDay = endDay - daysInMonth
+              if (endMonth > 12) {
+                endYear += 1
+                endMonth = 1
+              }
+            }
+          }
+          
+          // 格式化为 UTC+8 格式
+          const endTime = `${String(endYear).padStart(4, '0')}-${String(endMonth).padStart(2, '0')}-${String(endDay).padStart(2, '0')}T${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}:00+08:00`
           
           // 构建事件描述
           let description = ''

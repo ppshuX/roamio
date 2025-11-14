@@ -220,60 +220,27 @@ export function convertTripToRalendarEvents(tripData) {
         const [startHour, startMin] = timeRange.start.split(':').map(Number)
         const [endHour, endMin] = timeRange.end.split(':').map(Number)
 
-        // 正确的方法：将 UTC+8 时间转换为 UTC 时间
-        // 例如：2025-11-15 09:00 UTC+8 = 2025-11-15 01:00 UTC
-        // 例如：2025-11-15 07:00 UTC+8 = 2025-11-14 23:00 UTC（需要调整日期）
-
-        // 计算开始时间的 UTC 时间
-        let startUtcYear = year
-        let startUtcMonth = month
-        let startUtcDay = dayNum
-        let startUtcHour = startHour - 8
-        let startUtcMin = startMin
-
-        // 处理负数小时（需要调整到前一天）
-        if (startUtcHour < 0) {
-            startUtcHour += 24
-            startUtcDay -= 1
-            if (startUtcDay < 1) {
-                startUtcMonth -= 1
-                if (startUtcMonth < 0) {
-                    startUtcMonth = 11
-                    startUtcYear -= 1
+        // 直接使用 UTC+8 时间，不需要转换
+        // Ralendar API 期望的是 UTC+8 时区的时间字符串
+        
+        // 处理结束时间可能跨天的情况
+        let endYear = year
+        let endMonth = month
+        let endDay = dayNum
+        
+        // 如果结束时间小于开始时间，说明跨天了
+        if (endHour < startHour || (endHour === startHour && endMin < startMin)) {
+            endDay += 1
+            // 处理跨月
+            const daysInMonth = new Date(year, month + 1, 0).getDate()
+            if (endDay > daysInMonth) {
+                endMonth += 1
+                endDay = 1
+                if (endMonth > 11) {
+                    endYear += 1
+                    endMonth = 0
                 }
-                const lastDayOfPrevMonth = new Date(Date.UTC(startUtcYear, startUtcMonth + 1, 0)).getUTCDate()
-                startUtcDay = lastDayOfPrevMonth
             }
-        }
-
-        // 计算结束时间的 UTC 时间
-        let endUtcYear = year
-        let endUtcMonth = month
-        let endUtcDay = dayNum
-        let endUtcHour = endHour - 8
-        let endUtcMin = endMin
-
-        // 处理负数小时（需要调整到前一天）
-        if (endUtcHour < 0) {
-            endUtcHour += 24
-            endUtcDay -= 1
-            if (endUtcDay < 1) {
-                endUtcMonth -= 1
-                if (endUtcMonth < 0) {
-                    endUtcMonth = 11
-                    endUtcYear -= 1
-                }
-                const lastDayOfPrevMonth = new Date(Date.UTC(endUtcYear, endUtcMonth + 1, 0)).getUTCDate()
-                endUtcDay = lastDayOfPrevMonth
-            }
-        }
-
-        const startTimeUTC = new Date(Date.UTC(startUtcYear, startUtcMonth, startUtcDay, startUtcHour, startUtcMin, 0, 0))
-        const endTimeUTC = new Date(Date.UTC(endUtcYear, endUtcMonth, endUtcDay, endUtcHour, endUtcMin, 0, 0))
-
-        if (isNaN(startTimeUTC.getTime()) || isNaN(endTimeUTC.getTime())) {
-            console.warn(`第 ${dayIndex + 1} 天时间无效，跳过`)
-            return
         }
 
         // 构建事件标题
@@ -291,20 +258,22 @@ export function convertTripToRalendarEvents(tripData) {
             eventTitle = eventTitle.substring(0, 47) + '...'
         }
 
-        // 格式化时间为 ISO 8601 格式（UTC+8）
-        // 将 UTC 时间转换为 UTC+8 格式的 ISO 字符串
-        const formatISOWithOffset = (utcDate) => {
-            const iso = utcDate.toISOString()
-            // 将 UTC 时间标识符 Z 替换为 +08:00（表示 UTC+8）
-            return iso.replace('Z', '+08:00')
+        // 直接格式化为 UTC+8 格式的 ISO 字符串
+        const formatISOWithOffset = (y, m, d, h, min) => {
+            const yearStr = String(y).padStart(4, '0')
+            const monthStr = String(m + 1).padStart(2, '0')  // month 是 0-based
+            const dayStr = String(d).padStart(2, '0')
+            const hourStr = String(h).padStart(2, '0')
+            const minStr = String(min).padStart(2, '0')
+            return `${yearStr}-${monthStr}-${dayStr}T${hourStr}:${minStr}:00+08:00`
         }
 
         // 构建事件对象（确保字段符合 Ralendar API 要求）
         const event = {
             title: eventTitle.trim(), // 必填：标题
             description: (description || day.content || day.highlight || '').trim(), // 可选：描述
-            start_time: formatISOWithOffset(startTimeUTC), // 必填：开始时间（ISO 8601 with timezone）
-            end_time: formatISOWithOffset(endTimeUTC), // 可选：结束时间（ISO 8601 with timezone）
+            start_time: formatISOWithOffset(year, month, dayNum, startHour, startMin), // 必填：开始时间（ISO 8601 with timezone）
+            end_time: formatISOWithOffset(endYear, endMonth, endDay, endHour, endMin), // 可选：结束时间（ISO 8601 with timezone）
             reminder_minutes: 30, // 可选：提醒时间（分钟）
             email_reminder: true // 可选：邮件提醒
         }

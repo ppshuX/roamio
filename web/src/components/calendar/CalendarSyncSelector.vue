@@ -217,6 +217,13 @@ export default {
     
     const formatTime = (isoString) => {
       if (!isoString) return '未设置'
+      // 直接从 ISO 字符串中提取时间，避免时区转换问题
+      // 格式：2025-11-15T09:00:00+08:00
+      const match = isoString.match(/T(\d{2}):(\d{2}):\d{2}/)
+      if (match) {
+        return `${match[1]}:${match[2]}`
+      }
+      // 如果格式不匹配，回退到 Date 解析
       const date = new Date(isoString)
       const hours = String(date.getHours()).padStart(2, '0')
       const minutes = String(date.getMinutes()).padStart(2, '0')
