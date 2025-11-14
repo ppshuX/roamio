@@ -29,6 +29,20 @@ function parseDuration(duration) {
 }
 
 /**
+ * 验证日期格式 (YYYY-MM-DD)
+ * @param {string} date - 日期字符串
+ * @returns {boolean} - 是否有效
+ */
+function isValidDate(date) {
+  if (!date || typeof date !== 'string') return false
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+  if (!dateRegex.test(date)) return false
+  
+  const dateObj = new Date(date + 'T00:00:00')
+  return !isNaN(dateObj.getTime()) && dateObj.toISOString().startsWith(date)
+}
+
+/**
  * 将日期和时间组合为 ISO 8601 格式
  * @param {string} date - 日期字符串 (YYYY-MM-DD)
  * @param {string} time - 时间字符串 (HH:MM)
@@ -39,23 +53,60 @@ function combineDateTime(date, time) {
     throw new Error('日期和时间不能为空')
   }
   
+  // 验证日期格式
+  if (!isValidDate(date)) {
+    throw new Error(`无效的日期格式: ${date}，期望格式: YYYY-MM-DD`)
+  }
+  
   // 确保时间格式正确 (HH:MM)
+  let normalizedTime = time
   const timeMatch = time.match(/(\d{1,2}):(\d{2})/)
   if (!timeMatch) {
     // 如果没有匹配到时间，使用默认时间 09:00
-    time = '09:00'
+    normalizedTime = '09:00'
   } else {
-    // 确保两位数格式
-    const hours = timeMatch[1].padStart(2, '0')
-    const minutes = timeMatch[2].padStart(2, '0')
-    time = `${hours}:${minutes}`
+    // 确保两位数格式并验证范围
+    const hours = parseInt(timeMatch[1], 10)
+    const minutes = parseInt(timeMatch[2], 10)
+    
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+      throw new Error(`无效的时间值: ${time}，小时应在 0-23，分钟应在 0-59`)
+    }
+    
+    normalizedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
   }
   
-  // 组合日期和时间，使用中国时区 (UTC+8)
-  // 格式: YYYY-MM-DDTHH:MM:00+08:00
-  const isoString = `${date}T${time}:00+08:00`
+  // 解析日期和时间
+  const [year, month, day] = date.split('-').map(Number)
+  const [hours, mins] = normalizedTime.split(':').map(Number)
   
-  return isoString
+  // 验证日期范围
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    throw new Error(`无效的日期: ${date}`)
+  }
+  
+  // 创建 UTC 时间（减去8小时偏移，因为我们要表示的是 UTC+8 时区的时间）
+  // 例如：2025-11-15 09:00 UTC+8 = 2025-11-15 01:00 UTC
+  const utcDate = new Date(Date.UTC(year, month - 1, day, hours - 8, mins, 0, 0))
+  
+  // 验证日期对象是否有效
+  if (isNaN(utcDate.getTime())) {
+    throw new Error(`无效的日期时间: ${date} ${normalizedTime}`)
+  }
+  
+  // 格式化为 ISO 8601 字符串 (格式: YYYY-MM-DDTHH:MM:SSZ)
+  const isoString = utcDate.toISOString()
+  
+  // 替换 UTC 时区标识符 Z 为 +08:00（表示 UTC+8）
+  const isoStringWithOffset = isoString.replace('Z', '+08:00')
+  
+  // 再次验证生成的字符串可以被正确解析
+  const testDate = new Date(isoStringWithOffset)
+  if (isNaN(testDate.getTime())) {
+    throw new Error(`生成的日期时间无效: ${isoStringWithOffset}`)
+  }
+  
+  return isoStringWithOffset
 }
 
 /**
@@ -75,15 +126,57 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
   
   // 遍历每一天的行程
   aiPlan.days_detail.forEach((day, dayIndex) => {
-    const dayDate = startDate 
-      ? (() => {
-          // 如果提供了开始日期，从开始日期计算
-          const start = new Date(startDate)
-          const current = new Date(start)
-          current.setDate(start.getDate() + dayIndex)
-          return current.toISOString().split('T')[0]
-        })()
-      : (day.date || null)
+    let dayDate = null
+    
+    // 计算日期
+    if (startDate) {
+      // 如果提供了开始日期，从开始日期计算
+      try {
+        // 验证开始日期格式
+        if (!isValidDate(startDate)) {
+          console.warn(`开始日期格式无效: ${startDate}，跳过第 ${dayIndex + 1} 天`)
+          return
+        }
+        
+        // 解析开始日期
+        const [year, month, dayNum] = startDate.split('-').map(Number)
+        const start = new Date(year, month - 1, dayNum)
+        
+        if (isNaN(start.getTime())) {
+          console.warn(`开始日期无效: ${startDate}，跳过第 ${dayIndex + 1} 天`)
+          return
+        }
+        
+        // 计算当前天的日期
+        const current = new Date(start)
+        current.setDate(start.getDate() + dayIndex)
+        
+        // 格式化为 YYYY-MM-DD
+        const yearStr = current.getFullYear()
+        const monthStr = String(current.getMonth() + 1).padStart(2, '0')
+        const dayStr = String(current.getDate()).padStart(2, '0')
+        dayDate = `${yearStr}-${monthStr}-${dayStr}`
+      } catch (error) {
+        console.error(`计算日期失败 (Day ${dayIndex + 1}):`, error)
+        return
+      }
+    } else if (day.date) {
+      // 使用 day.date，但需要验证格式
+      const dateStr = day.date
+      
+      // 如果是完整的时间戳，提取日期部分
+      if (dateStr.includes('T')) {
+        dayDate = dateStr.split('T')[0]
+      } else {
+        dayDate = dateStr
+      }
+      
+      // 验证日期格式
+      if (!isValidDate(dayDate)) {
+        console.warn(`第 ${dayIndex + 1} 天日期格式无效: ${day.date}，跳过`)
+        return
+      }
+    }
     
     if (!dayDate) {
       console.warn(`第 ${dayIndex + 1} 天缺少日期，跳过`)
@@ -116,8 +209,21 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
           
           // 计算结束时间
           const duration = parseDuration(activity.duration || '2小时')
+          
+          // 解析开始时间
           const startDateObj = new Date(startTime)
+          if (isNaN(startDateObj.getTime())) {
+            throw new Error(`无效的开始时间: ${startTime}`)
+          }
+          
+          // 计算结束时间（毫秒）
           const endDateObj = new Date(startDateObj.getTime() + duration * 60 * 60 * 1000)
+          
+          if (isNaN(endDateObj.getTime())) {
+            throw new Error(`无效的结束时间（开始时间: ${startTime}, 持续时间: ${duration}小时）`)
+          }
+          
+          // 转换为 ISO 8601 格式（UTC+8）
           const endTime = endDateObj.toISOString().replace('Z', '+08:00')
           
           // 构建事件描述
