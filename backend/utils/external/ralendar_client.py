@@ -251,9 +251,15 @@ class RalendarClient:
             response.raise_for_status()
             result = response.json()
             
-            # 记录完整的响应以便调试
-            logger.info(f"Ralendar API full response: {result}")
+            # 记录完整的响应以便调试（使用 debug 级别，避免日志过多）
+            logger.debug(f"Ralendar API full response: {result}")
             logger.info(f"Ralendar API response keys: {list(result.keys())}")
+            if 'details' in result:
+                logger.info(f"Ralendar API has 'details' key: {type(result.get('details'))}")
+            if 'created' in result:
+                logger.info(f"Ralendar API has 'created' key at top level: {type(result.get('created'))}")
+            if 'failed' in result:
+                logger.info(f"Ralendar API has 'failed' key at top level: {type(result.get('failed'))}")
             
             # 根据文档，Ralendar API 返回格式为：
             # {
