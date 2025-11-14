@@ -61,9 +61,13 @@ class RalendarClient:
         url = f"{self.base_url}/fusion/events/batch/"
         headers = self.get_headers(user_token)
         
-        # 获取 unionid 和 openid（如果存在），但不从 event_data 中移除
+        # 获取 unionid 和 openid（如果存在），并从 event_data 中移除（避免重复）
         unionid = event_data.get('unionid', None)
         openid = event_data.get('openid', None)
+        
+        # 从事件数据中移除 unionid 和 openid（只放在顶层）
+        cleaned_event_data = {k: v for k, v in event_data.items() 
+                              if k not in ['unionid', 'openid']}
         
         # 构造批量创建的数据格式
         data = {
@@ -72,7 +76,7 @@ class RalendarClient:
             "events": [cleaned_event_data]  # 单个事件也用数组（不包含 unionid 和 openid）
         }
         
-        # 同时也添加 unionid 和 openid 到顶层（双重保险）
+        # 只在顶层添加 unionid 和 openid
         if unionid:
             data['unionid'] = unionid
         
