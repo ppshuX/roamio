@@ -102,6 +102,15 @@
       </div>
     </div>
     
+    <!-- 日期选择弹窗 -->
+    <DatePickerModal
+      v-if="showDatePicker"
+      :days="pendingAIPlan?.days || pendingAIPlan?.days_detail?.length || 3"
+      :default-date="tripData.start_date || null"
+      @confirm="handleDateSelected"
+      @close="showDatePicker = false"
+    />
+    
     <!-- 同步到日历选择界面 -->
     <div v-if="showCalendarSync" class="calendar-sync-overlay" @click.self="showCalendarSync = false">
       <div class="calendar-sync-container">
@@ -129,6 +138,7 @@ import ContentEditor from '@/components/editor/ContentEditor.vue'
 import EditorSidebar from '@/components/editor/EditorSidebar.vue'
 import TripGenerator from '@/components/ai/TripGeneratorSimple.vue'
 import CalendarSyncSelector from '@/components/calendar/CalendarSyncSelector.vue'
+import DatePickerModal from '@/components/calendar/DatePickerModal.vue'
 
 export default {
   name: 'TripEditorView',
@@ -140,7 +150,8 @@ export default {
     ContentEditor,
     EditorSidebar,
     TripGenerator,
-    CalendarSyncSelector
+    CalendarSyncSelector,
+    DatePickerModal
   },
   
   setup() {
@@ -151,9 +162,11 @@ export default {
     const saving = ref(false)
     const publishing = ref(false)
     const showAIGenerator = ref(false)
+    const showDatePicker = ref(false)
     const showCalendarSync = ref(false)
     const syncingToCalendar = ref(false)
     const aiGeneratedPlan = ref(null) // 保存 AI 生成的原始数据，用于同步
+    const pendingAIPlan = ref(null) // 待处理同步的 AI 数据
     const calendarEvents = ref([]) // 准备同步到日历的事件列表
     const tripId = computed(() => route.params.id ? parseInt(route.params.id) : null)
     
@@ -441,23 +454,72 @@ export default {
         return
       }
       
-      // 保存 AI 生成的原始数据
-      aiGeneratedPlan.value = aiPlan
+      // 保存待处理的 AI 数据
+      pendingAIPlan.value = aiPlan
       
-      // 转换为日历事件格式
-      // 获取开始日期（排除占位符和无效值）
+      // 检查是否有有效的开始日期
+      let hasValidDate = false
       let startDate = null
+      
+      // 检查 tripData 中的日期
       if (tripData.value.start_date && 
           tripData.value.start_date !== 'YYYY-MM-DD' && 
           /^\d{4}-\d{2}-\d{2}$/.test(tripData.value.start_date)) {
         startDate = tripData.value.start_date
-      } else if (aiPlan.days_detail?.[0]?.date) {
+        hasValidDate = true
+      } 
+      // 检查 AI 数据中的日期
+      else if (aiPlan.days_detail?.[0]?.date) {
         const firstDayDate = aiPlan.days_detail[0].date
         if (firstDayDate !== 'YYYY-MM-DD' && /^\d{4}-\d{2}-\d{2}/.test(firstDayDate)) {
           startDate = firstDayDate.includes('T') ? firstDayDate.split('T')[0] : firstDayDate
+          hasValidDate = true
         }
       }
-      // 如果仍然没有有效日期，传入 null，转换工具会使用今天
+      
+      // 如果没有有效日期，显示日期选择器
+      if (!hasValidDate) {
+        // 关闭 AI 生成弹窗，打开日期选择器
+        showAIGenerator.value = false
+        showDatePicker.value = true
+        return
+      }
+      
+      // 如果有有效日期，直接继续转换
+      proceedWithSync(aiPlan, startDate)
+    }
+    
+    // 处理日期选择确认
+    const handleDateSelected = (selectedDate) => {
+      if (!pendingAIPlan.value) {
+        alert('❌ 没有待同步的行程数据')
+        return
+      }
+      
+      // 更新 tripData 中的开始日期
+      if (selectedDate) {
+        tripData.value.start_date = selectedDate
+        
+        // 计算结束日期
+        const start = new Date(selectedDate)
+        const days = pendingAIPlan.value.days || pendingAIPlan.value.days_detail?.length || 3
+        const end = new Date(start)
+        end.setDate(start.getDate() + days - 1)
+        const year = end.getFullYear()
+        const month = String(end.getMonth() + 1).padStart(2, '0')
+        const day = String(end.getDate()).padStart(2, '0')
+        tripData.value.end_date = `${year}-${month}-${day}`
+      }
+      
+      // 关闭日期选择器，继续同步流程
+      showDatePicker.value = false
+      proceedWithSync(pendingAIPlan.value, selectedDate)
+    }
+    
+    // 执行同步流程
+    const proceedWithSync = (aiPlan, startDate) => {
+      // 保存 AI 生成的原始数据
+      aiGeneratedPlan.value = aiPlan
       
       const tripTitle = tripData.value.title || aiPlan.trip_title || '旅行'
       
@@ -470,13 +532,11 @@ export default {
           const hasActivities = aiPlan.days_detail?.some(day => 
             day.activities && Array.isArray(day.activities) && day.activities.length > 0
           )
-          const hasDate = startDate || aiPlan.days_detail?.some(day => day.date)
           
           let errorMsg = '❌ 没有可同步的行程事件\n\n'
           errorMsg += '可能的原因：\n'
           if (!hasDays) errorMsg += '• 行程数据中没有天数详情\n'
           if (!hasActivities) errorMsg += '• 行程数据中没有活动信息\n'
-          if (!hasDate) errorMsg += '• 行程数据中缺少日期信息\n'
           errorMsg += '\n请检查行程数据或重新生成行程。'
           
           alert(errorMsg)
@@ -486,8 +546,7 @@ export default {
         // 设置日历事件列表
         calendarEvents.value = events
         
-        // 关闭 AI 生成弹窗，打开日历同步选择界面
-        showAIGenerator.value = false
+        // 打开日历同步选择界面
         showCalendarSync.value = true
         
       } catch (error) {
@@ -684,6 +743,7 @@ export default {
       showAIGenerator,
       syncingToCalendar,
       aiGeneratedPlan,
+      showDatePicker,
       showCalendarSync,
       calendarEvents,
       handleSave,
@@ -691,6 +751,7 @@ export default {
       goBack,
       handleAIApply,
       handleSyncToCalendar,
+      handleDateSelected,
       handleCalendarSyncConfirm,
       syncToRalendar,
       availableModules,
