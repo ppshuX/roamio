@@ -984,17 +984,18 @@ export default {
   
   .btn-toolbar-action i {
     font-size: 0.875rem;
-    margin-right: 0;
+    margin-right: 0.25rem;
   }
   
   .btn-toolbar-action .btn-text {
     font-size: 0.8125rem;
+    display: inline;
   }
   
   .btn-toolbar-action .spinner-border-sm {
     width: 0.875rem;
     height: 0.875rem;
-    margin-right: 0;
+    margin-right: 0.25rem;
   }
 }
 
@@ -1025,21 +1026,16 @@ export default {
   
   .btn-toolbar-action i {
     font-size: 0.8rem;
+    margin-right: 0.2rem;
   }
   
   .btn-toolbar-action .btn-text {
     font-size: 0.75rem;
+    display: inline;
   }
   
-  /* 超小屏幕：只显示图标 */
-  @media (max-width: 480px) {
-    .btn-toolbar-action .btn-text {
-      display: none;
-    }
-    
-    .btn-toolbar-action {
-      padding: 0.35rem 0.45rem;
-    }
+  .btn-toolbar-action .spinner-border-sm {
+    margin-right: 0.2rem;
   }
 }
 

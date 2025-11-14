@@ -232,17 +232,52 @@ class RalendarClient:
         
         try:
             logger.info(f"Sending batch create request: {len(cleaned_events)} events, trip_slug={trip_slug}")
-            logger.debug(f"Request data: {data}")
+            logger.debug(f"Request data keys: {list(data.keys())}")
+            logger.debug(f"First event sample: {cleaned_events[0] if cleaned_events else 'No events'}")
+            
             response = requests.post(url, json=data, headers=headers, timeout=self.timeout)
             
             # 记录响应详情以便调试
+            logger.info(f"Ralendar API response status: {response.status_code}")
             if response.status_code != 200:
                 logger.error(f"Ralendar API returned {response.status_code}: {response.text}")
+                # 对于 502 Bad Gateway，提供更友好的错误信息
+                if response.status_code == 502:
+                    error_msg = f"Ralendar API 服务暂时不可用 (502 Bad Gateway)，请稍后重试"
+                    logger.error(error_msg)
+                    raise requests.exceptions.HTTPError(error_msg, response=response)
             
             response.raise_for_status()
             result = response.json()
-            logger.info(f"Batch created {len(result.get('created', []))} events, failed: {len(result.get('failed', []))}")
+            
+            # 记录详细的响应信息
+            created_count = len(result.get('created', []))
+            failed_count = len(result.get('failed', []))
+            logger.info(f"Ralendar API response: created={created_count}, failed={failed_count}")
+            
+            # 如果有失败的事件，记录详细信息
+            if failed_count > 0:
+                failed_events = result.get('failed', [])
+                logger.warning(f"Failed events: {failed_events}")
+                for failed_event in failed_events:
+                    logger.warning(f"Failed event details: {failed_event}")
+            
+            # 如果创建成功的事件，记录详细信息
+            if created_count > 0:
+                created_events = result.get('created', [])
+                logger.info(f"Created events IDs: {[e.get('id') for e in created_events if e.get('id')]}")
+            
             return result
+        except requests.exceptions.HTTPError as e:
+            # 处理 HTTP 错误（包括 502）
+            logger.error(f"Ralendar API HTTP error: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                logger.error(f"Response status: {e.response.status_code}")
+                logger.error(f"Response body: {e.response.text}")
+                # 对于 502，提供更友好的错误信息
+                if e.response.status_code == 502:
+                    raise Exception("Ralendar API 服务暂时不可用，请稍后重试")
+            raise
         except requests.exceptions.RequestException as e:
             logger.error(f"Batch create failed: {e}")
             if hasattr(e, 'response') and e.response is not None:
