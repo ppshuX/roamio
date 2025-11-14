@@ -36,6 +36,7 @@ def send_verification_email(email, code, verification_type='register', user=None
             'login': 'Roamio 登录验证',
             'reset_password': 'Roamio 重置密码',
             'bind_email': 'Roamio 绑定邮箱验证',
+            'change_email': 'Roamio 更改邮箱验证',
         }
         subject = subject_map.get(verification_type, 'Roamio 邮箱验证')
         
