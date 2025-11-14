@@ -452,7 +452,21 @@ export default {
         const events = convertAITripToEvents(aiPlan, tripTitle, startDate)
         
         if (events.length === 0) {
-          alert('❌ 没有可同步的行程事件，请检查行程数据')
+          // 诊断问题
+          const hasDays = aiPlan.days_detail && aiPlan.days_detail.length > 0
+          const hasActivities = aiPlan.days_detail?.some(day => 
+            day.activities && Array.isArray(day.activities) && day.activities.length > 0
+          )
+          const hasDate = startDate || aiPlan.days_detail?.some(day => day.date)
+          
+          let errorMsg = '❌ 没有可同步的行程事件\n\n'
+          errorMsg += '可能的原因：\n'
+          if (!hasDays) errorMsg += '• 行程数据中没有天数详情\n'
+          if (!hasActivities) errorMsg += '• 行程数据中没有活动信息\n'
+          if (!hasDate) errorMsg += '• 行程数据中缺少日期信息\n'
+          errorMsg += '\n请检查行程数据或重新生成行程。'
+          
+          alert(errorMsg)
           return
         }
         
@@ -465,7 +479,13 @@ export default {
         
       } catch (error) {
         console.error('转换行程事件失败:', error)
-        alert('❌ 转换行程事件失败：' + error.message)
+        console.error('AI 行程数据:', aiPlan)
+        
+        let errorMsg = '❌ 转换行程事件失败\n\n'
+        errorMsg += error.message || '未知错误'
+        errorMsg += '\n\n请检查控制台查看详细信息。'
+        
+        alert(errorMsg)
       }
     }
     

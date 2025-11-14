@@ -123,27 +123,57 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
   }
   
   const events = []
+  let usedStartDate = null
+  const warnings = []
+  
+  // 如果没有提供开始日期，尝试从第一天获取或使用今天
+  if (!startDate && aiPlan.days_detail.length > 0) {
+    const firstDay = aiPlan.days_detail[0]
+    if (firstDay.date && isValidDate(firstDay.date.split('T')[0])) {
+      startDate = firstDay.date.split('T')[0]
+    } else {
+      // 使用今天作为默认开始日期
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      startDate = `${year}-${month}-${day}`
+      warnings.push('未提供开始日期，使用今天作为默认开始日期')
+    }
+  } else if (!startDate) {
+    // 如果完全没有日期信息，使用今天
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    startDate = `${year}-${month}-${day}`
+    warnings.push('未提供开始日期，使用今天作为默认开始日期')
+  }
+  
+  usedStartDate = startDate
   
   // 遍历每一天的行程
   aiPlan.days_detail.forEach((day, dayIndex) => {
     let dayDate = null
     
     // 计算日期
-    if (startDate) {
+    if (usedStartDate) {
       // 如果提供了开始日期，从开始日期计算
       try {
         // 验证开始日期格式
-        if (!isValidDate(startDate)) {
-          console.warn(`开始日期格式无效: ${startDate}，跳过第 ${dayIndex + 1} 天`)
+        if (!isValidDate(usedStartDate)) {
+          warnings.push(`开始日期格式无效: ${usedStartDate}，跳过第 ${dayIndex + 1} 天`)
+          console.warn(`开始日期格式无效: ${usedStartDate}，跳过第 ${dayIndex + 1} 天`)
           return
         }
         
         // 解析开始日期
-        const [year, month, dayNum] = startDate.split('-').map(Number)
+        const [year, month, dayNum] = usedStartDate.split('-').map(Number)
         const start = new Date(year, month - 1, dayNum)
         
         if (isNaN(start.getTime())) {
-          console.warn(`开始日期无效: ${startDate}，跳过第 ${dayIndex + 1} 天`)
+          warnings.push(`开始日期无效: ${usedStartDate}，跳过第 ${dayIndex + 1} 天`)
+          console.warn(`开始日期无效: ${usedStartDate}，跳过第 ${dayIndex + 1} 天`)
           return
         }
         
@@ -157,6 +187,7 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
         const dayStr = String(current.getDate()).padStart(2, '0')
         dayDate = `${yearStr}-${monthStr}-${dayStr}`
       } catch (error) {
+        warnings.push(`计算日期失败 (Day ${dayIndex + 1}): ${error.message}`)
         console.error(`计算日期失败 (Day ${dayIndex + 1}):`, error)
         return
       }
@@ -173,21 +204,47 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
       
       // 验证日期格式
       if (!isValidDate(dayDate)) {
+        warnings.push(`第 ${dayIndex + 1} 天日期格式无效: ${day.date}，跳过`)
         console.warn(`第 ${dayIndex + 1} 天日期格式无效: ${day.date}，跳过`)
         return
       }
     }
     
     if (!dayDate) {
-      console.warn(`第 ${dayIndex + 1} 天缺少日期，跳过`)
-      return
+      // 如果仍然没有日期，使用开始日期加天数
+      if (usedStartDate && isValidDate(usedStartDate)) {
+        try {
+          const [year, month, dayNum] = usedStartDate.split('-').map(Number)
+          const start = new Date(year, month - 1, dayNum)
+          const current = new Date(start)
+          current.setDate(start.getDate() + dayIndex)
+          const yearStr = current.getFullYear()
+          const monthStr = String(current.getMonth() + 1).padStart(2, '0')
+          const dayStr = String(current.getDate()).padStart(2, '0')
+          dayDate = `${yearStr}-${monthStr}-${dayStr}`
+        } catch (error) {
+          warnings.push(`第 ${dayIndex + 1} 天无法计算日期，跳过`)
+          console.warn(`第 ${dayIndex + 1} 天无法计算日期，跳过`)
+          return
+        }
+      } else {
+        warnings.push(`第 ${dayIndex + 1} 天缺少日期且无法计算，跳过`)
+        console.warn(`第 ${dayIndex + 1} 天缺少日期且无法计算，跳过`)
+        return
+      }
     }
     
     const dayTitle = day.title || `Day ${day.day_number || dayIndex + 1}`
     
+    // 检查是否有活动
+    if (!day.activities || !Array.isArray(day.activities) || day.activities.length === 0) {
+      warnings.push(`第 ${dayIndex + 1} 天没有活动，跳过`)
+      console.warn(`第 ${dayIndex + 1} 天没有活动，跳过`)
+      return
+    }
+    
     // 遍历当天的活动
-    if (day.activities && Array.isArray(day.activities)) {
-      day.activities.forEach((activity, activityIndex) => {
+    day.activities.forEach((activity, activityIndex) => {
         try {
           // 构建事件标题: {trip_title} - {day_title}: {location}
           let eventTitle = `${tripTitle || aiPlan.trip_title || '旅行'}`.trim()
@@ -272,15 +329,25 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
           events.push(event)
           
         } catch (error) {
-          console.error(`转换活动失败 (Day ${dayIndex + 1}, Activity ${activityIndex + 1}):`, error)
+          warnings.push(`转换活动失败 (Day ${dayIndex + 1}, Activity ${activityIndex + 1}): ${error.message}`)
+          console.error(`转换活动失败 (Day ${dayIndex + 1}, Activity ${activityIndex + 1}):`, error, activity)
           // 继续处理下一个活动，不中断整个转换过程
         }
       })
-    }
-    
-    // 如果没有活动但有日期，创建一个默认事件（可选）
-    // 这里先不创建，只处理有活动的行程
   })
+  
+  // 如果有警告，记录到控制台
+  if (warnings.length > 0) {
+    console.warn('转换过程中的警告:', warnings)
+  }
+  
+  // 如果没有生成任何事件，抛出详细错误
+  if (events.length === 0) {
+    const errorMsg = warnings.length > 0 
+      ? `无法生成任何事件。警告：${warnings.join('; ')}`
+      : '无法生成任何事件，请检查行程数据格式'
+    throw new Error(errorMsg)
+  }
   
   return events
 }
