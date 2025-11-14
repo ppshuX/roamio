@@ -952,17 +952,27 @@ export default {
   
   .editor-toolbar-left {
     gap: 0.5rem;
-    flex: 0 0 auto;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
   }
   
   .editor-toolbar-title {
-    font-size: 0.95rem;
-    display: none; /* 移动端隐藏标题，节省空间 */
+    font-size: 0.875rem;
+    display: block; /* 移动端显示标题，使用小字体 */
+    font-weight: 500;
+    color: #666;
+    margin-left: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
   }
   
   .btn-back {
     padding: 0.375rem 0.5rem;
     font-size: 0.875rem;
+    flex-shrink: 0;
   }
   
   .btn-back .btn-text {
@@ -971,7 +981,7 @@ export default {
   
   .editor-toolbar-actions {
     gap: 0.375rem;
-    flex: 1;
+    flex-shrink: 0;
     justify-content: flex-end;
   }
   
@@ -1008,15 +1018,23 @@ export default {
   
   .editor-toolbar-left {
     gap: 0.375rem;
+    min-width: 0;
+  }
+  
+  .editor-toolbar-title {
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
   }
   
   .btn-back {
     padding: 0.3rem 0.4rem;
     font-size: 0.8rem;
+    flex-shrink: 0;
   }
   
   .editor-toolbar-actions {
     gap: 0.25rem;
+    flex-shrink: 0;
   }
   
   .btn-toolbar-action {
