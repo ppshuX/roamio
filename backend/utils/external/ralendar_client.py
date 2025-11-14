@@ -362,12 +362,18 @@ class RalendarClient:
         if not normalized_email:
             raise ValueError("email is required for check_email_exists")
         
-        url = f"{self.base_url}/fusion/users/check-email/"
+        # Ralendar 邮箱检查接口路径：/api/fusion/users/check-email/
+        # 注意：不包含 /v1，直接使用 /api/fusion/
+        base_url_without_v1 = self.base_url.replace('/api/v1', '/api')
+        url = f"{base_url_without_v1}/fusion/users/check-email/"
         payload = {"email": normalized_email}
         headers = {'Content-Type': 'application/json'}
         
+        # 邮箱检查接口建议超时时间为 3s（根据 Ralendar 文档）
+        timeout = 3
+        
         try:
-            response = requests.post(url, json=payload, headers=headers, timeout=self.timeout)
+            response = requests.post(url, json=payload, headers=headers, timeout=timeout)
             if response.status_code == 404:
                 # 视作不存在
                 return {"exists": False, "owner": None}
@@ -381,11 +387,8 @@ class RalendarClient:
                 "provider": result.get('provider'),
                 "match_type": result.get('match_type')
             }
-        except requests.exceptions.RequestException as exc:
-            logger.warning(f"Ralendar email check failed: {exc}")
-            raise
         except requests.exceptions.RequestException as e:
-            logger.error(f"Batch create failed: {e}")
+            logger.warning(f"Ralendar email check failed: {e}")
             if hasattr(e, 'response') and e.response is not None:
                 logger.error(f"Response status: {e.response.status_code}")
                 logger.error(f"Response body: {e.response.text}")
