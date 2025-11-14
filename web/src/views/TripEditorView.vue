@@ -17,7 +17,7 @@
             </div>
             <div>
               <button 
-                v-if="isEditMode && tripData.start_date"
+                v-if="isEditMode"
                 class="btn btn-outline-success me-2" 
                 @click="handleSyncToRalendarFromEditor"
                 :disabled="syncingToCalendar"
@@ -180,7 +180,7 @@ export default {
     const aiGeneratedPlan = ref(null) // 保存 AI 生成的原始数据，用于同步
     const pendingAIPlan = ref(null) // 待处理同步的 AI 数据
     const calendarEvents = ref([]) // 准备同步到日历的事件列表
-    const tripId = computed(() => route.params.id ? parseInt(route.params.id) : null)
+    const tripSlug = computed(() => route.params.slug && route.params.slug !== 'new' ? route.params.slug : null)
     
     // 可用模块
     const availableModules = [
@@ -483,8 +483,8 @@ export default {
         return
       }
       
-      // 检查是否有 tripId（已保存的行程）
-      if (!tripId.value) {
+      // 检查是否有 tripSlug（已保存的行程）
+      if (!tripSlug.value) {
         alert('❌ 请先保存行程，然后再同步到日历')
         return
       }
@@ -673,11 +673,11 @@ export default {
           }
         }
         
-        // 获取旅行计划的 slug（如果已创建）
-        let tripSlug = route.params.slug
+        // 获取旅行计划的 slug（优先使用计算属性，否则使用路由参数）
+        let currentTripSlug = tripSlug.value || route.params.slug
         
         // 如果还没有创建旅行计划，先保存
-        if (!tripSlug) {
+        if (!currentTripSlug || currentTripSlug === 'new') {
           if (!tripData.value.title) {
             alert('❌ 请先填写旅行标题，才能同步到日历')
             return
@@ -688,14 +688,14 @@ export default {
             ...tripData.value,
             status: 'draft'
           })
-          tripSlug = result.slug
+          currentTripSlug = result.slug
           
           // 更新路由（不刷新页面）
-          router.replace(`/editor/${tripSlug}`)
+          router.replace(`/editor/${currentTripSlug}`)
         }
         
         // 调用后端 API 同步到 Ralendar
-        const response = await syncTripToCalendar(tripSlug, valid)
+        const response = await syncTripToCalendar(currentTripSlug, valid)
         
         if (response.code === 200) {
           const { synced_count, failed_count } = response.data
@@ -824,7 +824,8 @@ export default {
     
     return {
       tripData,
-      tripId,
+      tripSlug,
+      isEditMode,
       saving,
       publishing,
       showAIGenerator,
@@ -845,8 +846,7 @@ export default {
       availableModules,
       toggleModule,
       daysCount,
-      canPublish,
-      isEditMode
+      canPublish
     }
   }
 }
