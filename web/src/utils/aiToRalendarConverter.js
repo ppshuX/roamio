@@ -126,28 +126,34 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
   let usedStartDate = null
   const warnings = []
   
+  // 检查并处理开始日期
+  // 如果日期是占位符或无效，设置为 null
+  if (!startDate || startDate === 'YYYY-MM-DD' || !isValidDate(startDate)) {
+    startDate = null
+  }
+  
   // 如果没有提供开始日期，尝试从第一天获取或使用今天
-  if (!startDate && aiPlan.days_detail.length > 0) {
-    const firstDay = aiPlan.days_detail[0]
-    if (firstDay.date && isValidDate(firstDay.date.split('T')[0])) {
-      startDate = firstDay.date.split('T')[0]
-    } else {
-      // 使用今天作为默认开始日期
+  if (!startDate) {
+    // 尝试从第一天的日期获取
+    if (aiPlan.days_detail.length > 0) {
+      const firstDay = aiPlan.days_detail[0]
+      if (firstDay.date) {
+        const dateStr = firstDay.date.includes('T') ? firstDay.date.split('T')[0] : firstDay.date
+        if (dateStr !== 'YYYY-MM-DD' && isValidDate(dateStr)) {
+          startDate = dateStr
+        }
+      }
+    }
+    
+    // 如果仍然没有有效日期，使用今天
+    if (!startDate) {
       const today = new Date()
       const year = today.getFullYear()
       const month = String(today.getMonth() + 1).padStart(2, '0')
       const day = String(today.getDate()).padStart(2, '0')
       startDate = `${year}-${month}-${day}`
-      warnings.push('未提供开始日期，使用今天作为默认开始日期')
+      warnings.push('未提供有效开始日期，使用今天作为默认开始日期')
     }
-  } else if (!startDate) {
-    // 如果完全没有日期信息，使用今天
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = String(today.getMonth() + 1).padStart(2, '0')
-    const day = String(today.getDate()).padStart(2, '0')
-    startDate = `${year}-${month}-${day}`
-    warnings.push('未提供开始日期，使用今天作为默认开始日期')
   }
   
   usedStartDate = startDate
@@ -160,7 +166,19 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
     if (usedStartDate) {
       // 如果提供了开始日期，从开始日期计算
       try {
-        // 验证开始日期格式
+        // 验证开始日期格式（排除占位符）
+        if (!usedStartDate || usedStartDate === 'YYYY-MM-DD' || !isValidDate(usedStartDate)) {
+          // 如果日期无效，尝试使用默认值（今天）
+          const today = new Date()
+          const year = today.getFullYear()
+          const month = String(today.getMonth() + 1).padStart(2, '0')
+          const day = String(today.getDate()).padStart(2, '0')
+          usedStartDate = `${year}-${month}-${day}`
+          warnings.push(`开始日期无效，使用今天（${usedStartDate}）作为默认开始日期`)
+          console.warn(`开始日期无效，使用今天作为默认开始日期`)
+        }
+        
+        // 再次验证
         if (!isValidDate(usedStartDate)) {
           warnings.push(`开始日期格式无效: ${usedStartDate}，跳过第 ${dayIndex + 1} 天`)
           console.warn(`开始日期格式无效: ${usedStartDate}，跳过第 ${dayIndex + 1} 天`)

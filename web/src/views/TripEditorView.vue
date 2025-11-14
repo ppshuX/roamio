@@ -445,7 +445,20 @@ export default {
       aiGeneratedPlan.value = aiPlan
       
       // 转换为日历事件格式
-      const startDate = tripData.value.start_date || aiPlan.days_detail?.[0]?.date || null
+      // 获取开始日期（排除占位符和无效值）
+      let startDate = null
+      if (tripData.value.start_date && 
+          tripData.value.start_date !== 'YYYY-MM-DD' && 
+          /^\d{4}-\d{2}-\d{2}$/.test(tripData.value.start_date)) {
+        startDate = tripData.value.start_date
+      } else if (aiPlan.days_detail?.[0]?.date) {
+        const firstDayDate = aiPlan.days_detail[0].date
+        if (firstDayDate !== 'YYYY-MM-DD' && /^\d{4}-\d{2}-\d{2}/.test(firstDayDate)) {
+          startDate = firstDayDate.includes('T') ? firstDayDate.split('T')[0] : firstDayDate
+        }
+      }
+      // 如果仍然没有有效日期，传入 null，转换工具会使用今天
+      
       const tripTitle = tripData.value.title || aiPlan.trip_title || '旅行'
       
       try {
