@@ -12,32 +12,8 @@
   </title>
   <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  <!-- 百度地图 API (使用 Ralendar 团队提供的 Key) - 异步加载 -->
-  <script>
-    // 百度地图加载监控
-    window._baiduMapLoadStart = Date.now();
-    window._baiduMapLoaded = false;
-    window._baiduMapError = null;
-    
-    // 监听百度地图加载成功
-    window.addEventListener('load', function() {
-      setTimeout(function() {
-        if (window.BMap) {
-          window._baiduMapLoaded = true;
-          console.log('✅ 百度地图 API 加载成功，耗时:', Date.now() - window._baiduMapLoadStart, 'ms');
-        } else {
-          console.error('❌ 百度地图 API 加载失败');
-          console.error('请检查：');
-          console.error('1. Referer 白名单是否正确配置（roamio.cn,*.roamio.cn）');
-          console.error('2. AK 是否有效：i8UmOotWSekjTJlPbydOk1xQZuUeGeE1');
-          console.error('3. 浏览器控制台 Network 面板查看加载失败原因');
-        }
-      }, 3000);
-    });
-  </script>
-  <script src="https://api.map.baidu.com/api?v=3.0&ak=i8UmOotWSekjTJlPbydOk1xQZuUeGeE1" 
-          onerror="console.error('❌ 百度地图脚本加载失败，请检查网络或API配置'); window._baiduMapError = 'script load failed';"
-          onload="console.log('📡 百度地图脚本已下载')"></script>
+  <!-- 百度地图 API -->
+  <script src="https://api.map.baidu.com/api?v=3.0&ak=i8UmOotWSekjTJlPbydOk1xQZuUeGeE1"></script>
   <!-- 高德地图 API (加载 Geocoder 插件) - 异步加载 -->
   <script>
     window._AMapSecurityConfig = {

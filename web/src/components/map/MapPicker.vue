@@ -126,11 +126,9 @@ export default defineComponent({
     // 初始化百度地图
     const initBaiduMap = () => {
       if (!window.BMap) {
-        console.error('❌ 百度地图 API 未加载，请检查：1) API Key 是否正确 2) Referer 白名单是否配置')
+        console.error('百度地图 API 未加载')
         return
       }
-      
-      console.log('✅ 百度地图 API 已加载，开始初始化...')
       
       // 创建地图实例
       map = new window.BMap.Map(mapContainer.value)
@@ -341,7 +339,6 @@ export default defineComponent({
             resolve()
           } else if (attempts >= maxAttempts) {
             clearInterval(checkInterval)
-            console.error('⚠️ 百度地图 API 加载超时')
             resolve()
           }
         }, 100)
