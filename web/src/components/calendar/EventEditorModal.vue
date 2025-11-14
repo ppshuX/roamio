@@ -105,32 +105,32 @@
         <div class="form-group">
           <label>地理坐标（可选）</label>
           <div class="coordinates-input">
-            <div class="coord-input">
-              <label>纬度:</label>
-              <input 
-                type="number" 
-                v-model.number="localEvent.latitude" 
-                step="0.000001"
-                placeholder="39.9163"
-              />
+              <div class="coord-input">
+                <label>纬度:</label>
+                <input 
+                  type="number" 
+                  v-model.number="localEvent.latitude" 
+                  step="0.000001"
+                  placeholder="39.9163"
+                />
+              </div>
+              <div class="coord-input">
+                <label>经度:</label>
+                <input 
+                  type="number" 
+                  v-model.number="localEvent.longitude" 
+                  step="0.000001"
+                  placeholder="116.3972"
+                />
+              </div>
+              <button 
+                class="btn-get-coords" 
+                @click="showMapPicker = true"
+                type="button"
+              >
+                🗺️ 地图选点
+              </button>
             </div>
-            <div class="coord-input">
-              <label>经度:</label>
-              <input 
-                type="number" 
-                v-model.number="localEvent.longitude" 
-                step="0.000001"
-                placeholder="116.3972"
-              />
-            </div>
-            <button 
-              class="btn-get-coords" 
-              @click="getCoordinates"
-              type="button"
-            >
-              📍 根据地址获取
-            </button>
-          </div>
         </div>
       </div>
       
@@ -139,14 +139,27 @@
         <button class="btn-save" @click="handleSave">保存</button>
       </div>
     </div>
+    
+    <!-- 地图选择器 -->
+    <MapPicker 
+      :show="showMapPicker"
+      :default-location="location"
+      @select="handleMapSelect"
+      @close="showMapPicker = false"
+    />
   </div>
 </template>
 
 <script>
 import { ref, computed, watch } from 'vue'
+import MapPicker from '@/components/map/MapPicker.vue'
 
 export default {
   name: 'EventEditorModal',
+  
+  components: {
+    MapPicker
+  },
   
   props: {
     event: {
@@ -158,6 +171,9 @@ export default {
   emits: ['save', 'close'],
   
   setup(props, { emit }) {
+    // 地图选择器
+    const showMapPicker = ref(false)
+    
     // 创建本地副本，避免直接修改 props
     const localEvent = ref({
       title: props.event.title || '',
@@ -330,20 +346,18 @@ export default {
       emit('save', { ...localEvent.value })
     }
     
-    const getCoordinates = async () => {
+    // 处理地图选点
+    const handleMapSelect = (mapLocation) => {
+      // 更新坐标
+      localEvent.value.latitude = mapLocation.lat
+      localEvent.value.longitude = mapLocation.lng
+      
+      // 如果用户还没有输入地点，使用地图返回的地点名称
       if (!location.value || !location.value.trim()) {
-        alert('请先输入地点')
-        return
+        location.value = mapLocation.name
       }
       
-      // TODO: 实现地理编码 API 调用
-      // 1. 如果 location 包含详细地址（有括号），优先使用括号内的地址
-      // 2. 如果没有详细地址，使用地点名称进行地理编码
-      // 3. 获取坐标后，更新 localEvent.value.latitude 和 localEvent.value.longitude
-      // 例如：const addressToGeocode = location.value.trim()
-      
-      // 暂时提示用户手动输入
-      alert('地理编码功能待实现，请手动输入坐标或使用地图选择')
+      showMapPicker.value = false
     }
     
     return {
@@ -353,7 +367,8 @@ export default {
       startTime,
       endTime,
       handleSave,
-      getCoordinates
+      showMapPicker,
+      handleMapSelect
     }
   }
 }
