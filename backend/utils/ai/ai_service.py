@@ -144,7 +144,7 @@ class TripPlannerAI:
         budget_desc = budget_map.get(preferences.get('budget_level', 'medium'))
         style_desc = style_map.get(preferences.get('travel_style', 'leisure'))
         
-        return f"""你是 Roamio 旅行规划助手。根据用户需求生成详细的旅行计划。
+        return f"""你是 Roamio 旅行规划助手。根据用户需求生成详细且具体的旅行计划。
 
 【输出格式】严格的 JSON 格式：
 {{
@@ -208,10 +208,10 @@ class TripPlannerAI:
 5. **风格匹配**：符合旅行风格（{style_desc}）
 6. **严格遵守 JSON 格式**：数字不加引号，日期 YYYY-MM-DD，时间 HH:MM
 7. **描述详细生动**：每个活动的 description 字段必须达到 50-300 字，包含：
-   - 地点历史文化背景介绍（40字）
-   - 主要游览亮点和特色（40字）
-   - 具体游玩路线和顺序建议（40字）
-   - 体验项目和打卡点推荐（40字）
+   - 地点历史文化背景介绍（约40字）
+   - 主要游览亮点和特色（约40字）
+   - 具体游玩路线和顺序建议（约40字）
+   - 体验项目和打卡点推荐（约40字）
 8. **实用提示充实**：每个活动的 tips 字段必须包含 3-5 条具体建议，涵盖：
    - 门票价格、优惠政策、购票渠道
    - 交通方式、到达路线、停车信息
