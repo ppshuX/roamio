@@ -869,12 +869,7 @@ export default {
   width: 100%;
 }
 
-/* 移动端：为固定工具栏添加顶部间距 */
-@media (max-width: 991px) {
-  .editor-main-content {
-    padding-top: 48px; /* 为固定工具栏留出空间 */
-  }
-}
+/* 移动端工具栏间距在下方的 @media 中统一设置 */
 
 .editor-toolbar {
   position: sticky;
@@ -938,6 +933,12 @@ export default {
     top: 56px;
     position: fixed;
     width: 100%;
+    z-index: 999; /* 确保工具栏在内容上方 */
+  }
+  
+  /* 移动端：为固定工具栏留出空间，消除间隙 */
+  .editor-main-content {
+    margin-top: 48px; /* 工具栏高度，使用 margin 而不是 padding */
   }
   
   .editor-toolbar .container-fluid {
@@ -1222,10 +1223,15 @@ export default {
     margin-right: 0.375rem !important;
   }
   
-  /* 减少容器内边距（工具栏是sticky，会占据空间，所以这里不需要太多padding） */
+  /* 移动端：消除容器顶部内边距，让内容紧贴工具栏 */
   .container.py-4 {
-    padding-top: 0.5rem !important;  /* 只需要一点点间距 */
+    padding-top: 0 !important;  /* 消除顶部间距，紧贴工具栏 */
     padding-bottom: 0.75rem !important;
+  }
+  
+  /* 移动端：基本信息卡片无上边距，紧贴容器顶部 */
+  .editor-main-content .card:first-child {
+    margin-top: 0 !important;
   }
   
   /* AI 按钮间距 */
@@ -1340,7 +1346,8 @@ export default {
 /* 响应式 */
 @media (max-width: 991px) {
   .editor-container {
-    padding-top: 56px;  /* 只需要为固定定位的导航栏留空间，工具栏是sticky会自然占据空间 */
+    padding-top: 56px;  /* 只需要为固定定位的导航栏留空间 */
+    padding-bottom: 0;
   }
   
   .ai-modal-content {
