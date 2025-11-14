@@ -160,6 +160,64 @@ function extractLocationFromContent(content) {
 }
 
 /**
+ * 从 content 中分割出多个活动
+ * @param {string} content - 行程内容
+ * @returns {Array} 活动数组 [{ time: '09:00-11:00', location: '故宫', description: '参观紫禁城' }, ...]
+ */
+function splitActivities(content) {
+    if (!content) return []
+    
+    const activities = []
+    
+    // 按箭头或换行符分割
+    const parts = content.split(/[→\n]/).map(p => p.trim()).filter(p => p.length > 0)
+    
+    for (const part of parts) {
+        // 尝试提取时间和地点
+        // 格式：09:00-11:00 故宫 - 参观紫禁城
+        const timeMatch = part.match(/(\d{1,2}:\d{2})\s*[-~至]\s*(\d{1,2}:\d{2})/)
+        
+        if (timeMatch) {
+            const timeRange = `${timeMatch[1]}-${timeMatch[2]}`
+            
+            // 移除时间部分，提取地点和描述
+            let afterTime = part.substring(timeMatch[0].length).trim()
+            
+            // 移除可能的前导符号
+            afterTime = afterTime.replace(/^[-~→\s]+/, '').trim()
+            
+            // 分割地点和描述（如果有的话）
+            let location = afterTime
+            let description = ''
+            
+            // 尝试按冒号、破折号等分割
+            const descMatch = afterTime.match(/^([^：:：\-—]+?)\s*[：:：\-—]\s*(.+)$/)
+            if (descMatch) {
+                location = descMatch[1].trim()
+                description = descMatch[2].trim()
+            } else {
+                // 如果没有描述，整个作为地点
+                location = afterTime
+            }
+            
+            // 验证地点有效性
+            if (location && 
+                location.length > 1 && 
+                location.length < 50 &&
+                !/^\d+$/.test(location)) {
+                activities.push({
+                    time: timeRange,
+                    location: location,
+                    description: description || afterTime
+                })
+            }
+        }
+    }
+    
+    return activities
+}
+
+/**
  * 将行程数据转换为 Ralendar 事件数组
  * @param {Object} tripData - 行程数据
  * @returns {Array} Ralendar 事件数组
@@ -197,6 +255,16 @@ export function convertTripToRalendarEvents(tripData) {
 
     const tripTitle = tripData.title || tripData.name || '旅行'
 
+    // 直接格式化为 UTC+8 格式的 ISO 字符串
+    const formatISOWithOffset = (y, m, d, h, min) => {
+        const yearStr = String(y).padStart(4, '0')
+        const monthStr = String(m + 1).padStart(2, '0')  // month 是 0-based
+        const dayStr = String(d).padStart(2, '0')
+        const hourStr = String(h).padStart(2, '0')
+        const minStr = String(min).padStart(2, '0')
+        return `${yearStr}-${monthStr}-${dayStr}T${hourStr}:${minStr}:00+08:00`
+    }
+
     // 遍历每一天的行程
     itinerary.forEach((day, dayIndex) => {
         if (!day || !day.day) {
@@ -210,85 +278,136 @@ export function convertTripToRalendarEvents(tripData) {
         const month = currentDate.getMonth()
         const dayNum = currentDate.getDate()
 
-        // 解析时间范围
-        const timeRange = parseTimeRange(day.time)
+        // 从 content 中分割出多个活动
+        const activities = splitActivities(day.content)
 
-        // 提取地点和描述
-        const { location, description } = extractLocationFromContent(day.content || day.highlight || '')
+        // 如果分割成功，为每个活动生成一个事件
+        if (activities.length > 0) {
+            activities.forEach((activity, activityIndex) => {
+                try {
+                    // 解析活动的时间范围
+                    const timeRange = parseTimeRange(activity.time)
+                    const [startHour, startMin] = timeRange.start.split(':').map(Number)
+                    const [endHour, endMin] = timeRange.end.split(':').map(Number)
 
-        // 构建开始和结束时间（UTC+8）
-        const [startHour, startMin] = timeRange.start.split(':').map(Number)
-        const [endHour, endMin] = timeRange.end.split(':').map(Number)
+                    // 处理结束时间可能跨天的情况
+                    let endYear = year
+                    let endMonth = month
+                    let endDay = dayNum
 
-        // 直接使用 UTC+8 时间，不需要转换
-        // Ralendar API 期望的是 UTC+8 时区的时间字符串
+                    // 如果结束时间小于开始时间，说明跨天了
+                    if (endHour < startHour || (endHour === startHour && endMin < startMin)) {
+                        endDay += 1
+                        // 处理跨月
+                        const daysInMonth = new Date(year, month + 1, 0).getDate()
+                        if (endDay > daysInMonth) {
+                            endMonth += 1
+                            endDay = 1
+                            if (endMonth > 11) {
+                                endYear += 1
+                                endMonth = 0
+                            }
+                        }
+                    }
 
-        // 处理结束时间可能跨天的情况
-        let endYear = year
-        let endMonth = month
-        let endDay = dayNum
+                    // 构建事件标题
+                    const dayTitle = day.day.replace(/^第\d+天[：:：]?\s*/, '').trim()
+                    let eventTitle = tripTitle
+                    if (dayTitle) {
+                        eventTitle += ` - ${dayTitle}`
+                    }
+                    if (activity.location) {
+                        eventTitle += `: ${activity.location}`
+                    }
 
-        // 如果结束时间小于开始时间，说明跨天了
-        if (endHour < startHour || (endHour === startHour && endMin < startMin)) {
-            endDay += 1
-            // 处理跨月
-            const daysInMonth = new Date(year, month + 1, 0).getDate()
-            if (endDay > daysInMonth) {
-                endMonth += 1
-                endDay = 1
-                if (endMonth > 11) {
-                    endYear += 1
-                    endMonth = 0
+                    // 限制标题长度
+                    if (eventTitle.length > 50) {
+                        eventTitle = eventTitle.substring(0, 47) + '...'
+                    }
+
+                    // 构建事件对象（确保字段符合 Ralendar API 要求）
+                    const event = {
+                        title: eventTitle.trim(), // 必填：标题
+                        description: activity.description.trim(), // 可选：描述
+                        start_time: formatISOWithOffset(year, month, dayNum, startHour, startMin), // 必填：开始时间
+                        end_time: formatISOWithOffset(endYear, endMonth, endDay, endHour, endMin), // 可选：结束时间
+                        reminder_minutes: 30, // 可选：提醒时间（分钟）
+                        email_reminder: true // 可选：邮件提醒
+                    }
+
+                    // 地点处理
+                    if (activity.location && activity.location !== '未指定地点' && activity.location.trim() !== '') {
+                        event.location = activity.location.trim()
+                    }
+
+                    events.push(event)
+                } catch (error) {
+                    console.error(`处理活动 ${activityIndex + 1} 失败:`, error, activity)
+                }
+            })
+        } else {
+            // 如果无法分割活动，回退到原来的逻辑（整天一个事件）
+            console.warn(`第 ${dayIndex + 1} 天无法分割活动，使用整天事件`)
+
+            // 解析时间范围
+            const timeRange = parseTimeRange(day.time)
+
+            // 提取地点和描述
+            const { location, description } = extractLocationFromContent(day.content || day.highlight || '')
+
+            // 构建开始和结束时间（UTC+8）
+            const [startHour, startMin] = timeRange.start.split(':').map(Number)
+            const [endHour, endMin] = timeRange.end.split(':').map(Number)
+
+            // 处理结束时间可能跨天的情况
+            let endYear = year
+            let endMonth = month
+            let endDay = dayNum
+
+            if (endHour < startHour || (endHour === startHour && endMin < startMin)) {
+                endDay += 1
+                const daysInMonth = new Date(year, month + 1, 0).getDate()
+                if (endDay > daysInMonth) {
+                    endMonth += 1
+                    endDay = 1
+                    if (endMonth > 11) {
+                        endYear += 1
+                        endMonth = 0
+                    }
                 }
             }
-        }
 
-        // 构建事件标题
-        let eventTitle = tripTitle
-        const dayTitle = day.day.replace(/^第\d+天[：:：]?\s*/, '').trim()
-        if (dayTitle) {
-            eventTitle += ` - ${dayTitle}`
-        }
-        if (location && location !== '未指定地点') {
-            eventTitle += `: ${location}`
-        }
+            // 构建事件标题
+            let eventTitle = tripTitle
+            const dayTitle = day.day.replace(/^第\d+天[：:：]?\s*/, '').trim()
+            if (dayTitle) {
+                eventTitle += ` - ${dayTitle}`
+            }
+            if (location && location !== '未指定地点') {
+                eventTitle += `: ${location}`
+            }
 
-        // 限制标题长度
-        if (eventTitle.length > 50) {
-            eventTitle = eventTitle.substring(0, 47) + '...'
+            // 限制标题长度
+            if (eventTitle.length > 50) {
+                eventTitle = eventTitle.substring(0, 47) + '...'
+            }
+
+            // 构建事件对象
+            const event = {
+                title: eventTitle.trim(),
+                description: (description || day.content || day.highlight || '').trim(),
+                start_time: formatISOWithOffset(year, month, dayNum, startHour, startMin),
+                end_time: formatISOWithOffset(endYear, endMonth, endDay, endHour, endMin),
+                reminder_minutes: 30,
+                email_reminder: true
+            }
+
+            if (location && location !== '未指定地点' && location.trim() !== '') {
+                event.location = location.trim()
+            }
+
+            events.push(event)
         }
-
-        // 直接格式化为 UTC+8 格式的 ISO 字符串
-        const formatISOWithOffset = (y, m, d, h, min) => {
-            const yearStr = String(y).padStart(4, '0')
-            const monthStr = String(m + 1).padStart(2, '0')  // month 是 0-based
-            const dayStr = String(d).padStart(2, '0')
-            const hourStr = String(h).padStart(2, '0')
-            const minStr = String(min).padStart(2, '0')
-            return `${yearStr}-${monthStr}-${dayStr}T${hourStr}:${minStr}:00+08:00`
-        }
-
-        // 构建事件对象（确保字段符合 Ralendar API 要求）
-        const event = {
-            title: eventTitle.trim(), // 必填：标题
-            description: (description || day.content || day.highlight || '').trim(), // 可选：描述
-            start_time: formatISOWithOffset(year, month, dayNum, startHour, startMin), // 必填：开始时间（ISO 8601 with timezone）
-            end_time: formatISOWithOffset(endYear, endMonth, endDay, endHour, endMin), // 可选：结束时间（ISO 8601 with timezone）
-            reminder_minutes: 30, // 可选：提醒时间（分钟）
-            email_reminder: true // 可选：邮件提醒
-        }
-
-        // 地点处理：如果有有效地点，添加 location 字段
-        // 注意：Ralendar API 只需要 location 字段，不需要 location_name、location_address 等
-        if (location && location !== '未指定地点' && location.trim() !== '') {
-            event.location = location.trim()
-        }
-
-        // 如果有坐标，添加坐标信息（Ralendar API 支持）
-        // 注意：坐标信息可能不在原始数据中，这里暂时不添加
-        // 如果需要，可以从其他地方获取坐标信息
-
-        events.push(event)
     })
 
     if (events.length === 0) {
