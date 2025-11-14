@@ -231,28 +231,36 @@ export default {
       const slug = route.params.slug
       try {
         loading.value = true
-        const response = await getTripDetail(slug)
+        
+        // 并行加载主要数据
+        const [response, config] = await Promise.all([
+          getTripDetail(slug),
+          getTripConfig(slug)
+        ])
+        
         trip.value = response
+        tripConfig.value = config
         
         // 确保 stats 存在
         if (!trip.value.stats) {
           trip.value.stats = { views: 0, likes: 0 }
         }
         
-        // 加载配置
-        tripConfig.value = getTripConfig(slug)
+        // 并行加载评论和统计（不阻塞首屏）
+        const promises = [fetchComments()]
         
-        // 加载评论
-        await fetchComments()
-        
-        // 记录浏览量并刷新统计
         if (trip.value.overview) {
-          await viewTripPlan(slug)
-          // 刷新统计数据
-          const statsResponse = await getTripPlanStats(slug)
-          trip.value.stats.views = statsResponse.views
-          trip.value.stats.likes = statsResponse.likes
+          promises.push(
+            viewTripPlan(slug).then(async () => {
+              const statsResponse = await getTripPlanStats(slug)
+              trip.value.stats.views = statsResponse.views
+              trip.value.stats.likes = statsResponse.likes
+            })
+          )
         }
+        
+        // 不等待统计完成，先显示内容
+        Promise.all(promises).catch(console.error)
       } catch (err) {
         console.error('获取旅行详情失败:', err)
         error.value = true

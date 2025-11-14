@@ -130,22 +130,29 @@ export default {
     const refreshStats = async () => {
       if (!trips.value?.length) return
       try {
-        const updated = await Promise.all(
-          trips.value.map(async (t) => {
-            try {
-              // 优先新接口（tp: 前缀），失败再回退旧接口，确保与详情页一致
-              let stat
+        // 限制并发数量，避免一次性发起太多请求
+        const batchSize = 5
+        const updated = [...trips.value]
+        
+        for (let i = 0; i < trips.value.length; i += batchSize) {
+          const batch = trips.value.slice(i, i + batchSize)
+          await Promise.all(
+            batch.map(async (t, index) => {
               try {
-                stat = await getTripPlanStats(t.slug)
-              } catch (e1) {
-                stat = await getTripStats(t.slug)
+                let stat
+                try {
+                  stat = await getTripPlanStats(t.slug)
+                } catch (e1) {
+                  stat = await getTripStats(t.slug)
+                }
+                updated[i + index] = { ...t, stats: { ...t.stats, ...stat } }
+              } catch (e) {
+                // keep original
               }
-              return { ...t, stats: { ...t.stats, ...stat } }
-            } catch (e) {
-              return t
-            }
-          })
-        )
+            })
+          )
+        }
+        
         trips.value = updated
       } catch (e) {
         // ignore
@@ -154,9 +161,12 @@ export default {
 
     onMounted(() => {
       fetchTrips().then(() => {
-        // 首次加载后刷新一次统计并开启轮询（云端接口）
-        refreshStats()
-        statsTimer = setInterval(refreshStats, 15000)
+        // 延迟加载统计，不阻塞首屏渲染
+        setTimeout(() => {
+          refreshStats()
+          // 增加轮询间隔到 30 秒，减少服务器压力
+          statsTimer = setInterval(refreshStats, 30000)
+        }, 1000)
       })
     })
 
