@@ -371,22 +371,24 @@ export function convertAITripToEvents(aiPlan, tripTitle = '', startDate = null) 
             location = `${location}（${activity.address}）`
           }
           
-          // 构建事件对象
+          // 构建事件对象（确保字段符合 Ralendar API 要求）
           const event = {
-            title: eventTitle,
-            description: description.trim(),
-            start_time: startTime,
-            end_time: endTime,
-            location: location, // 完整地点信息（名称+地址）
-            location_name: activity.location || '未指定地点', // 地点名称
-            location_address: activity.address || null, // 详细地址
-            location_type: activity.location_type || null, // 地点类型
-            reminder_minutes: 30, // 固定提前 30 分钟提醒
-            email_reminder: true // 启用邮件提醒
+            title: eventTitle.trim(), // 必填：标题
+            description: description.trim(), // 可选：描述
+            start_time: startTime, // 必填：开始时间（ISO 8601 with timezone）
+            end_time: endTime, // 可选：结束时间（ISO 8601 with timezone）
+            reminder_minutes: 30, // 可选：提醒时间（分钟）
+            email_reminder: true // 可选：邮件提醒
           }
           
-          // 如果有坐标，添加坐标信息
-          if (latitude && longitude) {
+          // 地点处理：如果有有效地点，添加 location 字段
+          // 注意：Ralendar API 只需要 location 字段，不需要 location_name、location_address 等
+          if (location && location !== '未指定地点' && location.trim() !== '') {
+            event.location = location.trim()
+          }
+          
+          // 如果有坐标，添加坐标信息（Ralendar API 支持）
+          if (latitude != null && longitude != null) {
             event.latitude = parseFloat(latitude)
             event.longitude = parseFloat(longitude)
           }

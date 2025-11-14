@@ -46,22 +46,13 @@
         </div>
         
         <div class="form-group">
-          <label>地点名称 *</label>
+          <label>地点 *</label>
           <input 
             type="text" 
-            v-model="locationName" 
-            placeholder="例如：故宫博物院"
+            v-model="location" 
+            placeholder="例如：故宫博物院（北京市东城区景山前街4号）"
           />
-        </div>
-        
-        <div class="form-group">
-          <label>详细地址</label>
-          <input 
-            type="text" 
-            v-model="localEvent.location_address" 
-            placeholder="例如：北京市东城区景山前街4号"
-          />
-          <small class="help-text">完整地址有助于地图导航和提醒定位</small>
+          <small class="help-text">可输入地点名称，或包含详细地址。完整地址有助于地图导航和提醒定位</small>
         </div>
         
         <div class="form-group">
@@ -183,35 +174,36 @@ export default {
       email_reminder: props.event.email_reminder !== undefined ? props.event.email_reminder : true
     })
     
-    // 地点名称的计算属性
-    const locationName = computed({
-      get: () => localEvent.value.location_name || localEvent.value.location || '',
-      set: (value) => {
-        localEvent.value.location_name = value
-        // 同时更新 location（用于兼容）
-        if (!localEvent.value.location_address) {
-          localEvent.value.location = value
-        } else {
-          localEvent.value.location = `${value}（${localEvent.value.location_address}）`
+    // 统一的地点字段（合并地点名称和详细地址）
+    const location = computed({
+      get: () => {
+        // 优先使用 location 字段
+        if (localEvent.value.location) {
+          return localEvent.value.location
         }
-      }
-    })
-    
-    // 监听地址变化，更新完整地点
-    watch(() => localEvent.value.location_address, (newAddress) => {
-      if (newAddress && localEvent.value.location_name) {
-        localEvent.value.location = `${localEvent.value.location_name}（${newAddress}）`
-      } else if (localEvent.value.location_name) {
-        localEvent.value.location = localEvent.value.location_name
-      }
-    })
-    
-    // 监听地点名称变化
-    watch(locationName, (newName) => {
-      if (localEvent.value.location_address) {
-        localEvent.value.location = `${newName}（${localEvent.value.location_address}）`
-      } else {
-        localEvent.value.location = newName
+        // 如果有 location_name 和 location_address，合并它们
+        if (localEvent.value.location_name) {
+          if (localEvent.value.location_address) {
+            return `${localEvent.value.location_name}（${localEvent.value.location_address}）`
+          }
+          return localEvent.value.location_name
+        }
+        return ''
+      },
+      set: (value) => {
+        localEvent.value.location = value || ''
+        
+        // 尝试从 location 中提取 location_name 和 location_address
+        // 格式：地点名称（详细地址）
+        const match = value.match(/^(.+?)（([^）]+)）$/)
+        if (match) {
+          localEvent.value.location_name = match[1].trim()
+          localEvent.value.location_address = match[2].trim()
+        } else {
+          // 如果没有括号，整个字符串作为地点名称
+          localEvent.value.location_name = value.trim()
+          localEvent.value.location_address = null
+        }
       }
     })
     
@@ -282,10 +274,18 @@ export default {
     
     // 监听 props 变化，更新本地副本
     watch(() => props.event, (newEvent) => {
+      // 合并地点信息
+      let locationValue = newEvent.location || newEvent.location_name || ''
+      if (newEvent.location_name && newEvent.location_address) {
+        locationValue = `${newEvent.location_name}（${newEvent.location_address}）`
+      } else if (newEvent.location_name) {
+        locationValue = newEvent.location_name
+      }
+      
       localEvent.value = {
         title: newEvent.title || '',
         description: newEvent.description || '',
-        location: newEvent.location || newEvent.location_name || '',
+        location: locationValue,
         location_name: newEvent.location_name || newEvent.location || '',
         location_address: newEvent.location_address || null,
         location_type: newEvent.location_type || null,
@@ -300,17 +300,20 @@ export default {
     
     const handleSave = () => {
       // 验证必填字段
-      if (!localEvent.value.title || !localEvent.value.location_name || !localEvent.value.start_time || !localEvent.value.end_time) {
-        alert('请填写所有必填字段（标题、地点名称、开始时间、结束时间）')
+      if (!localEvent.value.title || !localEvent.value.location || !localEvent.value.start_time || !localEvent.value.end_time) {
+        alert('请填写所有必填字段（标题、地点、开始时间、结束时间）')
         return
       }
       
-      // 确保 location 字段正确（用于兼容）
-      if (!localEvent.value.location) {
-        if (localEvent.value.location_address) {
-          localEvent.value.location = `${localEvent.value.location_name}（${localEvent.value.location_address}）`
+      // 确保 location_name 字段存在（用于兼容）
+      if (!localEvent.value.location_name && localEvent.value.location) {
+        // 从 location 中提取 location_name
+        const match = localEvent.value.location.match(/^(.+?)（([^）]+)）$/)
+        if (match) {
+          localEvent.value.location_name = match[1].trim()
+          localEvent.value.location_address = match[2].trim()
         } else {
-          localEvent.value.location = localEvent.value.location_name
+          localEvent.value.location_name = localEvent.value.location.trim()
         }
       }
       
@@ -328,19 +331,24 @@ export default {
     }
     
     const getCoordinates = async () => {
-      if (!localEvent.value.location) {
+      if (!location.value || !location.value.trim()) {
         alert('请先输入地点')
         return
       }
       
-      // 这里可以调用地理编码 API（百度/高德地图）
+      // TODO: 实现地理编码 API 调用
+      // 1. 如果 location 包含详细地址（有括号），优先使用括号内的地址
+      // 2. 如果没有详细地址，使用地点名称进行地理编码
+      // 3. 获取坐标后，更新 localEvent.value.latitude 和 localEvent.value.longitude
+      // 例如：const addressToGeocode = location.value.trim()
+      
       // 暂时提示用户手动输入
       alert('地理编码功能待实现，请手动输入坐标或使用地图选择')
     }
     
     return {
       localEvent,
-      locationName,
+      location,
       eventDate,
       startTime,
       endTime,

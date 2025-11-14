@@ -141,8 +141,11 @@ class RalendarClient:
             }
             
             # location 处理：优先使用 location，如果没有则使用 location_name
+            # 注意：如果 location 为空字符串或只有空白，不添加该字段
             location = event.get('location') or event.get('location_name') or ''
-            if location:
+            location = location.strip() if location else ''
+            # 只有当 location 不为空时才添加
+            if location and location != '未指定地点':
                 cleaned_event['location'] = location
             
             # 坐标处理（可选）
@@ -163,13 +166,50 @@ class RalendarClient:
                 cleaned_event['openid'] = openid
             
             # 验证必填字段
-            if not cleaned_event.get('title'):
+            title = cleaned_event.get('title', '').strip()
+            start_time = cleaned_event.get('start_time')
+            
+            if not title:
                 logger.warning(f"Event missing title, skipping: {event}")
                 continue
-            if not cleaned_event.get('start_time'):
+            
+            if not start_time:
                 logger.warning(f"Event missing start_time, skipping: {event}")
                 continue
             
+            # 验证 start_time 格式（应该是 ISO 8601 格式，包含时区）
+            try:
+                # 尝试解析时间字符串，确保格式正确
+                from datetime import datetime
+                if isinstance(start_time, str):
+                    # 尝试解析 ISO 8601 格式
+                    datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+            except (ValueError, AttributeError) as e:
+                logger.warning(f"Event start_time format invalid: {start_time}, error: {e}, skipping: {event}")
+                continue
+            
+            # 更新 title（去除前后空白）
+            cleaned_event['title'] = title
+            
+            # 验证并格式化 description
+            description = cleaned_event.get('description', '')
+            if description:
+                cleaned_event['description'] = description.strip()
+            else:
+                cleaned_event['description'] = ''  # 保持空字符串
+            
+            # 验证 end_time 格式（如果存在）
+            end_time = cleaned_event.get('end_time')
+            if end_time:
+                try:
+                    if isinstance(end_time, str):
+                        datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+                except (ValueError, AttributeError) as e:
+                    logger.warning(f"Event end_time format invalid: {end_time}, error: {e}, removing end_time")
+                    # 如果 end_time 格式无效，移除它（Ralendar API 可能不接受）
+                    del cleaned_event['end_time']
+            
+            logger.debug(f"Validated event: title={title}, start_time={start_time}, location={cleaned_event.get('location', 'N/A')}")
             cleaned_events.append(cleaned_event)
         
         # 如果清理后没有有效事件，抛出异常

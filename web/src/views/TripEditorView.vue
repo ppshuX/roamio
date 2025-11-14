@@ -6,44 +6,45 @@
       <!-- 顶部工具栏 -->
       <div class="editor-toolbar">
         <div class="container-fluid">
-          <div class="d-flex justify-content-between align-items-center py-3">
-            <div>
-              <button class="btn btn-outline-secondary me-2" @click="goBack">
-                <i class="bi bi-arrow-left me-1"></i>返回
+          <div class="editor-toolbar-content">
+            <div class="editor-toolbar-left">
+              <button class="btn btn-outline-secondary btn-back" @click="goBack">
+                <i class="bi bi-arrow-left"></i>
+                <span class="btn-text">返回</span>
               </button>
-              <h5 class="d-inline-block mb-0 ms-3">
+              <h5 class="editor-toolbar-title">
                 {{ isEditMode ? '编辑旅行计划' : '创建旅行计划' }}
               </h5>
             </div>
-            <div>
+            <div class="editor-toolbar-actions">
               <button 
                 v-if="isEditMode"
-                class="btn btn-outline-success me-2" 
+                class="btn btn-outline-success btn-toolbar-action" 
                 @click="handleSyncToRalendarFromEditor"
                 :disabled="syncingToCalendar"
                 title="将行程同步到 Ralendar 日历"
               >
-                <span v-if="syncingToCalendar" class="spinner-border spinner-border-sm me-1"></span>
-                <i v-else class="bi bi-calendar-check me-1"></i>
-                {{ syncingToCalendar ? '同步中...' : '同步到日历' }}
+                <span v-if="syncingToCalendar" class="spinner-border spinner-border-sm"></span>
+                <i v-else class="bi bi-calendar-check"></i>
+                <span class="btn-text">{{ syncingToCalendar ? '同步中...' : '同步到日历' }}</span>
               </button>
               <button 
-                class="btn btn-outline-primary me-2" 
+                class="btn btn-outline-primary btn-toolbar-action" 
                 @click="handleSave"
                 :disabled="saving"
               >
-                <span v-if="saving" class="spinner-border spinner-border-sm me-1"></span>
-                <i v-else class="bi bi-save me-1"></i>
-                保存
+                <span v-if="saving" class="spinner-border spinner-border-sm"></span>
+                <i v-else class="bi bi-save"></i>
+                <span class="btn-text">保存</span>
               </button>
               <button 
-                class="btn btn-primary" 
+                class="btn btn-primary btn-toolbar-action" 
                 @click="handlePublish"
                 :disabled="publishing || !canPublish"
               >
-                <span v-if="publishing" class="spinner-border spinner-border-sm me-1"></span>
-                <i v-else class="bi bi-send me-1"></i>
-                发布
+                <span v-if="publishing" class="spinner-border spinner-border-sm"></span>
+                <i v-else class="bi bi-send"></i>
+                <span class="btn-text">发布</span>
               </button>
             </div>
           </div>
@@ -51,8 +52,9 @@
       </div>
       
       <!-- 主编辑区 -->
-      <div class="container py-4">
-        <div class="row">
+      <div class="editor-main-content">
+        <div class="container py-4">
+          <div class="row">
           <!-- 左侧：编辑面板 -->
           <div class="col-lg-8">
             <!-- AI 智能生成按钮 -->
@@ -93,6 +95,7 @@
               :days-count="daysCount"
             />
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -862,6 +865,17 @@ export default {
   padding-top: 0;
 }
 
+.editor-main-content {
+  width: 100%;
+}
+
+/* 移动端：为固定工具栏添加顶部间距 */
+@media (max-width: 991px) {
+  .editor-main-content {
+    padding-top: 48px; /* 为固定工具栏留出空间 */
+  }
+}
+
 .editor-toolbar {
   position: sticky;
   top: 0;
@@ -873,11 +887,159 @@ export default {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
+.editor-toolbar-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  gap: 1rem;
+}
+
+.editor-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.editor-toolbar-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.editor-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btn-back,
+.btn-toolbar-action {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.btn-toolbar-action i,
+.btn-back i {
+  font-size: 1rem;
+}
+
 /* 移动端：工具栏在导航栏下方 */
 @media (max-width: 991px) {
   .editor-toolbar {
     top: 56px;
     position: fixed;
+    width: 100%;
+  }
+  
+  .editor-toolbar .container-fluid {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  .editor-toolbar-content {
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem;
+  }
+  
+  .editor-toolbar-left {
+    gap: 0.5rem;
+    flex: 0 0 auto;
+  }
+  
+  .editor-toolbar-title {
+    font-size: 0.95rem;
+    display: none; /* 移动端隐藏标题，节省空间 */
+  }
+  
+  .btn-back {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .btn-back .btn-text {
+    display: none; /* 移动端只显示图标 */
+  }
+  
+  .editor-toolbar-actions {
+    gap: 0.375rem;
+    flex: 1;
+    justify-content: flex-end;
+  }
+  
+  .btn-toolbar-action {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+    min-width: auto;
+  }
+  
+  .btn-toolbar-action i {
+    font-size: 0.875rem;
+    margin-right: 0;
+  }
+  
+  .btn-toolbar-action .btn-text {
+    font-size: 0.8125rem;
+  }
+  
+  .btn-toolbar-action .spinner-border-sm {
+    width: 0.875rem;
+    height: 0.875rem;
+    margin-right: 0;
+  }
+}
+
+/* 更小的移动端：按钮更紧凑 */
+@media (max-width: 576px) {
+  .editor-toolbar-content {
+    padding: 0.4rem 0.5rem;
+    gap: 0.375rem;
+  }
+  
+  .editor-toolbar-left {
+    gap: 0.375rem;
+  }
+  
+  .btn-back {
+    padding: 0.3rem 0.4rem;
+    font-size: 0.8rem;
+  }
+  
+  .editor-toolbar-actions {
+    gap: 0.25rem;
+  }
+  
+  .btn-toolbar-action {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .btn-toolbar-action i {
+    font-size: 0.8rem;
+  }
+  
+  .btn-toolbar-action .btn-text {
+    font-size: 0.75rem;
+  }
+  
+  /* 超小屏幕：只显示图标 */
+  @media (max-width: 480px) {
+    .btn-toolbar-action .btn-text {
+      display: none;
+    }
+    
+    .btn-toolbar-action {
+      padding: 0.35rem 0.45rem;
+    }
   }
 }
 
