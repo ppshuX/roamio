@@ -199,6 +199,96 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet,
             'email': email
         })
     
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated], url_path='change-email')
+    def change_email(self, request):
+        """
+        更改邮箱（需要邮箱验证码验证）
+        
+        流程：
+        1. 前端发送验证码到新邮箱（type=change_email）
+        2. 前端验证验证码获取verification_token
+        3. 调用此接口，传入new_email和verification_token，完成更改
+        """
+        from django.core.cache import cache
+        from django.utils import timezone
+        
+        new_email = request.data.get('new_email', '').strip().lower()
+        verification_token = request.data.get('verification_token', '')
+        
+        if not new_email:
+            return Response({
+                'error': '新邮箱地址不能为空'
+            }, status=400)
+        
+        if not verification_token:
+            return Response({
+                'error': '验证token不能为空'
+            }, status=400)
+        
+        # 检查是否已有邮箱
+        if not request.user.email:
+            return Response({
+                'error': '您还未绑定邮箱，请先绑定邮箱'
+            }, status=400)
+        
+        # 检查新邮箱是否与当前邮箱相同
+        if new_email == request.user.email.lower():
+            return Response({
+                'error': '新邮箱不能与当前邮箱相同'
+            }, status=400)
+        
+        # 验证邮箱验证token
+        cache_key = f'email_verified_token:{verification_token}'
+        token_data = cache.get(cache_key)
+        
+        if not token_data:
+            return Response({
+                'error': '验证token无效或已过期，请重新验证邮箱'
+            }, status=400)
+        
+        # 检查token中的邮箱是否匹配
+        if token_data.get('email') != new_email:
+            return Response({
+                'error': '验证token与新邮箱地址不匹配'
+            }, status=400)
+        
+        # 检查验证类型是否为更改邮箱
+        if token_data.get('verification_type') != 'change_email':
+            return Response({
+                'error': '验证token类型错误'
+            }, status=400)
+        
+        # 检查新邮箱是否已被其他用户使用
+        if User.objects.exclude(pk=request.user.pk).filter(email=new_email).exists():
+            return Response({
+                'error': '该邮箱已被其他用户使用'
+            }, status=400)
+        
+        # 保存旧邮箱（用于日志）
+        old_email = request.user.email
+        
+        # 更新用户邮箱
+        request.user.email = new_email
+        request.user.save()
+        
+        # 标记邮箱为已验证
+        if hasattr(request.user, 'profile'):
+            request.user.profile.email_verified = True
+            request.user.profile.email_verified_at = timezone.now()
+            request.user.profile.save()
+        
+        # 删除验证token（只能使用一次）
+        cache.delete(cache_key)
+        
+        logger.info(f'User {request.user.username} (ID: {request.user.id}) changed email from {old_email} to {new_email}')
+        
+        return Response({
+            'success': True,
+            'message': '邮箱更改成功',
+            'email': new_email,
+            'old_email': old_email
+        })
+    
     @action(detail=True, methods=['get'])
     def stats(self, request, pk=None):
         """获取用户统计信息"""

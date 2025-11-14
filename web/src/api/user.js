@@ -64,6 +64,14 @@ export const bindEmail = (data) => {
 }
 
 /**
+ * 更改邮箱（需要验证码验证）
+ * @param {Object} data - {new_email, verification_token}
+ */
+export const changeEmail = (data) => {
+    return request.post('/users/change-email/', data)
+}
+
+/**
  * 获取用户公开资料（包含统计信息）
  * @param {number} userId - 用户ID
  */

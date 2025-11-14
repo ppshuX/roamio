@@ -17,6 +17,7 @@ class EmailVerificationCode(models.Model):
         ('login', '登录验证'),
         ('reset_password', '重置密码'),
         ('bind_email', '绑定邮箱'),
+        ('change_email', '更改邮箱'),
     ]
     
     email = models.EmailField(verbose_name='邮箱地址', db_index=True)

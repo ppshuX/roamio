@@ -9,10 +9,13 @@
     
     <div class="card-body">
       <!-- 当前邮箱显示 -->
-      <div v-if="currentEmail && emailVerified" class="mb-3">
+      <div v-if="currentEmail && emailVerified && !isChangingEmail" class="mb-3">
         <div class="alert alert-success">
           <strong>已绑定邮箱：</strong> {{ currentEmail }}
         </div>
+        <button class="btn btn-outline-primary btn-sm" @click="startChangeEmail">
+          🔄 更改邮箱
+        </button>
       </div>
       
       <!-- 未绑定或未验证提示 -->
@@ -23,8 +26,76 @@
         </div>
       </div>
       
+      <!-- 更改邮箱表单 -->
+      <div v-if="isChangingEmail">
+        <div class="alert alert-info">
+          <strong>当前邮箱：</strong> {{ currentEmail }}
+        </div>
+        <form @submit.prevent="handleChangeEmail">
+          <!-- 新邮箱输入 -->
+          <div class="mb-3">
+            <label class="form-label">📧 新邮箱地址 <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <input
+                type="email"
+                class="form-control"
+                v-model="changeEmailForm.newEmail"
+                placeholder="请输入新邮箱地址"
+                required
+              />
+              <button
+                type="button"
+                class="btn btn-outline-primary"
+                :disabled="!changeEmailForm.newEmail || sendingCode || countdown > 0"
+                @click="handleSendChangeCode"
+              >
+                <span v-if="sendingCode" class="spinner-border spinner-border-sm me-1"></span>
+                <span v-else-if="countdown > 0">{{ countdown }}秒</span>
+                <span v-else>发送验证码</span>
+              </button>
+            </div>
+            <small v-if="codeSent" class="text-success">
+              验证码已发送到新邮箱，请查收
+            </small>
+          </div>
+          
+          <!-- 验证码输入 -->
+          <div class="mb-3" v-if="codeSent">
+            <label class="form-label">🔐 验证码 <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              v-model="changeEmailForm.code"
+              placeholder="请输入6位验证码"
+              maxlength="6"
+              required
+            />
+          </div>
+          
+          <!-- 操作按钮 -->
+          <div class="d-flex gap-2" v-if="codeSent">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              :disabled="changing || !changeEmailForm.code || changeEmailForm.code.length !== 6"
+            >
+              <span v-if="changing" class="spinner-border spinner-border-sm me-2"></span>
+              {{ changing ? '更改中...' : '✅ 确认更改' }}
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              @click="cancelChangeEmail"
+              :disabled="changing"
+            >
+              取消
+            </button>
+          </div>
+        </form>
+      </div>
+      
       <!-- 邮箱绑定表单 -->
-      <div v-if="!emailVerified || !currentEmail">
+      <div v-if="(!emailVerified || !currentEmail) && !isChangingEmail">
         <form @submit.prevent="handleBindEmail">
           <!-- 邮箱输入 -->
           <div class="mb-3">
@@ -107,7 +178,7 @@
 <script>
 import { ref } from 'vue'
 import { sendVerificationCode, verifyCode } from '@/api/auth'
-import { bindEmail } from '@/api/user'
+import { bindEmail, changeEmail } from '@/api/user'
 
 export default {
   name: 'EmailBindingEditor',
@@ -135,12 +206,19 @@ export default {
       code: ''
     })
     
+    const changeEmailForm = ref({
+      newEmail: '',
+      code: ''
+    })
+    
     const sendingCode = ref(false)
     const binding = ref(false)
+    const changing = ref(false)
     const codeSent = ref(false)
     const countdown = ref(0)
     const errorMessage = ref('')
     const successMessage = ref('')
+    const isChangingEmail = ref(false)
     
     let countdownTimer = null
     
@@ -293,17 +371,173 @@ export default {
       }, 1000)
     }
     
+    // 开始更改邮箱
+    const startChangeEmail = () => {
+      isChangingEmail.value = true
+      errorMessage.value = ''
+      successMessage.value = ''
+      changeEmailForm.value.newEmail = ''
+      changeEmailForm.value.code = ''
+      codeSent.value = false
+    }
+    
+    // 发送更改邮箱验证码
+    const handleSendChangeCode = async () => {
+      errorMessage.value = ''
+      successMessage.value = ''
+      
+      if (!changeEmailForm.value.newEmail) {
+        errorMessage.value = '请先输入新邮箱地址'
+        return
+      }
+      
+      // 验证邮箱格式
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(changeEmailForm.value.newEmail)) {
+        errorMessage.value = '请输入有效的邮箱地址'
+        return
+      }
+      
+      // 检查新邮箱是否与当前邮箱相同
+      if (changeEmailForm.value.newEmail.toLowerCase() === props.currentEmail.toLowerCase()) {
+        errorMessage.value = '新邮箱不能与当前邮箱相同'
+        return
+      }
+      
+      sendingCode.value = true
+      
+      try {
+        await sendVerificationCode({
+          email: changeEmailForm.value.newEmail,
+          type: 'change_email'
+        })
+        
+        codeSent.value = true
+        countdown.value = 60
+        startCountdown()
+        successMessage.value = '验证码已发送到新邮箱，请查收'
+        
+      } catch (error) {
+        console.error('发送验证码失败:', error)
+        if (error.response?.data) {
+          const data = error.response.data
+          if (data.error) {
+            errorMessage.value = data.error
+          } else if (data.email) {
+            errorMessage.value = Array.isArray(data.email) ? data.email[0] : data.email
+          } else {
+            errorMessage.value = '发送验证码失败，请稍后重试'
+          }
+        } else {
+          errorMessage.value = '网络错误，请检查网络连接'
+        }
+      } finally {
+        sendingCode.value = false
+      }
+    }
+    
+    // 更改邮箱
+    const handleChangeEmail = async () => {
+      errorMessage.value = ''
+      successMessage.value = ''
+      
+      if (!changeEmailForm.value.code || changeEmailForm.value.code.length !== 6) {
+        errorMessage.value = '请输入6位验证码'
+        return
+      }
+      
+      changing.value = true
+      
+      try {
+        // 1. 先验证验证码
+        const verifyResponse = await verifyCode({
+          email: changeEmailForm.value.newEmail,
+          code: changeEmailForm.value.code,
+          type: 'change_email'
+        })
+        
+        if (!verifyResponse.success || !verifyResponse.verification_token) {
+          errorMessage.value = '验证码验证失败，请检查验证码是否正确'
+          changing.value = false
+          return
+        }
+        
+        // 2. 更改邮箱
+        await changeEmail({
+          new_email: changeEmailForm.value.newEmail,
+          verification_token: verifyResponse.verification_token
+        })
+        
+        // 3. 触发更新事件
+        emit('email-bound', {
+          email: changeEmailForm.value.newEmail,
+          verified: true
+        })
+        emit('update')
+        
+        successMessage.value = '邮箱更改成功！'
+        
+        // 清除表单并关闭更改模式
+        changeEmailForm.value.newEmail = ''
+        changeEmailForm.value.code = ''
+        codeSent.value = false
+        isChangingEmail.value = false
+        if (countdownTimer) {
+          clearInterval(countdownTimer)
+          countdownTimer = null
+          countdown.value = 0
+        }
+        
+      } catch (error) {
+        console.error('更改邮箱失败:', error)
+        if (error.response?.data) {
+          const data = error.response.data
+          if (data.error) {
+            errorMessage.value = data.error
+          } else {
+            errorMessage.value = '更改邮箱失败，请稍后重试'
+          }
+        } else {
+          errorMessage.value = '网络错误，请检查网络连接'
+        }
+      } finally {
+        changing.value = false
+      }
+    }
+    
+    // 取消更改邮箱
+    const cancelChangeEmail = () => {
+      isChangingEmail.value = false
+      changeEmailForm.value.newEmail = ''
+      changeEmailForm.value.code = ''
+      codeSent.value = false
+      errorMessage.value = ''
+      successMessage.value = ''
+      if (countdownTimer) {
+        clearInterval(countdownTimer)
+        countdownTimer = null
+        countdown.value = 0
+      }
+    }
+    
     return {
       emailForm,
+      changeEmailForm,
       sendingCode,
       binding,
+      changing,
       codeSent,
       countdown,
       errorMessage,
       successMessage,
+      isChangingEmail,
       handleSendCode,
       handleBindEmail,
-      handleCancel
+      handleCancel,
+      startChangeEmail,
+      handleSendChangeCode,
+      handleChangeEmail,
+      cancelChangeEmail
     }
   }
 }
