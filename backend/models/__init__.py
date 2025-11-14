@@ -11,6 +11,7 @@ from .email_verification import EmailVerificationCode
 from .event import TripEvent
 from .subscription import Subscription
 from .payment import TripCreationOrder, SubscriptionOrder
+from .ralendar_account import RalendarAccount
 
 __all__ = [
     'UserProfile',
@@ -23,5 +24,6 @@ __all__ = [
     'Subscription',
     'TripCreationOrder',
     'SubscriptionOrder',
+    'RalendarAccount',
 ]
 

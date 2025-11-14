@@ -167,12 +167,13 @@ class RalendarIntegrationViewSet(ViewSet):
     @action(detail=True, methods=['post'], url_path='sync-ai-trip')
     def sync_ai_trip(self, request, pk=None):
         """
-        将 AI 生成的行程同步到 Ralendar 日历
+        将 AI 生成的行程同步到 Ralendar 日历（使用 OAuth Token）
         
         URL: POST /api/v1/ralendar/trips/{slug}/sync-ai-trip/
         
         请求体:
         {
+            "ralendar_account_id": 1,  # 可选，不传则使用默认账号
             "events": [
                 {
                     "title": "北京五日游 - Day 1: 抵达北京",
@@ -196,10 +197,13 @@ class RalendarIntegrationViewSet(ViewSet):
                 "synced_count": 5,
                 "failed_count": 0,
                 "event_ids": [123, 124, 125, 126, 127],
-                "trip_slug": "beijing-trip-2025"
+                "trip_slug": "beijing-trip-2025",
+                "ralendar_account": "张三 (zhangsan@example.com)"
             }
         }
         """
+        from backend.models import RalendarAccount
+        
         # 获取旅行计划
         trip_slug = pk
         try:
@@ -211,50 +215,52 @@ class RalendarIntegrationViewSet(ViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        # 获取用户 Token
-        user_token = self.get_user_token(request)
-        if not user_token:
-            logger.error("未找到用户认证信息")
-            return Response(
-                {'error': '未找到用户认证信息'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+        # 获取 Ralendar 账号
+        ralendar_account_id = request.data.get('ralendar_account_id')
         
-        # 获取用户标识信息（优先级：unionid > openid > email）
-        from backend.models import SocialAccount
-        openid = None
-        unionid = None
-        user_email = None
-        
-        # 1. 尝试获取 QQ 社交账号信息
-        try:
-            social_account = SocialAccount.objects.filter(
+        if ralendar_account_id:
+            # 使用指定的账号
+            try:
+                ralendar_account = RalendarAccount.objects.get(
+                    id=ralendar_account_id,
+                    user=request.user,
+                    is_active=True
+                )
+            except RalendarAccount.DoesNotExist:
+                return Response({
+                    'error': '指定的 Ralendar 账号不存在或已失效',
+                    'code': 'RALENDAR_ACCOUNT_NOT_FOUND'
+                }, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # 使用默认账号
+            ralendar_account = RalendarAccount.objects.filter(
                 user=request.user,
-                provider='qq'
+                is_active=True,
+                is_default=True
             ).first()
             
-            if social_account:
-                openid = social_account.uid
-                unionid = social_account.unionid
-                logger.info(f"找到 QQ 社交账号 - openid: {openid[:10] if openid else 'None'}..., unionid: {unionid[:10] if unionid else 'None'}...")
-        except Exception as e:
-            logger.error(f"Failed to get QQ info: {e}")
+            if not ralendar_account:
+                # 没有默认账号，尝试获取第一个账号
+                ralendar_account = RalendarAccount.objects.filter(
+                    user=request.user,
+                    is_active=True
+                ).first()
+            
+            if not ralendar_account:
+                return Response({
+                    'error': '尚未绑定 Ralendar 账号',
+                    'detail': '请先在个人中心绑定 Ralendar 账号，然后再同步',
+                    'code': 'NO_RALENDAR_ACCOUNT'
+                }, status=status.HTTP_400_BAD_REQUEST)
         
-        # 2. 如果没有 QQ 信息，尝试使用邮箱
-        if not openid and not unionid:
-            if request.user.email:
-                user_email = request.user.email
-                logger.info(f"用户 {request.user.username} 没有绑定 QQ，使用邮箱进行识别: {user_email}")
-            else:
-                # 如果连邮箱也没有，返回友好错误
-                return Response(
-                    {
-                        'error': '需要绑定邮箱或 QQ 登录',
-                        'detail': '同步到 Ralendar 需要绑定邮箱，或使用 QQ 账号登录。请先在个人中心绑定邮箱。',
-                        'code': 'EMAIL_OR_QQ_REQUIRED'
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+        # 检查 Token 是否过期
+        if ralendar_account.is_token_expired:
+            return Response({
+                'error': 'Ralendar Token 已过期',
+                'detail': '请重新授权 Ralendar 账号',
+                'code': 'TOKEN_EXPIRED',
+                'ralendar_account_id': ralendar_account.id
+            }, status=status.HTTP_401_UNAUTHORIZED)
         
         # 验证请求数据
         events = request.data.get('events', [])
@@ -264,19 +270,18 @@ class RalendarIntegrationViewSet(ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # 使用 Ralendar 账号的 access_token
+        access_token = ralendar_account.access_token
+        
         # 调用 Ralendar API 批量创建事件
-        # 注意：事件数据会在 RalendarClient 中清理，移除不支持的字段
         client = RalendarClient()
         
         try:
-            # 传递用户标识到批量创建方法（优先级：unionid > openid > email）
+            # 🌟 关键修改：使用 OAuth access_token，不再传递 unionid/openid/email
             result = client.batch_create_events(
-                user_token, 
+                access_token,  # 使用 Ralendar 的 OAuth Token
                 events, 
-                trip.slug,
-                unionid=unionid,
-                openid=openid,
-                email=user_email
+                trip.slug
             )
             
             # 处理返回结果
@@ -289,6 +294,9 @@ class RalendarIntegrationViewSet(ViewSet):
             # 提取事件 IDs
             event_ids = [e.get('id') for e in created_events if e.get('id')]
             
+            # 更新 Ralendar 账号的同步时间
+            ralendar_account.update_sync_time()
+            
             # 更新 Trip 模型的同步状态（如果字段存在）
             try:
                 if hasattr(trip, 'ralendar_synced_at'):
@@ -300,7 +308,7 @@ class RalendarIntegrationViewSet(ViewSet):
             except Exception as e:
                 logger.warning(f"更新同步状态失败（字段可能不存在）: {e}")
             
-            logger.info(f"同步成功: {synced_count} 个事件，失败: {failed_count} 个")
+            logger.info(f"同步成功: {synced_count} 个事件，失败: {failed_count} 个，Ralendar账号: {ralendar_account.display_name}")
             
             return Response({
                 'code': 200,
@@ -310,6 +318,7 @@ class RalendarIntegrationViewSet(ViewSet):
                     'failed_count': failed_count,
                     'event_ids': event_ids,
                     'trip_slug': trip.slug,
+                    'ralendar_account': ralendar_account.display_name,
                     'failed_events': failed_events if failed_count > 0 else []
                 }
             }, status=status.HTTP_200_OK)

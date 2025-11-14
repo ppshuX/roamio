@@ -376,6 +376,37 @@ class AuthViewSet(viewsets.GenericViewSet):
                 social_account.save()
                 logger.info(f"Updated UnionID for user {user.id}")
             
+            # 🌟 新增：如果用户没有邮箱，尝试从 Ralendar 获取
+            if unionid and not user.email:
+                try:
+                    from backend.utils.external import RalendarClient
+                    from backend.utils.email_availability import check_email_availability
+                    
+                    ralendar_client = RalendarClient()
+                    ralendar_result = ralendar_client.get_user_by_unionid(unionid)
+                    
+                    if ralendar_result.get('exists') and ralendar_result.get('user'):
+                        suggested_email = ralendar_result['user'].get('email')
+                        
+                        if suggested_email:
+                            # 检查邮箱是否在 Roamio 可用（不检查 Ralendar，因为已经知道是同一用户）
+                            availability = check_email_availability(
+                                suggested_email,
+                                current_user=user,
+                                include_remote=False
+                            )
+                            
+                            if availability['available']:
+                                # 自动绑定邮箱
+                                user.email = suggested_email
+                                user.save()
+                                logger.info(f"✅ 从 Ralendar 自动绑定邮箱：{suggested_email}")
+                            else:
+                                logger.warning(f"⚠️ Ralendar 邮箱 {suggested_email} 在 Roamio 已被占用，无法自动绑定")
+                except Exception as e:
+                    # Ralendar 查询失败不影响登录
+                    logger.warning(f"从 Ralendar 获取邮箱失败：{e}（不影响登录）")
+            
             # 更新 QQ 头像（如果用户还没有头像，或者 QQ 头像有更新）
             if qq_info.get('avatar_url'):
                 # 确保 UserProfile 已创建
@@ -398,12 +429,16 @@ class AuthViewSet(viewsets.GenericViewSet):
             # 生成JWT Token
             refresh = RefreshToken.for_user(user)
             
+            # 刷新用户数据以获取最新邮箱
+            user.refresh_from_db()
+            
             return Response({
                 'success': True,
                 'access': str(refresh.access_token),
                 'refresh': str(refresh),
                 'user': UserSerializer(user).data,
-                'message': '登录成功'
+                'message': '登录成功',
+                'email_auto_bound': bool(user.email)  # 🌟 是否自动绑定了邮箱
             }, status=status.HTTP_200_OK)
             
         except SocialAccount.DoesNotExist:
@@ -455,6 +490,37 @@ class AuthViewSet(viewsets.GenericViewSet):
                     UserProfile.objects.create(user=user)
                     user.refresh_from_db()
                 
+                # 🌟 新增：如果用户没有邮箱，尝试从 Ralendar 获取
+                if unionid and not user.email:
+                    try:
+                        from backend.utils.external import RalendarClient
+                        from backend.utils.email_availability import check_email_availability
+                        
+                        ralendar_client = RalendarClient()
+                        ralendar_result = ralendar_client.get_user_by_unionid(unionid)
+                        
+                        if ralendar_result.get('exists') and ralendar_result.get('user'):
+                            suggested_email = ralendar_result['user'].get('email')
+                            
+                            if suggested_email:
+                                # 检查邮箱是否在 Roamio 可用（不检查 Ralendar，因为已经知道是同一用户）
+                                availability = check_email_availability(
+                                    suggested_email,
+                                    current_user=user,
+                                    include_remote=False
+                                )
+                                
+                                if availability['available']:
+                                    # 自动绑定邮箱
+                                    user.email = suggested_email
+                                    user.save()
+                                    logger.info(f"✅ 从 Ralendar 自动绑定邮箱：{suggested_email}")
+                                else:
+                                    logger.warning(f"⚠️ Ralendar 邮箱 {suggested_email} 在 Roamio 已被占用，无法自动绑定")
+                    except Exception as e:
+                        # Ralendar 查询失败不影响登录
+                        logger.warning(f"从 Ralendar 获取邮箱失败：{e}（不影响登录）")
+                
                 # 自动下载并设置QQ头像（如果QQ头像URL存在）
                 if qq_info.get('avatar_url'):
                     from ...utils.avatar_downloader import set_user_avatar_from_url
@@ -467,14 +533,18 @@ class AuthViewSet(viewsets.GenericViewSet):
                 # 生成JWT Token
                 refresh = RefreshToken.for_user(user)
                 
+                # 刷新用户数据以获取最新邮箱
+                user.refresh_from_db()
+                
                 return Response({
                     'success': True,
                     'access': str(refresh.access_token),
                     'refresh': str(refresh),
                     'user': UserSerializer(user).data,
                     'message': 'QQ登录成功',
-                    'email_optional': True,  # 提示邮箱可选
-                    'tip': '建议在个人中心绑定邮箱以便接收重要通知'
+                    'email_auto_bound': bool(user.email),  # 🌟 是否自动绑定了邮箱
+                    'email_optional': not bool(user.email),  # 如果已绑定，则不需要提示
+                    'tip': '已自动绑定邮箱' if user.email else '建议在个人中心绑定邮箱以便接收重要通知'
                 }, status=status.HTTP_200_OK)
             except Exception as e:
                 # 捕获并记录详细错误信息

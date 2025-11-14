@@ -106,6 +106,20 @@
             class="mb-4"
           />
           
+          <!-- Ralendar 账号管理 -->
+          <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+              <h5 class="mb-0">🗓️ Ralendar 日历连接</h5>
+            </div>
+            <div class="card-body">
+              <RalendarAccountManager 
+                ref="ralendarManager"
+                @connect="handleRalendarConnect"
+                @update="handleRalendarUpdate"
+              />
+            </div>
+          </div>
+          
           <!-- 基本信息 -->
           <BasicInfoEditor
             :username="editForm.username"
@@ -250,6 +264,7 @@ import UserProfileCard from './UserProfileCard.vue'
 import UserStats from './UserStats.vue'
 import AdvancedSettingsModal from '@/components/AdvancedSettingsModal.vue'
 import EmailBindingEditor from './EmailBindingEditor.vue'
+import RalendarAccountManager from '@/components/ralendar/RalendarAccountManager.vue'
 import BasicInfoEditor from './BasicInfoEditor.vue'
 
 export default {
@@ -262,6 +277,7 @@ export default {
     Footer,
     AdvancedSettingsModal,
     EmailBindingEditor,
+    RalendarAccountManager,
     BasicInfoEditor
   },
   
@@ -647,6 +663,17 @@ export default {
       }
     }
     
+    // Ralendar 相关方法
+    const handleRalendarConnect = () => {
+      console.log('开始连接 Ralendar...')
+      // 实际的连接逻辑在 RalendarAccountManager 组件中处理
+    }
+    
+    const handleRalendarUpdate = () => {
+      console.log('Ralendar 账号已更新')
+      // 可以在这里添加额外的逻辑，比如刷新页面数据
+    }
+    
     onMounted(async () => {
       // 检查登录状态
       if (!userStore.isLoggedIn) {
@@ -710,7 +737,9 @@ export default {
       handleDeleteAccount,
       confirmAndDeleteAccount,
       handleEmailBound,
-      handleRefreshUserInfo
+      handleRefreshUserInfo,
+      handleRalendarConnect,
+      handleRalendarUpdate
     }
   }
 }

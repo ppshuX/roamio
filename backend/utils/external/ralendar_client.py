@@ -114,23 +114,24 @@ class RalendarClient:
             logger.error(f"Ralendar API request failed: {e}")
             raise
     
-    def batch_create_events(self, user_token, events_list, trip_slug, unionid=None, openid=None, email=None):
+    def batch_create_events(self, user_token, events_list, trip_slug):
         """
-        批量创建多个事件
+        批量创建多个事件（使用 OAuth Token）
         
         Args:
-            user_token (str): 用户的 JWT Token
+            user_token (str): Ralendar OAuth Access Token
             events_list (list): 事件列表
             trip_slug (str): 旅行计划的 slug
-            unionid (str, optional): UnionID，用于用户匹配（优先级最高）
-            openid (str, optional): OpenID，用于用户匹配（优先级次之）
-            email (str, optional): 用户邮箱，用于用户匹配（优先级最低）
         
         Returns:
             dict: {"created": [...], "failed": [...]}
             
         Raises:
             requests.exceptions.RequestException: API 请求失败
+        
+        Note:
+            user_token 是 OAuth access_token，已包含用户身份信息，
+            无需额外传递 unionid/openid/email
         """
         url = f"{self.base_url}/fusion/events/batch/"
         headers = self.get_headers(user_token)
@@ -228,18 +229,10 @@ class RalendarClient:
             "related_trip_slug": trip_slug
         }
         
-        # 添加用户标识（优先级：unionid > openid > email）
-        if unionid:
-            data['unionid'] = unionid
-        if openid:
-            data['openid'] = openid
-        if email:
-            data['email'] = email
+        # 🌟 使用 OAuth Token，用户身份已在 token 中，无需额外传递
         
         try:
-            # 记录用户标识方式
-            user_id_method = 'unionid' if unionid else ('openid' if openid else ('email' if email else 'none'))
-            logger.info(f"Sending batch create request: {len(cleaned_events)} events, trip_slug={trip_slug}, user_id_method={user_id_method}")
+            logger.info(f"Sending batch create request (OAuth): {len(cleaned_events)} events, trip_slug={trip_slug}")
             logger.debug(f"Request data keys: {list(data.keys())}")
             logger.debug(f"First event sample: {cleaned_events[0] if cleaned_events else 'No events'}")
             
@@ -341,6 +334,58 @@ class RalendarClient:
                 # 对于 502，提供更友好的错误信息
                 if e.response.status_code == 502:
                     raise Exception("Ralendar API 服务暂时不可用，请稍后重试")
+            raise
+    
+    def get_user_by_unionid(self, unionid):
+        """
+        通过 unionid 获取 Ralendar 用户信息（包括邮箱）
+        
+        Args:
+            unionid (str): QQ UnionID
+        
+        Returns:
+            dict: {
+                "exists": bool,
+                "user": {
+                    "email": "user@example.com",
+                    "user_id": 123,
+                    "nickname": "用户昵称",
+                    "provider": "qq"
+                }
+            }
+        """
+        if not unionid:
+            raise ValueError("unionid is required for get_user_by_unionid")
+        
+        # Ralendar 通过 unionid 获取用户信息的接口
+        # 注意：不包含 /v1，直接使用 /api/fusion/
+        base_url_without_v1 = self.base_url.replace('/api/v1', '/api')
+        url = f"{base_url_without_v1}/fusion/users/get-by-unionid/"
+        payload = {"unionid": unionid}
+        headers = {'Content-Type': 'application/json'}
+        
+        # 超时时间 3s
+        timeout = 3
+        
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=timeout)
+            
+            if response.status_code == 404:
+                # 用户不存在
+                return {"exists": False, "user": None}
+            
+            response.raise_for_status()
+            result = response.json()
+            
+            return {
+                "exists": bool(result.get('exists')),
+                "user": result.get('user')
+            }
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Ralendar get_user_by_unionid failed: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                logger.error(f"Response status: {e.response.status_code}")
+                logger.error(f"Response body: {e.response.text}")
             raise
     
     def check_email_exists(self, email):

@@ -512,3 +512,33 @@ RALENDAR_API_URL = os.getenv(
     'RALENDAR_API_URL',
     'https://app7626.acapp.acwing.com.cn/api/v1'  # 默认值
 )
+
+# Ralendar OAuth 配置
+RALENDAR_OAUTH_CLIENT_ID = os.getenv('RALENDAR_OAUTH_CLIENT_ID', '')
+RALENDAR_OAUTH_CLIENT_SECRET = os.getenv('RALENDAR_OAUTH_CLIENT_SECRET', '')
+RALENDAR_OAUTH_AUTHORIZE_URL = os.getenv(
+    'RALENDAR_OAUTH_AUTHORIZE_URL',
+    'https://app7626.acapp.acwing.com.cn/oauth/authorize'
+)
+RALENDAR_OAUTH_TOKEN_URL = os.getenv(
+    'RALENDAR_OAUTH_TOKEN_URL',
+    'https://app7626.acapp.acwing.com.cn/api/oauth/token'
+)
+RALENDAR_OAUTH_USERINFO_URL = os.getenv(
+    'RALENDAR_OAUTH_USERINFO_URL',
+    'https://app7626.acapp.acwing.com.cn/api/oauth/userinfo'
+)
+RALENDAR_OAUTH_REDIRECT_URI = os.getenv(
+    'RALENDAR_OAUTH_REDIRECT_URI',
+    'http://localhost:8080/auth/ralendar/callback'  # 开发环境默认值，生产环境需配置
+)
+
+# OAuth 配置检查（DEBUG模式下显示提示）
+if DEBUG and not (RALENDAR_OAUTH_CLIENT_ID and RALENDAR_OAUTH_CLIENT_SECRET):
+    print("=" * 50)
+    print("[WARNING] Ralendar OAuth configuration incomplete")
+    print("[TIP] Configure these in .env file:")
+    print("  - RALENDAR_OAUTH_CLIENT_ID")
+    print("  - RALENDAR_OAUTH_CLIENT_SECRET")
+    print("  - RALENDAR_OAUTH_REDIRECT_URI (optional)")
+    print("=" * 50)

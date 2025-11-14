@@ -79,6 +79,15 @@ const routes = [
       title: 'QQ登录回调',
       requiresAuth: false
     }
+  },
+  {
+    path: '/auth/ralendar/callback',
+    name: 'ralendar-callback',
+    component: () => import('@/views/auth/RalendarCallback.vue'),
+    meta: {
+      title: 'Ralendar 授权回调',
+      requiresAuth: false
+    }
   }
 ]
 
