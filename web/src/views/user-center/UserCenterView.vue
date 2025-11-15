@@ -665,12 +665,10 @@ export default {
     
     // Ralendar 相关方法
     const handleRalendarConnect = () => {
-      console.log('开始连接 Ralendar...')
       // 实际的连接逻辑在 RalendarAccountManager 组件中处理
     }
     
     const handleRalendarUpdate = () => {
-      console.log('Ralendar 账号已更新')
       // 可以在这里添加额外的逻辑，比如刷新页面数据
     }
     

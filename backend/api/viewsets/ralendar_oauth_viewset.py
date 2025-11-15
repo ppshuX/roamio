@@ -334,8 +334,6 @@ class RalendarOAuthViewSet(viewsets.ViewSet):
             'redirect_uri': settings.RALENDAR_OAUTH_REDIRECT_URI
         }
         
-        logger.debug(f"请求 token: url={url}, client_id={settings.RALENDAR_OAUTH_CLIENT_ID}")
-        
         response = requests.post(url, json=data, timeout=10)
         
         if response.status_code != 200:
@@ -359,8 +357,6 @@ class RalendarOAuthViewSet(viewsets.ViewSet):
         headers = {
             'Authorization': f'Bearer {access_token}'
         }
-        
-        logger.debug(f"请求用户信息: url={url}")
         
         response = requests.get(url, headers=headers, timeout=10)
         
