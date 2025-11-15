@@ -9,10 +9,7 @@ import request from './request'
  * @returns {Promise} 授权 URL 和 state
  */
 export function getRalendarAuthorizeUrl() {
-  return request({
-    url: '/api/v1/ralendar-oauth/authorize-url/',
-    method: 'get'
-  })
+  return request.get('/ralendar-oauth/authorize-url/')
 }
 
 /**
@@ -22,13 +19,9 @@ export function getRalendarAuthorizeUrl() {
  * @returns {Promise} 绑定结果
  */
 export function handleRalendarCallback(code, state) {
-  return request({
-    url: '/api/v1/ralendar-oauth/callback/',
-    method: 'post',
-    data: {
-      code,
-      state
-    }
+  return request.post('/ralendar-oauth/callback/', {
+    code,
+    state
   })
 }
 
@@ -37,10 +30,7 @@ export function handleRalendarCallback(code, state) {
  * @returns {Promise} 账号列表
  */
 export function getRalendarAccounts() {
-  return request({
-    url: '/api/v1/ralendar-oauth/accounts/',
-    method: 'get'
-  })
+  return request.get('/ralendar-oauth/accounts/')
 }
 
 /**
@@ -49,10 +39,7 @@ export function getRalendarAccounts() {
  * @returns {Promise}
  */
 export function setDefaultRalendarAccount(accountId) {
-  return request({
-    url: `/api/v1/ralendar-oauth/${accountId}/set-default/`,
-    method: 'post'
-  })
+  return request.post(`/ralendar-oauth/${accountId}/set-default/`)
 }
 
 /**
@@ -61,9 +48,6 @@ export function setDefaultRalendarAccount(accountId) {
  * @returns {Promise}
  */
 export function unbindRalendarAccount(accountId) {
-  return request({
-    url: `/api/v1/ralendar-oauth/${accountId}/unbind/`,
-    method: 'delete'
-  })
+  return request.delete(`/ralendar-oauth/${accountId}/unbind/`)
 }
 
