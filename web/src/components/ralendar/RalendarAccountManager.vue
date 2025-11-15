@@ -73,7 +73,7 @@
       <!-- 添加更多账号 -->
       <button
         class="btn btn-outline-secondary w-100 mt-3"
-        @click="$emit('connect')"
+        @click="connectRalendar"
         :disabled="actionLoading"
       >
         <i class="bi bi-plus-circle me-2"></i>
@@ -87,7 +87,8 @@
       <p class="mt-3 text-muted">尚未绑定 Ralendar 账号</p>
       <button
         class="btn btn-primary"
-        @click="$emit('connect')"
+        @click="connectRalendar"
+        :disabled="actionLoading"
       >
         <i class="bi bi-calendar-plus me-2"></i>
         连接 Ralendar
@@ -103,7 +104,9 @@
 
 <script>
 import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { 
+  getRalendarAuthorizeUrl,
   getRalendarAccounts, 
   setDefaultRalendarAccount, 
   unbindRalendarAccount 
@@ -172,6 +175,35 @@ export default {
       }
     }
 
+    // 连接 Ralendar（跳转到授权页面）
+    const connectRalendar = async () => {
+      actionLoading.value = true
+      error.value = ''
+      
+      try {
+        // 获取授权 URL
+        const response = await getRalendarAuthorizeUrl()
+        const { authorize_url } = response
+        
+        if (authorize_url) {
+          // 保存来源页面（用于授权后返回）
+          sessionStorage.setItem('ralendar_auth_origin', window.location.pathname)
+          
+          // 跳转到 Ralendar 授权页面
+          window.location.href = authorize_url
+        } else {
+          error.value = '获取授权链接失败'
+          ElMessage.error('获取授权链接失败')
+        }
+      } catch (err) {
+        console.error('连接 Ralendar 失败:', err)
+        error.value = err.response?.data?.error || '连接失败，请重试'
+        ElMessage.error(error.value)
+      } finally {
+        actionLoading.value = false
+      }
+    }
+
     // 格式化日期
     const formatDate = (dateString) => {
       if (!dateString) return ''
@@ -196,6 +228,7 @@ export default {
       error,
       setDefault,
       unbind,
+      connectRalendar,
       formatDate,
       // 暴露 loadAccounts 方法供父组件调用
       loadAccounts
