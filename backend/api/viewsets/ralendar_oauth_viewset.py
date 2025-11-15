@@ -28,7 +28,7 @@ class RalendarOAuthViewSet(viewsets.ViewSet):
     Ralendar OAuth 授权流程
     """
     
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'], url_path='authorize-url', permission_classes=[IsAuthenticated])
     def authorize_url(self, request):
         """
         获取 Ralendar OAuth 授权 URL
@@ -239,7 +239,7 @@ class RalendarOAuthViewSet(viewsets.ViewSet):
             'accounts': serializer.data
         })
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], url_path='set-default', permission_classes=[IsAuthenticated])
     def set_default(self, request, pk=None):
         """
         设置默认 Ralendar 账号
