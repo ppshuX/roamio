@@ -26,6 +26,7 @@ from .auth_serializer import (
     QQLoginSerializer,
     QQBindSerializer,
     ResetPasswordSerializer,
+    EmailCheckSerializer,
 )
 from .event_serializer import (
     TripEventSerializer,
@@ -65,5 +66,6 @@ __all__ = [
     'QQLoginSerializer',
     'QQBindSerializer',
     'ResetPasswordSerializer',
+    'EmailCheckSerializer',
 ]
 
