@@ -104,7 +104,6 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
 import { 
   getRalendarAuthorizeUrl,
   getRalendarAccounts, 
@@ -193,12 +192,12 @@ export default {
           window.location.href = authorize_url
         } else {
           error.value = '获取授权链接失败'
-          ElMessage.error('获取授权链接失败')
+          alert('获取授权链接失败')
         }
       } catch (err) {
         console.error('连接 Ralendar 失败:', err)
         error.value = err.response?.data?.error || '连接失败，请重试'
-        ElMessage.error(error.value)
+        alert(error.value)
       } finally {
         actionLoading.value = false
       }

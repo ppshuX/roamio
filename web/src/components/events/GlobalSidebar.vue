@@ -337,8 +337,6 @@
 
 <script>
 import { ref, computed, watch, defineComponent, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getRalendarAuthorizeUrl, getRalendarAccounts } from '@/api/ralendarOAuth'
 import MapPicker from '@/components/map/MapPicker.vue'
@@ -360,7 +358,6 @@ export default defineComponent({
   emits: ['close'],
   
   setup(props) {
-    const router = useRouter()
     const userStore = useUserStore()
     
     const isLoggedIn = computed(() => userStore.isLoggedIn)
@@ -421,11 +418,11 @@ export default defineComponent({
           // 跳转到授权页面
           window.location.href = authorize_url
         } else {
-          ElMessage.error('获取授权链接失败')
+          alert('获取授权链接失败')
         }
       } catch (err) {
         console.error('连接 Ralendar 失败:', err)
-        ElMessage.error(err.response?.data?.error || '连接失败，请重试')
+        alert(err.response?.data?.error || '连接失败，请重试')
       } finally {
         connecting.value = false
       }

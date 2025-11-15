@@ -2,7 +2,7 @@
  * Ralendar OAuth API
  * 处理 Ralendar 账号的 OAuth 授权
  */
-import request from '@/utils/request'
+import request from './request'
 
 /**
  * 获取 Ralendar OAuth 授权 URL
