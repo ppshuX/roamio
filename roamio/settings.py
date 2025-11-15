@@ -522,11 +522,11 @@ RALENDAR_OAUTH_AUTHORIZE_URL = os.getenv(
 )
 RALENDAR_OAUTH_TOKEN_URL = os.getenv(
     'RALENDAR_OAUTH_TOKEN_URL',
-    'https://app7626.acapp.acwing.com.cn/api/oauth/token'
+    'https://app7626.acapp.acwing.com.cn/oauth/token'
 )
 RALENDAR_OAUTH_USERINFO_URL = os.getenv(
     'RALENDAR_OAUTH_USERINFO_URL',
-    'https://app7626.acapp.acwing.com.cn/api/oauth/userinfo'
+    'https://app7626.acapp.acwing.com.cn/oauth/userinfo'
 )
 RALENDAR_OAUTH_REDIRECT_URI = os.getenv(
     'RALENDAR_OAUTH_REDIRECT_URI',
