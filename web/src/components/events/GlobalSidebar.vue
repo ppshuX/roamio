@@ -35,10 +35,36 @@
           </router-link>
         </div>
         
-        <!-- 已登录 - 显示所有待办 -->
+        <!-- 已登录 - 检查是否绑定 Ralendar 账号 -->
         <template v-else>
-          <!-- 快捷操作 -->
-          <div class="quick-actions mb-3">
+          <!-- 未绑定 Ralendar 账号提示 -->
+          <div v-if="!hasRalendarAccount && !loading" class="connect-prompt text-center py-5">
+            <i class="bi bi-calendar-x text-muted mb-3" style="font-size: 48px;"></i>
+            <p class="text-muted mb-3">尚未连接 Ralendar 账号</p>
+            <p class="text-muted small mb-4">连接后即可管理待办事项</p>
+            <button 
+              class="btn btn-primary"
+              @click="handleConnectRalendar"
+              :disabled="connecting"
+            >
+              <span v-if="connecting" class="spinner-border spinner-border-sm me-2"></span>
+              <i v-else class="bi bi-calendar-plus me-2"></i>
+              {{ connecting ? '连接中...' : '连接 Ralendar' }}
+            </button>
+            <div class="mt-3">
+              <router-link 
+                to="/user/center" 
+                class="btn btn-outline-secondary btn-sm"
+              >
+                前往个人中心管理
+              </router-link>
+            </div>
+          </div>
+          
+          <!-- 已绑定 - 显示所有待办 -->
+          <template v-else>
+            <!-- 快捷操作 -->
+            <div class="quick-actions mb-3">
             <button 
               class="btn btn-primary w-100"
               @click="showAddForm = true"
@@ -293,6 +319,7 @@
               </div>
             </div>
           </div>
+          </template>
         </template>
         </div>
       </div>
@@ -309,8 +336,11 @@
 </template>
 
 <script>
-import { ref, computed, watch, defineComponent } from 'vue'
+import { ref, computed, watch, defineComponent, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { getRalendarAuthorizeUrl, getRalendarAccounts } from '@/api/ralendarOAuth'
 import MapPicker from '@/components/map/MapPicker.vue'
 
 export default defineComponent({
@@ -330,10 +360,14 @@ export default defineComponent({
   emits: ['close'],
   
   setup(props) {
+    const router = useRouter()
     const userStore = useUserStore()
     
     const isLoggedIn = computed(() => userStore.isLoggedIn)
     const loading = ref(false)
+    const hasRalendarAccount = ref(false)
+    const checkingAccount = ref(false)
+    const connecting = ref(false)
     const allEvents = ref([])
     const showAddForm = ref(false)
     const showMapPicker = ref(false)
@@ -351,9 +385,55 @@ export default defineComponent({
       email_reminder: false
     })
     
+    // 检查是否已绑定 Ralendar 账号
+    const checkRalendarAccount = async () => {
+      if (!isLoggedIn.value) return
+      
+      checkingAccount.value = true
+      try {
+        const response = await getRalendarAccounts()
+        hasRalendarAccount.value = (response.accounts || []).length > 0
+        
+        // 如果已绑定，加载待办事项
+        if (hasRalendarAccount.value) {
+          await loadAllEvents()
+        }
+      } catch (err) {
+        console.error('检查 Ralendar 账号失败:', err)
+        hasRalendarAccount.value = false
+      } finally {
+        checkingAccount.value = false
+      }
+    }
+    
+    // 连接 Ralendar
+    const handleConnectRalendar = async () => {
+      connecting.value = true
+      try {
+        const response = await getRalendarAuthorizeUrl()
+        const { authorize_url } = response
+        
+        if (authorize_url) {
+          // 保存来源页面
+          sessionStorage.setItem('ralendar_auth_origin', window.location.pathname)
+          sessionStorage.setItem('ralendar_auth_from', 'sidebar')
+          
+          // 跳转到授权页面
+          window.location.href = authorize_url
+        } else {
+          ElMessage.error('获取授权链接失败')
+        }
+      } catch (err) {
+        console.error('连接 Ralendar 失败:', err)
+        ElMessage.error(err.response?.data?.error || '连接失败，请重试')
+      } finally {
+        connecting.value = false
+      }
+    }
+    
     // 加载所有待办事项
     const loadAllEvents = async () => {
-      if (!isLoggedIn.value) return
+      if (!isLoggedIn.value || !hasRalendarAccount.value) return
       
       loading.value = true
       try {
@@ -611,16 +691,26 @@ export default defineComponent({
       }
     }
     
-    // 监听显示状态，打开时加载数据
+    // 监听显示状态，打开时检查账号并加载数据
     watch(() => props.show, (newVal) => {
       if (newVal && isLoggedIn.value) {
-        loadAllEvents()
+        checkRalendarAccount()
+      }
+    })
+    
+    // 组件挂载时检查（如果已显示）
+    onMounted(() => {
+      if (props.show && isLoggedIn.value) {
+        checkRalendarAccount()
       }
     })
     
     return {
       isLoggedIn,
       loading,
+      hasRalendarAccount,
+      checkingAccount,
+      connecting,
       allEvents,
       showAddForm,
       showMapPicker,
@@ -628,6 +718,7 @@ export default defineComponent({
       editingEventId,
       newEvent,
       formatTime,
+      handleConnectRalendar,
       handleAddEvent,
       cancelAdd,
       handleMapSelect,
