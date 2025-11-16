@@ -446,7 +446,7 @@ class RalendarClient:
                 logger.error(f"Response body: {e.response.text}")
             raise
     
-    def list_events(self, user_token, unionid=None):
+    def list_events(self, user_token, unionid=None, openid=None):
         """
         获取用户的所有事件（使用 Fusion API）
         
@@ -464,11 +464,17 @@ class RalendarClient:
         headers = self.get_headers(user_token)
         params = {}
         
+        # 按 Ralendar 建议优先传 unionid，其次 openid
         if unionid:
             params['unionid'] = unionid
+        elif openid:
+            params['openid'] = openid
         
         try:
             response = requests.get(url, headers=headers, params=params, timeout=self.timeout)
+            # 记录非 200 响应的 body，方便排查（例如缺少 unionid/openid）
+            if response.status_code != 200:
+                logger.error(f"List events HTTP {response.status_code}: {response.text}")
             response.raise_for_status()
             result = response.json()
             logger.info(f"Got {result.get('events_count', 0)} events for user {result.get('username')}")

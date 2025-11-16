@@ -43,9 +43,10 @@ class RalendarIntegrationViewSet(ViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
-        # 获取用户的 UnionID（用于加速匹配）
+        # 获取用户的 QQ UnionID/OpenID（用于在 Fusion API 中识别用户）
         from backend.models import SocialAccount
         unionid = None
+        openid = None
         try:
             social_account = SocialAccount.objects.filter(
                 user=request.user,
@@ -54,14 +55,15 @@ class RalendarIntegrationViewSet(ViewSet):
             
             if social_account:
                 unionid = social_account.unionid
+                openid = social_account.uid
         except Exception as e:
-            logger.error(f"Failed to get UnionID: {e}")
+            logger.error(f"Failed to get QQ identifiers for list_events: {e}")
         
         # 调用 Ralendar Fusion API
         client = RalendarClient()
         
         try:
-            result = client.list_events(user_token, unionid=unionid)
+            result = client.list_events(user_token, unionid=unionid, openid=openid)
             # Fusion API 返回格式：{"events": [...], "events_count": 10}
             # 转换为前端期望的格式：{"results": [...]}
             response_data = {
