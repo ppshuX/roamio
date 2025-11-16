@@ -114,7 +114,7 @@ class RalendarClient:
             logger.error(f"Ralendar API request failed: {e}")
             raise
     
-    def batch_create_events(self, user_token, events_list, trip_slug):
+    def batch_create_events(self, user_token, events_list, trip_slug, unionid=None, openid=None):
         """
         批量创建多个事件（使用 OAuth Token）
         
@@ -130,8 +130,9 @@ class RalendarClient:
             requests.exceptions.RequestException: API 请求失败
         
         Note:
-            user_token 是 OAuth access_token，已包含用户身份信息，
-            无需额外传递 unionid/openid/email
+            user_token 是 OAuth access_token，已包含用户身份信息。
+            根据 Ralendar 最新规范，推荐在顶层显式传递 unionid/openid，
+            便于 Fusion API 稳定识别用户。
         """
         url = f"{self.base_url}/fusion/events/batch/"
         headers = self.get_headers(user_token)
@@ -223,13 +224,19 @@ class RalendarClient:
             logger.error(error_msg)
             raise ValueError(error_msg)
         
+        # 构造顶层 payload，并根据需要附加 unionid / openid
         data = {
             "events": cleaned_events,
             "source_app": "roamio",
             "related_trip_slug": trip_slug
         }
+
+        # Ralendar 团队建议：在顶层显式传递 unionid 或 openid，用于稳定识别用户
+        if unionid:
+            data["unionid"] = unionid
+        elif openid:
+            data["openid"] = openid
         
-        # 🌟 使用 OAuth Token，用户身份已在 token 中，无需额外传递
         
         try:
             logger.info(f"Sending batch create request (OAuth): {len(cleaned_events)} events, trip_slug={trip_slug}")

@@ -273,15 +273,32 @@ class RalendarIntegrationViewSet(ViewSet):
         # 使用 Ralendar 账号的 access_token
         access_token = ralendar_account.access_token
         
+        # 从 QQ 社交账号获取 unionid/openid，便于 Ralendar 识别用户
+        from backend.models import SocialAccount
+        unionid = None
+        openid = None
+        try:
+            social_account = SocialAccount.objects.filter(
+                user=request.user,
+                provider='qq'
+            ).first()
+            if social_account:
+                unionid = social_account.unionid
+                openid = social_account.uid
+        except Exception as e:
+            logger.warning(f"Failed to load QQ identifiers for Ralendar sync: {e}")
+        
         # 调用 Ralendar API 批量创建事件
         client = RalendarClient()
         
         try:
-            # 🌟 关键修改：使用 OAuth access_token，不再传递 unionid/openid/email
+            # 使用 OAuth access_token，并在顶层传递 unionid/openid
             result = client.batch_create_events(
-                access_token,  # 使用 Ralendar 的 OAuth Token
-                events, 
-                trip.slug
+                access_token,
+                events,
+                trip.slug,
+                unionid=unionid,
+                openid=openid,
             )
             
             # 处理返回结果
