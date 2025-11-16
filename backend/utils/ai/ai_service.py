@@ -159,6 +159,29 @@ class TripPlannerAI:
                     candidate[:500]
                 )
         
+        # 第三轮：如果是数组开头（有些模型会返回 [ {...}, ... ]）
+        start = text.find('[')
+        end = text.rfind(']')
+        if start != -1 and end != -1 and end > start:
+            candidate = text[start:end + 1]
+            try:
+                return json.loads(candidate)
+            except json.JSONDecodeError:
+                logger.error(
+                    "AI JSON array candidate parse failed. Candidate snippet: %s",
+                    candidate[:500]
+                )
+        
+        # 第四轮：使用 ast.literal_eval 做一次宽松解析（兼容单引号等 Python 风格）
+        try:
+            import ast
+            obj = ast.literal_eval(text)
+            if isinstance(obj, (dict, list)):
+                return obj
+        except Exception:
+            # 不记录详细异常，避免日志过长；最终会在下面统一记录一段原始内容
+            pass
+        
         # 仍然失败，记录一小段原始内容方便排查
         logger.error(
             "AI response is not valid JSON. Raw snippet: %s",
