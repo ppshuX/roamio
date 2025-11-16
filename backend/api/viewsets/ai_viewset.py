@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.cache import cache
 from datetime import date
 
-from backend.utils.ai import TripPlannerAI
+from backend.utils.ai import TripPlannerAI, AIFormatError
 from backend.serializers.ai_serializer import (
     TripGenerationRequestSerializer,
     TripRefinementRequestSerializer
@@ -117,6 +117,17 @@ class AIAssistantViewSet(viewsets.ViewSet):
                 }
             })
             
+        except AIFormatError as e:
+            # 特殊处理：携带原始内容片段，便于管理员调试
+            logger.error(f"AI format error: {e}. Raw snippet: {getattr(e, 'raw_content', '')}")
+            resp = {
+                'code': 400,
+                'message': "AI 返回格式错误，请重试"
+            }
+            # 仅对管理员返回调试字段，避免普通用户看到冗长内容
+            if getattr(request.user, 'is_staff', False):
+                resp['debug_raw'] = getattr(e, 'raw_content', None)
+            return Response(resp, status=status.HTTP_400_BAD_REQUEST)
         except ValueError as e:
             logger.error(f"AI generation validation error: {e}")
             return Response({

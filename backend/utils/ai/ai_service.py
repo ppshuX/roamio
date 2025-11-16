@@ -13,6 +13,13 @@ from datetime import date, timedelta
 logger = logging.getLogger(__name__)
 
 
+class AIFormatError(ValueError):
+    """自定义异常：用于携带原始 AI 文本，便于上层做调试输出"""
+    def __init__(self, message, raw_content=None):
+        super().__init__(message)
+        self.raw_content = raw_content
+
+
 class TripPlannerAI:
     """旅行规划 AI 服务"""
     
@@ -183,11 +190,13 @@ class TripPlannerAI:
             pass
         
         # 仍然失败，记录一小段原始内容方便排查
+        raw_snippet = text[:1000]
         logger.error(
             "AI response is not valid JSON. Raw snippet: %s",
-            text[:500]
+            raw_snippet
         )
-        raise ValueError("AI 返回格式错误，请重试")
+        # 抛出自定义异常，方便上层在管理员用户下返回调试信息
+        raise AIFormatError("AI 返回格式错误，请重试", raw_content=raw_snippet)
     
     def _build_system_prompt(self, preferences):
         """构建系统提示词"""
