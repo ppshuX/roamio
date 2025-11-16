@@ -102,7 +102,7 @@ class TripPlannerAI:
             
             # 3. 解析响应
             result_text = result['choices'][0]['message']['content']
-            self.tokens_used = result['usage']['total_tokens']
+            self.tokens_used = result.get('usage', {}).get('total_tokens', 0)
             self.generation_time = time.time() - start_time
             
             logger.info(
@@ -110,8 +110,8 @@ class TripPlannerAI:
                 f"Tokens: {self.tokens_used}, Time: {self.generation_time:.2f}s"
             )
             
-            # 4. 解析 JSON
-            trip_plan = json.loads(result_text)
+            # 4. 解析 JSON（带容错）
+            trip_plan = self._parse_json_response(result_text)
             
             # 5. 数据验证和清洗
             validated_plan = self._validate_and_clean(trip_plan, preferences)
@@ -124,6 +124,47 @@ class TripPlannerAI:
         except Exception as e:
             logger.error(f"AI generation error: {e}")
             raise
+    
+    def _parse_json_response(self, content):
+        """
+        尝试把大模型返回内容解析为 JSON，做一层容错处理。
+        有些情况下模型会在 JSON 前后加说明文字，这里尽量截取出真正的 JSON 部分。
+        """
+        # 如果已经是 dict，直接返回
+        if isinstance(content, dict):
+            return content
+        
+        if not isinstance(content, str):
+            logger.error(f"Unexpected AI content type: {type(content)}")
+            raise ValueError("AI 返回格式错误，请重试")
+        
+        text = content.strip()
+        
+        # 第一轮：直接解析
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            pass
+        
+        # 第二轮：截取第一个 '{' 到最后一个 '}' 之间的内容再解析
+        start = text.find('{')
+        end = text.rfind('}')
+        if start != -1 and end != -1 and end > start:
+            candidate = text[start:end + 1]
+            try:
+                return json.loads(candidate)
+            except json.JSONDecodeError:
+                logger.error(
+                    "AI JSON candidate parse failed. Candidate snippet: %s",
+                    candidate[:500]
+                )
+        
+        # 仍然失败，记录一小段原始内容方便排查
+        logger.error(
+            "AI response is not valid JSON. Raw snippet: %s",
+            text[:500]
+        )
+        raise ValueError("AI 返回格式错误，请重试")
     
     def _build_system_prompt(self, preferences):
         """构建系统提示词"""
