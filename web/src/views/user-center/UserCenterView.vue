@@ -96,31 +96,7 @@
         
         <!-- 右侧：信息编辑 -->
         <div class="col-md-8">
-          <!-- 邮箱绑定 -->
-          <EmailBindingEditor
-            :current-email="email || ''"
-            :email-verified="isEmailVerified"
-            :user-id="userInfo?.id"
-            @email-bound="handleEmailBound"
-            @update="handleRefreshUserInfo"
-            class="mb-4"
-          />
-          
-          <!-- Ralendar 账号管理 -->
-          <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white">
-              <h5 class="mb-0">🗓️ Ralendar 日历连接</h5>
-            </div>
-            <div class="card-body">
-              <RalendarAccountManager 
-                ref="ralendarManager"
-                @connect="handleRalendarConnect"
-                @update="handleRalendarUpdate"
-              />
-            </div>
-          </div>
-          
-          <!-- 基本信息 -->
+          <!-- 基本信息（放在最上面，优先展示个人资料） -->
           <BasicInfoEditor
             :username="editForm.username"
             :birthday="editForm.birthday"
@@ -130,7 +106,7 @@
             @cancel="cancelBasicEdit"
           />
           
-          <!-- 旅行者资料 -->
+          <!-- 旅行者资料（紧跟基本信息） -->
           <div class="card shadow-sm mb-4">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
               <h5 class="mb-0">✨ 旅行者资料</h5>
@@ -241,6 +217,31 @@
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+
+          <!-- 账号与安全区域：邮箱绑定 + Ralendar 连接，放在资料之后 -->
+          <!-- 邮箱绑定 -->
+          <EmailBindingEditor
+            :current-email="email || ''"
+            :email-verified="isEmailVerified"
+            :user-id="userInfo?.id"
+            @email-bound="handleEmailBound"
+            @update="handleRefreshUserInfo"
+            class="mb-4"
+          />
+          
+          <!-- Ralendar 账号管理 -->
+          <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+              <h5 class="mb-0">🗓️ Ralendar 日历连接</h5>
+            </div>
+            <div class="card-body">
+              <RalendarAccountManager 
+                ref="ralendarManager"
+                @connect="handleRalendarConnect"
+                @update="handleRalendarUpdate"
+              />
             </div>
           </div>
         </div>
