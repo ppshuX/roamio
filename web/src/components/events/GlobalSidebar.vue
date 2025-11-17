@@ -452,6 +452,38 @@ export default defineComponent({
           // 同时保存到本地存储（备份）
           localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
         } else {
+          // 尝试解析错误信息
+          let errorMessage = '加载失败'
+          let errorCode = null
+          try {
+            const errorData = await response.json()
+            errorMessage = errorData.detail || errorData.error || errorMessage
+            errorCode = errorData.code
+            
+            // 输出详细错误信息到控制台
+            console.error('加载待办失败:', {
+              code: errorCode,
+              message: errorMessage,
+              status: response.status,
+              fullError: errorData
+            })
+            
+            // 根据错误代码显示不同的提示
+            if (errorData.code === 'NO_RALENDAR_ACCOUNT') {
+              console.error('❌ 尚未绑定 Ralendar 账号，请先在个人中心绑定')
+            } else if (errorData.code === 'NO_USER_IDENTIFIER') {
+              console.error('❌ 无法识别用户身份，请确保已通过 QQ 登录')
+            } else if (errorData.code === 'TOKEN_EXPIRED') {
+              console.error('❌ Ralendar Token 已过期，请重新授权')
+            } else {
+              console.error('❌ 错误:', errorMessage)
+            }
+          } catch (e) {
+            // 无法解析 JSON，使用默认错误信息
+            console.error('无法解析错误响应:', e)
+            console.error('HTTP 状态码:', response.status)
+          }
+          
           // 加载失败时，尝试从本地存储恢复
           const stored = localStorage.getItem('ralendar_events')
           if (stored) {
@@ -540,7 +572,38 @@ export default defineComponent({
       })
           
           if (!response.ok) {
-            throw new Error('更新失败')
+            // 尝试解析错误信息
+            let errorMessage = '更新失败'
+            try {
+              const errorData = await response.json()
+              errorMessage = errorData.detail || errorData.error || errorMessage
+              
+              // 输出详细错误信息到控制台
+              console.error('更新事件失败:', {
+                code: errorData.code,
+                message: errorMessage,
+                status: response.status,
+                eventId: editingEventId.value,
+                fullError: errorData
+              })
+              
+              // 根据错误代码显示不同的提示
+              if (errorData.code === 'NO_RALENDAR_ACCOUNT') {
+                console.error('❌ 尚未绑定 Ralendar 账号，请先在个人中心绑定')
+              } else if (errorData.code === 'NO_USER_IDENTIFIER') {
+                console.error('❌ 无法识别用户身份，请确保已通过 QQ 登录')
+              } else if (errorData.code === 'TOKEN_EXPIRED') {
+                console.error('❌ Ralendar Token 已过期，请重新授权')
+              } else if (errorData.code === 'RALENDAR_API_ERROR') {
+                console.error('❌ Ralendar API 错误:', errorMessage)
+              } else {
+                console.error('❌ 更新失败:', errorMessage)
+              }
+            } catch (e) {
+              console.error('无法解析错误响应:', e)
+              console.error('HTTP 状态码:', response.status)
+            }
+            throw new Error(errorMessage)
           }
           
           const result = await response.json()
@@ -567,8 +630,37 @@ export default defineComponent({
           })
           
           if (!response.ok) {
-            const error = await response.json()
-            throw new Error(error.error || '创建失败')
+            // 尝试解析错误信息
+            let errorMessage = '创建失败'
+            try {
+              const errorData = await response.json()
+              errorMessage = errorData.detail || errorData.error || errorMessage
+              
+              // 输出详细错误信息到控制台
+              console.error('创建事件失败:', {
+                code: errorData.code,
+                message: errorMessage,
+                status: response.status,
+                fullError: errorData
+              })
+              
+              // 根据错误代码显示不同的提示
+              if (errorData.code === 'NO_RALENDAR_ACCOUNT') {
+                console.error('❌ 尚未绑定 Ralendar 账号，请先在个人中心绑定')
+              } else if (errorData.code === 'NO_USER_IDENTIFIER') {
+                console.error('❌ 无法识别用户身份，请确保已通过 QQ 登录')
+              } else if (errorData.code === 'TOKEN_EXPIRED') {
+                console.error('❌ Ralendar Token 已过期，请重新授权')
+              } else if (errorData.code === 'RALENDAR_API_ERROR') {
+                console.error('❌ Ralendar API 错误:', errorMessage)
+              } else {
+                console.error('❌ 创建失败:', errorMessage)
+              }
+            } catch (e) {
+              console.error('无法解析错误响应:', e)
+              console.error('HTTP 状态码:', response.status)
+            }
+            throw new Error(errorMessage)
           }
           
           const result = await response.json()
@@ -597,7 +689,7 @@ export default defineComponent({
         
       } catch (error) {
         console.error('操作失败:', error)
-        alert(error.message || '操作失败，请稍后重试')
+        console.error('错误详情:', error.message || '操作失败，请稍后重试')
       } finally {
         submitting.value = false
       }
