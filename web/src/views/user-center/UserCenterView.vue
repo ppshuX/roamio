@@ -7,7 +7,7 @@
       🏠
     </button>
     
-    <div class="container py-5">
+    <div class="container py-3">
       <!-- 页面标题 -->
       <h2 class="mb-1">个人中心</h2>
       <p class="mb-4 slogan-text" :class="getLevelTextClass(profileData.level)">Hello Roamioer!</p>
@@ -751,7 +751,7 @@ export default {
 }
 
 .user-center-container {
-  padding: 2rem 0;
+  padding: 1rem 0;
 }
 
 /* 返回按钮 */
