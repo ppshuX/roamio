@@ -8,7 +8,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from backend.utils.external import RalendarClient
-from backend.models import SocialAccount
+from backend.models import SocialAccount, RalendarAccount
+from django.utils import timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,49 +26,105 @@ class RalendarEventDetailView(APIView):
     
     permission_classes = [IsAuthenticated]
     
-    def get_user_token(self, request):
-        """从请求中获取用户Token"""
-        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-        if auth_header.startswith('Bearer '):
-            return auth_header.split(' ')[1]
-        return None
-    
-    def get_unionid(self, request):
-        """获取用户的UnionID"""
-        try:
-            social_account = SocialAccount.objects.filter(
+    def get_ralendar_account(self, request):
+        """获取用户的 Ralendar 账号（优先使用默认账号）"""
+        ralendar_account = RalendarAccount.objects.filter(
+            user=request.user,
+            is_active=True,
+            is_default=True
+        ).first()
+        
+        if not ralendar_account:
+            # 没有默认账号，尝试获取第一个账号
+            ralendar_account = RalendarAccount.objects.filter(
                 user=request.user,
-                provider='qq'
+                is_active=True
             ).first()
-            return social_account.unionid if social_account else None
+        
+        return ralendar_account
+    
+    def get_user_identifiers(self, request, access_token):
+        """
+        获取用户的 unionid/openid（用于 Ralendar API）
+        
+        优先级：
+        1. 从 OAuth token payload 中提取
+        2. 从 SocialAccount 读取（兜底方案）
+        """
+        unionid = None
+        openid = None
+        
+        # 尝试从 OAuth token payload 中提取
+        try:
+            import jwt
+            try:
+                decoded = jwt.decode(access_token, options={"verify_signature": False})
+                unionid = decoded.get('unionid')
+                openid = decoded.get('openid')
+                logger.debug(f"Extracted from token: unionid={unionid}, openid={openid}")
+            except Exception as e:
+                logger.debug(f"Token is not JWT or cannot decode: {e}")
+        except ImportError:
+            logger.warning("PyJWT not installed, cannot parse token payload")
         except Exception as e:
-            logger.error(f"Failed to get UnionID: {e}")
-            return None
+            logger.warning(f"Failed to extract unionid/openid from token: {e}")
+        
+        # 如果 token 中没有，回退到从 SocialAccount 读取
+        if not unionid and not openid:
+            try:
+                social_account = SocialAccount.objects.filter(
+                    user=request.user,
+                    provider='qq'
+                ).first()
+                if social_account:
+                    unionid = social_account.unionid
+                    openid = social_account.uid
+                    logger.debug(f"Fallback to SocialAccount: unionid={unionid}, openid={openid}")
+            except Exception as e:
+                logger.warning(f"Failed to get QQ identifiers from SocialAccount: {e}")
+        
+        return unionid, openid
     
     def put(self, request, event_id):
         """
-        更新事件
+        更新事件（使用 Ralendar OAuth Token）
         
         URL: PUT /api/v1/ralendar/events/{event_id}/
         """
-        user_token = self.get_user_token(request)
-        if not user_token:
-            return Response(
-                {'error': '未找到用户认证信息'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+        # 获取 Ralendar 账号
+        ralendar_account = self.get_ralendar_account(request)
+        if not ralendar_account:
+            return Response({
+                'error': '尚未绑定 Ralendar 账号',
+                'detail': '请先在个人中心绑定 Ralendar 账号',
+                'code': 'NO_RALENDAR_ACCOUNT'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        unionid = self.get_unionid(request)
+        # 检查 Token 是否过期
+        if ralendar_account.is_token_expired:
+            return Response({
+                'error': 'Ralendar Token 已过期',
+                'detail': '请重新授权 Ralendar 账号',
+                'code': 'TOKEN_EXPIRED',
+                'ralendar_account_id': ralendar_account.id
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # 使用 Ralendar OAuth access_token
+        access_token = ralendar_account.access_token
+        
+        # 获取用户标识
+        unionid, openid = self.get_user_identifiers(request, access_token)
+        
         event_data = request.data.copy()
         
         logger.info(f"准备更新事件 {event_id}")
         logger.info(f"请求数据: {event_data}")
-        logger.info(f"UnionID: {unionid}")
+        logger.info(f"UnionID: {unionid}, OpenID: {openid}")
         
         client = RalendarClient()
         
         try:
-            result = client.update_event(user_token, event_id, event_data, unionid=unionid)
+            result = client.update_event(access_token, event_id, event_data, unionid=unionid, openid=openid)
             logger.info(f"更新成功: {result}")
             return Response(result, status=status.HTTP_200_OK)
         except Exception as e:
@@ -82,26 +139,41 @@ class RalendarEventDetailView(APIView):
     
     def delete(self, request, event_id):
         """
-        删除事件
+        删除事件（使用 Ralendar OAuth Token）
         
         URL: DELETE /api/v1/ralendar/events/{event_id}/
         """
-        user_token = self.get_user_token(request)
-        if not user_token:
-            return Response(
-                {'error': '未找到用户认证信息'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+        # 获取 Ralendar 账号
+        ralendar_account = self.get_ralendar_account(request)
+        if not ralendar_account:
+            return Response({
+                'error': '尚未绑定 Ralendar 账号',
+                'detail': '请先在个人中心绑定 Ralendar 账号',
+                'code': 'NO_RALENDAR_ACCOUNT'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        unionid = self.get_unionid(request)
+        # 检查 Token 是否过期
+        if ralendar_account.is_token_expired:
+            return Response({
+                'error': 'Ralendar Token 已过期',
+                'detail': '请重新授权 Ralendar 账号',
+                'code': 'TOKEN_EXPIRED',
+                'ralendar_account_id': ralendar_account.id
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # 使用 Ralendar OAuth access_token
+        access_token = ralendar_account.access_token
+        
+        # 获取用户标识
+        unionid, openid = self.get_user_identifiers(request, access_token)
         
         logger.info(f"准备删除事件 {event_id}")
-        logger.info(f"UnionID: {unionid}")
+        logger.info(f"UnionID: {unionid}, OpenID: {openid}")
         
         client = RalendarClient()
         
         try:
-            client.delete_event(user_token, event_id, unionid=unionid)
+            client.delete_event(access_token, event_id, unionid=unionid, openid=openid)
             logger.info(f"删除成功: {event_id}")
             return Response({'message': '删除成功'}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
