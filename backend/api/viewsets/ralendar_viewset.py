@@ -13,6 +13,7 @@ from django.shortcuts import get_object_or_404
 from backend.models import Trip
 from backend.utils.external import RalendarClient
 import logging
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -109,10 +110,20 @@ class RalendarIntegrationViewSet(ViewSet):
             except Exception as e:
                 logger.warning(f"Failed to get QQ identifiers from SocialAccount: {e}")
         
+        # 检查是否有用户标识（Ralendar API 需要 unionid 或 openid）
+        if not unionid and not openid:
+            logger.warning(f"用户 {request.user.username} 没有 unionid 或 openid，无法调用 Ralendar API")
+            return Response({
+                'error': '无法识别用户身份',
+                'detail': 'Ralendar API 需要 unionid 或 openid 来识别用户。请确保已通过 QQ 登录或绑定 QQ 账号。',
+                'code': 'NO_USER_IDENTIFIER'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         # 调用 Ralendar Fusion API
         client = RalendarClient()
         
         try:
+            logger.info(f"调用 Ralendar list_events: unionid={unionid}, openid={openid}")
             result = client.list_events(access_token, unionid=unionid, openid=openid)
             # Fusion API 返回格式：{"events": [...], "events_count": 10}
             # 转换为前端期望的格式：{"results": [...]}
@@ -125,12 +136,35 @@ class RalendarIntegrationViewSet(ViewSet):
             logger.info(f"获取事件成功: {response_data['count']} 个")
             return Response(response_data, status=status.HTTP_200_OK)
         
+        except requests.exceptions.HTTPError as e:
+            # Ralendar API 返回了 HTTP 错误
+            error_detail = f"Ralendar API 错误: {e}"
+            if hasattr(e, 'response') and e.response is not None:
+                try:
+                    error_body = e.response.json()
+                    error_detail = error_body.get('error', error_body.get('detail', str(e)))
+                    logger.error(f"Ralendar API 错误响应: {error_body}")
+                except:
+                    error_detail = e.response.text or str(e)
+                    logger.error(f"Ralendar API 错误响应 (非JSON): {error_detail}")
+            
+            logger.error(f"获取事件失败: {error_detail}")
+            import traceback
+            logger.error(traceback.format_exc())
+            
+            return Response({
+                'error': '获取事件失败',
+                'detail': error_detail,
+                'code': 'RALENDAR_API_ERROR'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
         except Exception as e:
             logger.error(f"获取事件失败: {e}")
             import traceback
             logger.error(traceback.format_exc())
             return Response({
-                'error': f'获取事件失败: {str(e)}'
+                'error': f'获取事件失败: {str(e)}',
+                'code': 'INTERNAL_ERROR'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=False, methods=['post'], url_path='events/create')
@@ -226,6 +260,15 @@ class RalendarIntegrationViewSet(ViewSet):
         event_data = request.data.copy()
         event_data['source_app'] = 'roamio'
         
+        # 检查是否有用户标识（Ralendar API 需要 unionid 或 openid）
+        if not unionid and not openid:
+            logger.warning(f"用户 {request.user.username} 没有 unionid 或 openid，无法调用 Ralendar API")
+            return Response({
+                'error': '无法识别用户身份',
+                'detail': 'Ralendar API 需要 unionid 或 openid 来识别用户。请确保已通过 QQ 登录或绑定 QQ 账号。',
+                'code': 'NO_USER_IDENTIFIER'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         # 添加用户标识（优先级：unionid > openid）
         if unionid:
             event_data['unionid'] = unionid
@@ -236,16 +279,40 @@ class RalendarIntegrationViewSet(ViewSet):
         client = RalendarClient()
         
         try:
+            logger.info(f"调用 Ralendar create_event: unionid={unionid}, openid={openid}")
             result = client.create_event(access_token, event_data, unionid=unionid, openid=openid)
             logger.info(f"创建事件成功: {result.get('id')}")
             return Response(result, status=status.HTTP_201_CREATED)
+        
+        except requests.exceptions.HTTPError as e:
+            # Ralendar API 返回了 HTTP 错误
+            error_detail = f"Ralendar API 错误: {e}"
+            if hasattr(e, 'response') and e.response is not None:
+                try:
+                    error_body = e.response.json()
+                    error_detail = error_body.get('error', error_body.get('detail', str(e)))
+                    logger.error(f"Ralendar API 错误响应: {error_body}")
+                except:
+                    error_detail = e.response.text or str(e)
+                    logger.error(f"Ralendar API 错误响应 (非JSON): {error_detail}")
+            
+            logger.error(f"创建事件失败: {error_detail}")
+            import traceback
+            logger.error(traceback.format_exc())
+            
+            return Response({
+                'error': '创建事件失败',
+                'detail': error_detail,
+                'code': 'RALENDAR_API_ERROR'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         except Exception as e:
             logger.error(f"创建事件失败: {e}")
             import traceback
             logger.error(traceback.format_exc())
             return Response({
-                'error': f'创建事件失败: {str(e)}'
+                'error': f'创建事件失败: {str(e)}',
+                'code': 'INTERNAL_ERROR'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=True, methods=['post'], url_path='sync-ai-trip')
@@ -395,10 +462,21 @@ class RalendarIntegrationViewSet(ViewSet):
             except Exception as e:
                 logger.warning(f"Failed to load QQ identifiers from SocialAccount: {e}")
         
+        # 检查是否有用户标识（Ralendar API 需要 unionid 或 openid）
+        if not unionid and not openid:
+            logger.warning(f"用户 {request.user.username} 没有 unionid 或 openid，无法调用 Ralendar API")
+            return Response({
+                'code': 400,
+                'error': '无法识别用户身份',
+                'detail': 'Ralendar API 需要 unionid 或 openid 来识别用户。请确保已通过 QQ 登录或绑定 QQ 账号。',
+                'message': '同步失败：无法识别用户身份'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         # 调用 Ralendar API 批量创建事件
         client = RalendarClient()
         
         try:
+            logger.info(f"调用 Ralendar batch_create_events: trip_slug={trip.slug}, unionid={unionid}, openid={openid}, events_count={len(events)}")
             # 使用 OAuth access_token，并在顶层传递 unionid/openid
             result = client.batch_create_events(
                 access_token,
@@ -447,13 +525,37 @@ class RalendarIntegrationViewSet(ViewSet):
                 }
             }, status=status.HTTP_200_OK)
             
+        except requests.exceptions.HTTPError as e:
+            # Ralendar API 返回了 HTTP 错误
+            error_detail = f"Ralendar API 错误: {e}"
+            if hasattr(e, 'response') and e.response is not None:
+                try:
+                    error_body = e.response.json()
+                    error_detail = error_body.get('error', error_body.get('detail', str(e)))
+                    logger.error(f"Ralendar API 错误响应: {error_body}")
+                except:
+                    error_detail = e.response.text or str(e)
+                    logger.error(f"Ralendar API 错误响应 (非JSON): {error_detail}")
+            
+            logger.error(f"同步失败: {error_detail}")
+            import traceback
+            logger.error(traceback.format_exc())
+            
+            return Response({
+                'code': 500,
+                'error': '同步失败',
+                'detail': error_detail,
+                'message': f'同步失败: {error_detail}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
         except Exception as e:
             logger.error(f"同步失败: {e}")
             import traceback
             logger.error(traceback.format_exc())
             return Response({
                 'code': 500,
-                'error': f'同步失败: {str(e)}'
+                'error': f'同步失败: {str(e)}',
+                'message': f'同步失败: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     # 注意：更新和删除事件的功能已移至独立的 RalendarEventDetailView
