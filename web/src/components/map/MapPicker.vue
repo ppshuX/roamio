@@ -173,20 +173,38 @@ export default defineComponent({
     
     // 百度地图：设置标记
     const setMarkerBaidu = (point) => {
+      // 确保地图实例有效
+      if (!map || typeof map.addOverlay !== 'function') {
+        console.error('百度地图实例无效，无法设置标记')
+        return
+      }
+      
       // 移除旧标记
-      if (marker) {
-        map.removeOverlay(marker)
+      if (marker && typeof map.removeOverlay === 'function') {
+        try {
+          map.removeOverlay(marker)
+        } catch (error) {
+          console.warn('移除旧标记失败:', error)
+        }
       }
       
       // 添加新标记
-      marker = new window.BMap.Marker(point)
-      map.addOverlay(marker)
-      
-      // 动画效果
-      marker.setAnimation(window.BMAP_ANIMATION_BOUNCE)
-      setTimeout(() => {
-        marker.setAnimation(null)
-      }, 1000)
+      try {
+        marker = new window.BMap.Marker(point)
+        map.addOverlay(marker)
+        
+        // 动画效果
+        if (marker.setAnimation) {
+          marker.setAnimation(window.BMAP_ANIMATION_BOUNCE)
+          setTimeout(() => {
+            if (marker && marker.setAnimation) {
+              marker.setAnimation(null)
+            }
+          }, 1000)
+        }
+      } catch (error) {
+        console.error('设置标记失败:', error)
+      }
     }
     
     // 高德地图：设置标记
@@ -256,31 +274,63 @@ export default defineComponent({
       }
       
       searchTimer = setTimeout(() => {
-        if (!searchKeyword.value || !map) return
+        if (!searchKeyword.value || !map) {
+          console.warn('搜索失败: 搜索关键词为空或地图未初始化')
+          return
+        }
         
+        // 确保地图类型匹配
         if (mapType.value === 'baidu') {
-          handleSearchBaidu()
+          // 验证是百度地图实例
+          if (map && typeof map.centerAndZoom === 'function') {
+            handleSearchBaidu()
+          } else {
+            console.error('地图实例不是有效的百度地图实例')
+          }
         } else {
-          handleSearchAmap()
+          // 验证是高德地图实例
+          if (map && typeof map.setZoomAndCenter === 'function') {
+            handleSearchAmap()
+          } else {
+            console.error('地图实例不是有效的高德地图实例')
+          }
         }
       }, 300) // 防抖 300ms
     }
     
     // 百度地图搜索
     const handleSearchBaidu = () => {
-      const localSearch = new window.BMap.LocalSearch(map, {
+      // 确保地图已初始化且是百度地图实例
+      if (!map || !map.centerAndZoom) {
+        console.error('百度地图未初始化或无效')
+        return
+      }
+      
+      // 使用闭包保存 map 实例，避免回调中上下文丢失
+      const currentMap = map
+      const localSearch = new window.BMap.LocalSearch(currentMap, {
         onSearchComplete: (results) => {
+          // 再次检查地图实例是否有效
+          if (!currentMap || typeof currentMap.centerAndZoom !== 'function') {
+            console.error('地图实例无效，无法执行 centerAndZoom')
+            return
+          }
+          
           if (results && results.getCurrentNumPois() > 0) {
             const poi = results.getPoi(0)
             const point = poi.point
             
-            map.centerAndZoom(point, 15)
-            setMarkerBaidu(point)
-            
-            selectedLocation.value = {
-              name: poi.title,
-              lat: point.lat,
-              lng: point.lng
+            try {
+              currentMap.centerAndZoom(point, 15)
+              setMarkerBaidu(point)
+              
+              selectedLocation.value = {
+                name: poi.title,
+                lat: point.lat,
+                lng: point.lng
+              }
+            } catch (error) {
+              console.error('设置地图中心点失败:', error)
             }
           }
         }
