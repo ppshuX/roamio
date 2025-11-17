@@ -159,6 +159,8 @@ class RalendarOAuthViewSet(viewsets.ViewSet):
         ralendar_email = user_info.get('email')
         ralendar_avatar = user_info.get('avatar')
         ralendar_provider = user_info.get('provider')
+        ralendar_unionid = user_info.get('unionid')  # 从 userinfo 中提取 unionid
+        ralendar_openid = user_info.get('openid')  # 从 userinfo 中提取 openid
         
         if not ralendar_user_id:
             return Response({
@@ -192,6 +194,8 @@ class RalendarOAuthViewSet(viewsets.ViewSet):
                 'ralendar_email': ralendar_email,
                 'ralendar_avatar': ralendar_avatar,
                 'ralendar_provider': ralendar_provider,
+                'ralendar_unionid': ralendar_unionid,  # 保存 unionid
+                'ralendar_openid': ralendar_openid,  # 保存 openid
                 'access_token': access_token,
                 'refresh_token': refresh_token,
                 'token_expires_at': token_expires_at,
@@ -199,6 +203,12 @@ class RalendarOAuthViewSet(viewsets.ViewSet):
                 'is_active': True
             }
         )
+        
+        # 记录 unionid/openid 信息（用于调试）
+        if ralendar_unionid or ralendar_openid:
+            logger.info(f"保存 Ralendar 用户标识: unionid={ralendar_unionid}, openid={ralendar_openid}")
+        else:
+            logger.warning(f"Ralendar userinfo 中未包含 unionid 或 openid: {user_info}")
         
         # 如果是新绑定且是用户的第一个账号，自动设为默认
         if created:

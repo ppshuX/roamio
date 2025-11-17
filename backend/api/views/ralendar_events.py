@@ -44,33 +44,42 @@ class RalendarEventDetailView(APIView):
         
         return ralendar_account
     
-    def get_user_identifiers(self, request, access_token):
+    def get_user_identifiers(self, request, access_token, ralendar_account=None):
         """
         获取用户的 unionid/openid（用于 Ralendar API）
         
         优先级：
-        1. 从 OAuth token payload 中提取
-        2. 从 SocialAccount 读取（兜底方案）
+        1. 从 RalendarAccount 中读取（从 Ralendar userinfo 获取，最准确）
+        2. 从 OAuth token payload 中提取（兜底方案 1）
+        3. 从 SocialAccount 读取（兜底方案 2）
         """
         unionid = None
         openid = None
         
-        # 尝试从 OAuth token payload 中提取
-        try:
-            import jwt
-            try:
-                decoded = jwt.decode(access_token, options={"verify_signature": False})
-                unionid = decoded.get('unionid')
-                openid = decoded.get('openid')
-                logger.debug(f"Extracted from token: unionid={unionid}, openid={openid}")
-            except Exception as e:
-                logger.debug(f"Token is not JWT or cannot decode: {e}")
-        except ImportError:
-            logger.warning("PyJWT not installed, cannot parse token payload")
-        except Exception as e:
-            logger.warning(f"Failed to extract unionid/openid from token: {e}")
+        # 优先从 RalendarAccount 中读取 unionid/openid
+        if ralendar_account:
+            unionid = ralendar_account.ralendar_unionid
+            openid = ralendar_account.ralendar_openid
+            if unionid or openid:
+                logger.debug(f"从 RalendarAccount 获取用户标识: unionid={unionid}, openid={openid}")
         
-        # 如果 token 中没有，回退到从 SocialAccount 读取
+        # 如果 RalendarAccount 中没有，尝试从 OAuth token payload 中提取
+        if not unionid and not openid:
+            try:
+                import jwt
+                try:
+                    decoded = jwt.decode(access_token, options={"verify_signature": False})
+                    unionid = decoded.get('unionid')
+                    openid = decoded.get('openid')
+                    logger.debug(f"从 token payload 提取: unionid={unionid}, openid={openid}")
+                except Exception as e:
+                    logger.debug(f"Token is not JWT or cannot decode: {e}")
+            except ImportError:
+                logger.warning("PyJWT not installed, cannot parse token payload")
+            except Exception as e:
+                logger.warning(f"Failed to extract unionid/openid from token: {e}")
+        
+        # 如果 token 中也没有，回退到从 SocialAccount 读取
         if not unionid and not openid:
             try:
                 social_account = SocialAccount.objects.filter(
@@ -80,7 +89,7 @@ class RalendarEventDetailView(APIView):
                 if social_account:
                     unionid = social_account.unionid
                     openid = social_account.uid
-                    logger.debug(f"Fallback to SocialAccount: unionid={unionid}, openid={openid}")
+                    logger.debug(f"从 SocialAccount 回退: unionid={unionid}, openid={openid}")
             except Exception as e:
                 logger.warning(f"Failed to get QQ identifiers from SocialAccount: {e}")
         
@@ -113,8 +122,8 @@ class RalendarEventDetailView(APIView):
         # 使用 Ralendar OAuth access_token
         access_token = ralendar_account.access_token
         
-        # 获取用户标识
-        unionid, openid = self.get_user_identifiers(request, access_token)
+        # 获取用户标识（优先从 RalendarAccount 读取）
+        unionid, openid = self.get_user_identifiers(request, access_token, ralendar_account)
         
         # 检查是否有用户标识（Ralendar API 需要 unionid 或 openid）
         if not unionid and not openid:
@@ -200,8 +209,8 @@ class RalendarEventDetailView(APIView):
         # 使用 Ralendar OAuth access_token
         access_token = ralendar_account.access_token
         
-        # 获取用户标识
-        unionid, openid = self.get_user_identifiers(request, access_token)
+        # 获取用户标识（优先从 RalendarAccount 读取）
+        unionid, openid = self.get_user_identifiers(request, access_token, ralendar_account)
         
         # 检查是否有用户标识（Ralendar API 需要 unionid 或 openid）
         if not unionid and not openid:

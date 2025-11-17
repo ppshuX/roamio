@@ -70,31 +70,33 @@ class RalendarIntegrationViewSet(ViewSet):
         # 使用 Ralendar OAuth access_token
         access_token = ralendar_account.access_token
         
-        # 尝试从 OAuth token payload 中提取 unionid/openid
-        unionid = None
-        openid = None
+        # 优先从 RalendarAccount 中读取 unionid/openid（从 Ralendar userinfo 获取，最准确）
+        unionid = ralendar_account.ralendar_unionid
+        openid = ralendar_account.ralendar_openid
         
-        try:
-            import jwt
-            import json
-            # 尝试解析 JWT token（不验证签名，因为我们只需要读取 payload）
+        if unionid or openid:
+            logger.debug(f"从 RalendarAccount 获取用户标识: unionid={unionid}, openid={openid}")
+        
+        # 如果 RalendarAccount 中没有，尝试从 OAuth token payload 中提取（兜底方案 1）
+        if not unionid and not openid:
             try:
-                # 解码 token（不验证签名）
-                decoded = jwt.decode(access_token, options={"verify_signature": False})
-                unionid = decoded.get('unionid')
-                openid = decoded.get('openid')
-                logger.debug(f"Extracted from token: unionid={unionid}, openid={openid}")
+                import jwt
+                # 尝试解析 JWT token（不验证签名，因为我们只需要读取 payload）
+                try:
+                    # 解码 token（不验证签名）
+                    decoded = jwt.decode(access_token, options={"verify_signature": False})
+                    unionid = decoded.get('unionid')
+                    openid = decoded.get('openid')
+                    logger.debug(f"从 token payload 提取: unionid={unionid}, openid={openid}")
+                except Exception as e:
+                    logger.debug(f"Token is not JWT or cannot decode: {e}")
+            except ImportError:
+                # 如果没有 PyJWT，跳过 token 解析
+                logger.warning("PyJWT not installed, cannot parse token payload")
             except Exception as e:
-                logger.debug(f"Token is not JWT or cannot decode: {e}")
-                # 如果不是 JWT 格式，尝试作为 JSON 解析（某些实现可能直接返回 JSON）
-                pass
-        except ImportError:
-            # 如果没有 PyJWT，跳过 token 解析
-            logger.warning("PyJWT not installed, cannot parse token payload")
-        except Exception as e:
-            logger.warning(f"Failed to extract unionid/openid from token: {e}")
+                logger.warning(f"Failed to extract unionid/openid from token: {e}")
         
-        # 如果 token 中没有，回退到从 SocialAccount 读取（兜底方案）
+        # 如果 token 中也没有，回退到从 SocialAccount 读取（兜底方案 2）
         if not unionid and not openid:
             try:
                 from backend.models import SocialAccount
@@ -106,7 +108,7 @@ class RalendarIntegrationViewSet(ViewSet):
                 if social_account:
                     unionid = social_account.unionid
                     openid = social_account.uid
-                    logger.debug(f"Fallback to SocialAccount: unionid={unionid}, openid={openid}")
+                    logger.debug(f"从 SocialAccount 回退: unionid={unionid}, openid={openid}")
             except Exception as e:
                 logger.warning(f"Failed to get QQ identifiers from SocialAccount: {e}")
         
@@ -424,30 +426,33 @@ class RalendarIntegrationViewSet(ViewSet):
         # 使用 Ralendar 账号的 access_token
         access_token = ralendar_account.access_token
         
-        # 尝试从 OAuth token payload 中提取 unionid/openid
-        unionid = None
-        openid = None
+        # 优先从 RalendarAccount 中读取 unionid/openid（从 Ralendar userinfo 获取，最准确）
+        unionid = ralendar_account.ralendar_unionid
+        openid = ralendar_account.ralendar_openid
         
-        try:
-            import jwt
-            # 尝试解析 JWT token（不验证签名，因为我们只需要读取 payload）
+        if unionid or openid:
+            logger.debug(f"从 RalendarAccount 获取用户标识: unionid={unionid}, openid={openid}")
+        
+        # 如果 RalendarAccount 中没有，尝试从 OAuth token payload 中提取（兜底方案 1）
+        if not unionid and not openid:
             try:
-                # 解码 token（不验证签名）
-                decoded = jwt.decode(access_token, options={"verify_signature": False})
-                unionid = decoded.get('unionid')
-                openid = decoded.get('openid')
-                logger.debug(f"Extracted from token: unionid={unionid}, openid={openid}")
+                import jwt
+                # 尝试解析 JWT token（不验证签名，因为我们只需要读取 payload）
+                try:
+                    # 解码 token（不验证签名）
+                    decoded = jwt.decode(access_token, options={"verify_signature": False})
+                    unionid = decoded.get('unionid')
+                    openid = decoded.get('openid')
+                    logger.debug(f"从 token payload 提取: unionid={unionid}, openid={openid}")
+                except Exception as e:
+                    logger.debug(f"Token is not JWT or cannot decode: {e}")
+            except ImportError:
+                # 如果没有 PyJWT，跳过 token 解析
+                logger.warning("PyJWT not installed, cannot parse token payload")
             except Exception as e:
-                logger.debug(f"Token is not JWT or cannot decode: {e}")
-                # 如果不是 JWT 格式，跳过
-                pass
-        except ImportError:
-            # 如果没有 PyJWT，跳过 token 解析
-            logger.warning("PyJWT not installed, cannot parse token payload")
-        except Exception as e:
-            logger.warning(f"Failed to extract unionid/openid from token: {e}")
+                logger.warning(f"Failed to extract unionid/openid from token: {e}")
         
-        # 如果 token 中没有，回退到从 SocialAccount 读取（兜底方案）
+        # 如果 token 中也没有，回退到从 SocialAccount 读取（兜底方案 2）
         if not unionid and not openid:
             try:
                 from backend.models import SocialAccount
@@ -458,7 +463,7 @@ class RalendarIntegrationViewSet(ViewSet):
                 if social_account:
                     unionid = social_account.unionid
                     openid = social_account.uid
-                    logger.debug(f"Fallback to SocialAccount: unionid={unionid}, openid={openid}")
+                    logger.debug(f"从 SocialAccount 回退: unionid={unionid}, openid={openid}")
             except Exception as e:
                 logger.warning(f"Failed to load QQ identifiers from SocialAccount: {e}")
         

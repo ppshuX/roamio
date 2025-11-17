@@ -45,6 +45,18 @@ class RalendarAccount(models.Model):
         null=True,
         help_text='Ralendar 登录方式：qq/acwing/email'
     )
+    ralendar_unionid = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Ralendar 用户的 UnionID（QQ/微信）'
+    )
+    ralendar_openid = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Ralendar 用户的 OpenID（QQ/微信）'
+    )
     
     # OAuth Token
     access_token = models.TextField(
