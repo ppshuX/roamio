@@ -136,7 +136,7 @@ class RalendarIntegrationViewSet(ViewSet):
     @action(detail=False, methods=['post'], url_path='events/create')
     def create_event(self, request):
         """
-        创建单个事件到 Ralendar
+        创建单个事件到 Ralendar（使用 Ralendar OAuth Token）
         
         URL: POST /api/v1/ralendar/trips/events/create/
         
@@ -154,57 +154,89 @@ class RalendarIntegrationViewSet(ViewSet):
             ...
         }
         """
-        # 获取用户 Token
-        user_token = self.get_user_token(request)
-        if not user_token:
-            logger.error("未找到用户认证信息")
-            return Response(
-                {'error': '未找到用户认证信息'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+        from backend.models import RalendarAccount
         
-        # 获取用户标识信息（优先级：unionid > openid > email）
-        from backend.models import SocialAccount
-        openid = None
-        unionid = None
-        user_email = None
+        # 获取 Ralendar 账号（优先使用默认账号）
+        ralendar_account = RalendarAccount.objects.filter(
+            user=request.user,
+            is_active=True,
+            is_default=True
+        ).first()
         
-        # 1. 尝试获取 QQ 社交账号信息
-        try:
-            social_account = SocialAccount.objects.filter(
+        if not ralendar_account:
+            # 没有默认账号，尝试获取第一个账号
+            ralendar_account = RalendarAccount.objects.filter(
                 user=request.user,
-                provider='qq'
+                is_active=True
             ).first()
-            
-            if social_account:
-                openid = social_account.uid
-                unionid = social_account.unionid
-        except Exception as e:
-            logger.error(f"Failed to get QQ info: {e}")
         
-        # 2. 如果没有 QQ 信息，使用邮箱
-        if not openid and not unionid:
-            if request.user.email:
-                user_email = request.user.email
-                logger.info(f"用户 {request.user.username} 使用邮箱进行识别: {user_email}")
+        if not ralendar_account:
+            return Response({
+                'error': '尚未绑定 Ralendar 账号',
+                'detail': '请先在个人中心绑定 Ralendar 账号',
+                'code': 'NO_RALENDAR_ACCOUNT'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 检查 Token 是否过期
+        if ralendar_account.is_token_expired:
+            return Response({
+                'error': 'Ralendar Token 已过期',
+                'detail': '请重新授权 Ralendar 账号',
+                'code': 'TOKEN_EXPIRED',
+                'ralendar_account_id': ralendar_account.id
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # 使用 Ralendar OAuth access_token
+        access_token = ralendar_account.access_token
+        
+        # 尝试从 OAuth token payload 中提取 unionid/openid
+        unionid = None
+        openid = None
+        
+        try:
+            import jwt
+            try:
+                decoded = jwt.decode(access_token, options={"verify_signature": False})
+                unionid = decoded.get('unionid')
+                openid = decoded.get('openid')
+                logger.debug(f"Extracted from token: unionid={unionid}, openid={openid}")
+            except Exception as e:
+                logger.debug(f"Token is not JWT or cannot decode: {e}")
+        except ImportError:
+            logger.warning("PyJWT not installed, cannot parse token payload")
+        except Exception as e:
+            logger.warning(f"Failed to extract unionid/openid from token: {e}")
+        
+        # 如果 token 中没有，回退到从 SocialAccount 读取（兜底方案）
+        if not unionid and not openid:
+            try:
+                from backend.models import SocialAccount
+                social_account = SocialAccount.objects.filter(
+                    user=request.user,
+                    provider='qq'
+                ).first()
+                if social_account:
+                    unionid = social_account.unionid
+                    openid = social_account.uid
+                    logger.debug(f"Fallback to SocialAccount: unionid={unionid}, openid={openid}")
+            except Exception as e:
+                logger.warning(f"Failed to load QQ identifiers from SocialAccount: {e}")
         
         # 获取事件数据
         event_data = request.data.copy()
         event_data['source_app'] = 'roamio'
         
-        # 添加用户标识（优先级：unionid > openid > email）
+        # 添加用户标识（优先级：unionid > openid）
         if unionid:
             event_data['unionid'] = unionid
-        if openid:
+        elif openid:
             event_data['openid'] = openid
-        if user_email:
-            event_data['email'] = user_email
         
         # 调用 Ralendar API
         client = RalendarClient()
         
         try:
-            result = client.create_event(user_token, event_data)
+            result = client.create_event(access_token, event_data, unionid=unionid, openid=openid)
             logger.info(f"创建事件成功: {result.get('id')}")
             return Response(result, status=status.HTTP_201_CREATED)
         

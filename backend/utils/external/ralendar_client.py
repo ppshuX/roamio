@@ -33,7 +33,7 @@ class RalendarClient:
             'Content-Type': 'application/json'
         }
     
-    def create_event(self, user_token, event_data):
+    def create_event(self, user_token, event_data, unionid=None, openid=None):
         """
         创建单个事件到 Ralendar（使用 Fusion API）
         
@@ -50,6 +50,8 @@ class RalendarClient:
                     "longitude": 116.3972,
                     "email_reminder": True
                 }
+            unionid (str, optional): UnionID，用于加速匹配
+            openid (str, optional): OpenID，用于加速匹配
         
         Returns:
             dict: 创建成功的事件数据
@@ -61,10 +63,11 @@ class RalendarClient:
         url = f"{self.base_url}/fusion/events/batch/"
         headers = self.get_headers(user_token)
         
-        # 获取用户标识（如果存在），并从 event_data 中移除（避免重复）
-        unionid = event_data.get('unionid', None)
-        openid = event_data.get('openid', None)
-        email = event_data.get('email', None)
+        # 优先使用参数中的 unionid/openid，如果没有则从 event_data 中获取
+        if not unionid:
+            unionid = event_data.get('unionid', None)
+        if not openid:
+            openid = event_data.get('openid', None)
         
         # 从事件数据中移除用户标识（只放在顶层）
         cleaned_event_data = {k: v for k, v in event_data.items() 
@@ -77,13 +80,11 @@ class RalendarClient:
             "events": [cleaned_event_data]  # 单个事件也用数组（不包含用户标识）
         }
         
-        # 只在顶层添加用户标识（优先级：unionid > openid > email）
+        # 只在顶层添加用户标识（优先级：unionid > openid）
         if unionid:
             data['unionid'] = unionid
-        if openid:
+        elif openid:
             data['openid'] = openid
-        if email:
-            data['email'] = email
         
         try:
             response = requests.post(url, json=data, headers=headers, timeout=self.timeout)
