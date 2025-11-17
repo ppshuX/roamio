@@ -113,10 +113,27 @@ class RalendarAccount(models.Model):
     
     @property
     def is_token_expired(self):
-        """检查 token 是否过期"""
+        """
+        检查 token 是否过期
+        
+        提前 5 分钟判断为过期，以便用户有时间刷新 token
+        """
         if not self.token_expires_at:
+            # 如果没有设置过期时间，视为不过期（可能是长期有效的 token）
             return False
-        return timezone.now() >= self.token_expires_at
+        
+        # 提前 5 分钟判断为过期
+        buffer_time = timezone.timedelta(minutes=5)
+        expired = timezone.now() >= (self.token_expires_at - buffer_time)
+        
+        if expired:
+            # 记录过期信息（用于调试）
+            import logging
+            logger = logging.getLogger(__name__)
+            remaining = (self.token_expires_at - timezone.now()).total_seconds()
+            logger.debug(f"Token expired: expires_at={self.token_expires_at}, now={timezone.now()}, remaining={remaining:.0f}s")
+        
+        return expired
     
     @property
     def display_name(self):

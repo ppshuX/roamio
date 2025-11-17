@@ -136,6 +136,9 @@ class RalendarOAuthViewSet(viewsets.ViewSet):
         expires_in = token_response.get('expires_in', 7200)  # 默认 2 小时
         token_scope = token_response.get('scope', 'calendar:read calendar:write')
         
+        # 记录 token 信息（用于调试）
+        logger.info(f"Ralendar token response: expires_in={expires_in}, has_refresh_token={bool(refresh_token)}")
+        
         if not access_token:
             return Response({
                 'error': '未能获取 access_token'
@@ -172,7 +175,13 @@ class RalendarOAuthViewSet(viewsets.ViewSet):
             }, status=status.HTTP_404_NOT_FOUND)
         
         # 计算 token 过期时间
+        # 如果 expires_in 为 0 或负数，说明 token 可能已经过期或无效
+        if expires_in <= 0:
+            logger.warning(f"Ralendar returned invalid expires_in: {expires_in}, using default 7200")
+            expires_in = 7200
+        
         token_expires_at = timezone.now() + timedelta(seconds=expires_in)
+        logger.info(f"Token expires at: {token_expires_at} (in {expires_in} seconds, current time: {timezone.now()})")
         
         # 检查是否已绑定该 Ralendar 账号
         ralendar_account, created = RalendarAccount.objects.update_or_create(
