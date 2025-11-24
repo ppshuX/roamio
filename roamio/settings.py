@@ -445,7 +445,7 @@ else:
 # ==================== QQ OAuth 配置 ====================
 QQ_APP_ID = os.getenv('QQ_APP_ID', '102813859')
 QQ_APP_KEY = os.getenv('QQ_APP_KEY', 'OddPvLYXHo69wTYO')
-QQ_REDIRECT_URI = os.getenv('QQ_REDIRECT_URI', 'https://app7508.acapp.acwing.com.cn/settings/qq/receive_code')
+QQ_REDIRECT_URI = os.getenv('QQ_REDIRECT_URI', 'https://roamio.cn/settings/qq/receive_code')
 QQ_AUTHORIZE_URL = 'https://graph.qq.com/oauth2.0/authorize'
 QQ_ACCESS_TOKEN_URL = 'https://graph.qq.com/oauth2.0/token'
 QQ_GET_USER_INFO_URL = 'https://graph.qq.com/oauth2.0/me'

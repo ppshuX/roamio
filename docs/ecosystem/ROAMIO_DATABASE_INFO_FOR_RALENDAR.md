@@ -86,7 +86,7 @@ class SocialAccount(models.Model):
 # Roamio QQ 应用信息
 QQ_APP_ID = '102813859'
 QQ_APP_KEY = 'OddPvLYXHo69wTYO'
-QQ_REDIRECT_URI = 'https://app7508.acapp.acwing.com.cn/api/v1/auth/qq/callback/'
+QQ_REDIRECT_URI = 'https://roamio.cn/api/v1/auth/qq/callback/'
 ```
 
 ---
@@ -211,7 +211,7 @@ ROAMIO_QQ_APP_KEY=OddPvLYXHo69wTYO
 
 # ==================== 服务器信息 ====================
 ROAMIO_SERVER_IP=47.121.137.60
-ROAMIO_DOMAIN=app7508.acapp.acwing.com.cn
+ROAMIO_DOMAIN=roamio.cn
 
 # ==================== Redis（可选）====================
 # 如果 Ralendar 需要共用 Redis
@@ -342,7 +342,7 @@ curl -H "Authorization: Bearer ROAMIO_TOKEN" \
 **Roamio 团队**
 - 负责人：ppshuX
 - QQ/邮箱：2064747320@qq.com
-- 服务器：app7508.acapp.acwing.com.cn
+- 服务器：roamio.cn
 
 **Ralendar 团队**
 - 负责人：ppshuX

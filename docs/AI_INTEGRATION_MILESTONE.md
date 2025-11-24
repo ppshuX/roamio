@@ -568,7 +568,7 @@ git push
 
 ```bash
 # 测试 AI API
-curl -X POST https://app7508.acapp.acwing.com.cn/api/v1/ai/generate-trip/ \
+curl -X POST https://roamio.cn/api/v1/ai/generate-trip/ \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{"prompt": "北京三日游", "preferences": {"days": 3}}'

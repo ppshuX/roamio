@@ -160,7 +160,7 @@ npm run build
 #### 7.1 后端 API 测试
 ```bash
 # 测试生成行程
-curl -X POST https://app7508.acapp.acwing.com.cn/api/v1/ai/generate-trip/ \
+curl -X POST https://roamio.cn/api/v1/ai/generate-trip/ \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -173,7 +173,7 @@ curl -X POST https://app7508.acapp.acwing.com.cn/api/v1/ai/generate-trip/ \
   }'
 
 # 测试使用统计
-curl -X GET https://app7508.acapp.acwing.com.cn/api/v1/ai/usage-stats/ \
+curl -X GET https://roamio.cn/api/v1/ai/usage-stats/ \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

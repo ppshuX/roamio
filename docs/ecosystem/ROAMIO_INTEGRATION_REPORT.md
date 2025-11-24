@@ -202,13 +202,13 @@ class RalendarIntegrationViewSet(ViewSet):
 
 ```bash
 # 服务器
-Domain: app7508.acapp.acwing.com.cn
+Domain: roamio.cn
 IP: 47.121.137.60
 
 # QQ OAuth
 APP_ID: 102813859
 APP_KEY: OddPvLYXHo69wTYO
-Redirect URI: https://app7508.acapp.acwing.com.cn/settings/qq/receive_code
+Redirect URI: https://roamio.cn/settings/qq/receive_code
 
 # 数据库
 Type: MySQL 8.0 (Aliyun RDS)
@@ -321,7 +321,7 @@ URL: https://app7626.acapp.acwing.com.cn/api/v1
 - **开发者**: ppshuX
 - **QQ**: 2064747320
 - **邮箱**: 2064747320@qq.com
-- **服务器**: app7508.acapp.acwing.com.cn (47.121.137.60)
+- **服务器**: roamio.cn (47.121.137.60)
 
 ### **可用时间**
 - **工作日**: 19:00 - 23:00

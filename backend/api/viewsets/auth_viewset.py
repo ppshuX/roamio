@@ -354,8 +354,25 @@ class AuthViewSet(viewsets.GenericViewSet):
         # 获取QQ用户信息
         qq_info = get_qq_user_info_by_code(code)
         if not qq_info.get('success'):
+            error_code = qq_info.get('error', 'unknown_error')
+            error_description = qq_info.get('error_description', 'QQ登录失败，请重试')
+            
+            # 记录详细错误信息
+            logger.error(f'QQ登录失败 - code: {code[:20] if code else None}..., error: {error_code}, description: {error_description}')
+            
+            # 根据错误类型提供更友好的错误信息
+            if error_code == 'invalid_grant' or '授权码' in error_description or 'code' in error_code.lower():
+                error_message = '授权码无效或已过期，请重新登录'
+            elif error_code == 'invalid_client':
+                error_message = 'QQ应用配置错误，请联系管理员'
+            elif error_code == 'redirect_uri_mismatch':
+                error_message = '回调地址配置不匹配，请联系管理员'
+            else:
+                error_message = error_description
+            
             return Response({
-                'error': qq_info.get('error_description', 'QQ登录失败，请重试')
+                'error': error_message,
+                'error_code': error_code
             }, status=status.HTTP_400_BAD_REQUEST)
         
         openid = qq_info.get('openid')

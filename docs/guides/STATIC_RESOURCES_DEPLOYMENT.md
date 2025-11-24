@@ -71,11 +71,11 @@ STATICFILES_DIRS = [
 ```nginx
 server {
     listen 443 ssl;
-    server_name app7508.acapp.acwing.com.cn;
+    server_name roamio.cn;
     
     # SSL 证书
-    ssl_certificate /etc/letsencrypt/live/app7508.acapp.acwing.com.cn/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/app7508.acapp.acwing.com.cn/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/roamio.cn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/roamio.cn/privkey.pem;
     
     # ==================== 前端静态文件 ====================
     location / {
@@ -167,15 +167,15 @@ def get_avatar_url(self):
         return '/static/images/default_avatar.png'
 
 # 邮件模板中
-<img src="https://app7508.acapp.acwing.com.cn/static/images/logo_Roamio.png">
+<img src="https://roamio.cn/static/images/logo_Roamio.png">
 ```
 
 ### **Ralendar 引用（未来）**
 
 ```kotlin
 // Android Kotlin 中
-val logoUrl = "https://app7508.acapp.acwing.com.cn/static/images/logo_Roamio.png"
-val ralendarLogoUrl = "https://app7508.acapp.acwing.com.cn/static/images/logo_Ralendar.png"
+val logoUrl = "https://roamio.cn/static/images/logo_Roamio.png"
+val ralendarLogoUrl = "https://roamio.cn/static/images/logo_Ralendar.png"
 
 // 使用 Glide 加载
 Glide.with(context)
@@ -222,8 +222,8 @@ ls ~/roamio/backend/static/images/
 ls ~/roamio/backend/static/audios/
 
 # 测试访问
-curl https://app7508.acapp.acwing.com.cn/static/images/logo_Roamio.png -I
-curl https://app7508.acapp.acwing.com.cn/static/audios/rain.mp3 -I
+curl https://roamio.cn/static/images/logo_Roamio.png -I
+curl https://roamio.cn/static/audios/rain.mp3 -I
 ```
 
 ---
@@ -320,8 +320,8 @@ python3 manage.py collectstatic --noinput
 
 ```kotlin
 // MainActivity.kt
-val roamioLogoUrl = "https://app7508.acapp.acwing.com.cn/static/images/logo_Roamio.png"
-val ralendarLogoUrl = "https://app7508.acapp.acwing.com.cn/static/images/logo_Ralendar.png"
+val roamioLogoUrl = "https://roamio.cn/static/images/logo_Roamio.png"
+val ralendarLogoUrl = "https://roamio.cn/static/images/logo_Ralendar.png"
 
 Glide.with(this)
     .load(roamioLogoUrl)
@@ -332,7 +332,7 @@ Glide.with(this)
 
 ```html
 <!-- index.html -->
-<link rel="icon" href="https://app7508.acapp.acwing.com.cn/static/images/favicon.png">
+<link rel="icon" href="https://roamio.cn/static/images/favicon.png">
 ```
 
 ---

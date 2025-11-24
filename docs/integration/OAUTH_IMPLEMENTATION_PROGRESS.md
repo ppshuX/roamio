@@ -203,7 +203,7 @@ RALENDAR_OAUTH_REDIRECT_URI=https://roamio.cn/auth/ralendar/callback
 
 - **技术规范**：`RALENDAR_OAUTH_INTEGRATION_SPEC.md` - 给 Ralendar 团队
 - **设置指南**：`OAUTH_SETUP_GUIDE.md` - 配置和使用说明
-- **自动创建方案**：`RALENDAR_USER_AUTO_CREATION.md` - 已废弃
+- **自动创建方案**：`RALENDAR_USER_AUTO_CREATION.md` - 历史文档（已采用 OAuth 2.0 方案）
 
 ---
 

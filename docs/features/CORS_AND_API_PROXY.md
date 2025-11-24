@@ -17,7 +17,7 @@
 
 ```
 Access to fetch at 'https://app7626.acapp.acwing.com.cn/api/v1/events/' 
-from origin 'https://app7508.acapp.acwing.com.cn' 
+from origin 'https://roamio.cn' 
 has been blocked by CORS policy: 
 Response to preflight request doesn't pass access control check: 
 No 'Access-Control-Allow-Origin' header is present on the requested resource.
@@ -39,8 +39,8 @@ No 'Access-Control-Allow-Origin' header is present on the requested resource.
 
 | URL 1 | URL 2 | 是否同源 | 原因 |
 |-------|-------|---------|------|
-| `https://app7508.acapp.acwing.com.cn` | `https://app7508.acapp.acwing.com.cn/api/` | ✅ 同源 | 协议、域名、端口完全相同 |
-| `https://app7508.acapp.acwing.com.cn` | `https://app7626.acapp.acwing.com.cn` | ❌ 跨域 | 域名不同 (7508 vs 7626) |
+| `https://roamio.cn` | `https://roamio.cn/api/` | ✅ 同源 | 协议、域名、端口完全相同 |
+| `https://roamio.cn` | `https://app7626.acapp.acwing.com.cn` | ❌ 跨域 | 域名不同 |
 | `https://example.com` | `http://example.com` | ❌ 跨域 | 协议不同 (https vs http) |
 | `https://example.com:443` | `https://example.com:8080` | ❌ 跨域 | 端口不同 (443 vs 8080) |
 
@@ -51,7 +51,7 @@ No 'Access-Control-Allow-Origin' header is present on the requested resource.
 ### Roamio 和 Ralendar 的情况
 
 ```
-Roamio 前端:  https://app7508.acapp.acwing.com.cn
+Roamio 前端:  https://roamio.cn
 Ralendar API: https://app7626.acapp.acwing.com.cn
 
 域名不同 → 跨域请求 → 被 CORS 阻止 ❌
@@ -62,12 +62,12 @@ Ralendar API: https://app7626.acapp.acwing.com.cn
 1. **浏览器发送 Preflight 请求**（OPTIONS 方法）
    ```
    OPTIONS https://app7626.acapp.acwing.com.cn/api/v1/events/
-   Origin: https://app7508.acapp.acwing.com.cn
+   Origin: https://roamio.cn
    ```
 
 2. **服务器需要返回允许的源**
    ```
-   Access-Control-Allow-Origin: https://app7508.acapp.acwing.com.cn
+   Access-Control-Allow-Origin: https://roamio.cn
    Access-Control-Allow-Methods: GET, POST, PUT, DELETE
    Access-Control-Allow-Headers: Authorization, Content-Type
    ```
@@ -272,7 +272,7 @@ class RalendarClient:
 ### 为什么前端 fetch 不行？
 
 1. **浏览器安全策略**：CORS 是浏览器强制执行的安全机制
-2. **跨域限制**：Roamio (app7508) 和 Ralendar (app7626) 是不同的域
+2. **跨域限制**：Roamio (roamio.cn) 和 Ralendar (app7626.acapp.acwing.com.cn) 是不同的域
 3. **Preflight 检查失败**：Ralendar 没有返回允许 Roamio 访问的 CORS 头
 
 ### 为什么要用后端代理？

@@ -12,9 +12,7 @@ docs/
 ├── README.md                    # 📖 文档中心首页（本文件）
 │
 ├── api/                         # 🔌 API 相关文档
-│   ├── ECOSYSTEM_API_DOCUMENTATION.md  # ⭐ 完整 API 文档（Roamio + Ralendar）
-│   ├── API_STANDARDS.md         # 统一 API 规范
-│   └── RALENDAR_API_CONFIG.md   # Ralendar API 配置指南
+│   └── ECOSYSTEM_API_DOCUMENTATION.md  # ⭐ 完整 API 文档（Roamio + Ralendar）
 │
 ├── architecture/                # 🏗️ 架构设计文档
 │   ├── ARCHITECTURE_ANALYSIS.md # 架构分析报告
@@ -22,17 +20,46 @@ docs/
 │
 ├── guides/                      # 📖 开发指南
 │   ├── TENCENT_COS_SETUP.md    # 腾讯云 COS 配置指南
-│   └── TRIP_SHARING_GUIDE.md   # 旅行分享功能指南
+│   ├── TRIP_SHARING_GUIDE.md   # 旅行分享功能指南
+│   └── STATIC_RESOURCES_DEPLOYMENT.md  # 静态资源部署指南
+│
+├── integration/                 # 🔗 集成文档
+│   ├── RALENDAR_OAUTH_INTEGRATION_SPEC.md  # Ralendar OAuth 集成规范
+│   ├── RALENDAR_OAUTH_CONFIGURATION.md     # Ralendar OAuth 配置
+│   ├── OAUTH_IMPLEMENTATION_SUMMARY.md     # OAuth 实现总结
+│   ├── OAUTH_SETUP_GUIDE.md                # OAuth 设置指南
+│   ├── ENV_CONFIG_CHECKLIST.md             # 环境配置检查清单
+│   ├── RALENDAR_USER_AUTO_CREATION.md      # Ralendar 用户自动创建
+│   └── RALENDAR_EMAIL_CHECK_API.md         # Ralendar 邮箱检查 API
+│
+├── features/                    # ✨ 功能文档
+│   ├── RALENDAR_INTEGRATION.md # Ralendar 集成功能
+│   ├── AI_CALENDAR_INTEGRATION_DISCUSSION.md  # AI 日历集成讨论
+│   ├── AI_CALENDAR_SYNC_FLOW.md             # AI 日历同步流程
+│   ├── AI_CALENDAR_SYNC_REFINED.md          # AI 日历同步优化
+│   └── CORS_AND_API_PROXY.md                # CORS 和 API 代理
 │
 ├── summaries/                   # 📝 工作总结
-│   ├── DAILY_SUMMARY_2025_11_07.md  # 每日工作总结
-│   ├── CLEANUP_SUMMARY.md           # 项目清理总结
+│   ├── DAILY_SUMMARY_20251113.md  # 每日工作总结
 │   └── PROJECT_STATUS.md            # 项目状态报告
 │
-└── ecosystem/                   # 🌍 生态系统文档
-    ├── ECOSYSTEM_OVERVIEW.md    # 生态系统概览
-    ├── RALENDAR_INTEGRATION.md  # Ralendar 融合计划
-    └── BUSINESS_PLAN.md         # 商业计划摘要
+├── ecosystem/                   # 🌍 生态系统文档
+│   ├── ECOSYSTEM_OVERVIEW.md    # 生态系统概览
+│   ├── INTEGRATION_CHECKLIST.md  # 集成检查清单
+│   ├── INTEGRATION_TEST_GUIDE.md # 集成测试指南
+│   ├── ROAMIO_INTEGRATION_REPORT.md  # Roamio 集成报告
+│   ├── ROAMIO_RESPONSE_TO_RALENDAR.md      # Roamio 对 Ralendar 的回复
+│   └── ROAMIO_DATABASE_INFO_FOR_RALENDAR.md  # Roamio 数据库信息
+│
+└── AI 相关文档/                 # 🤖 AI 功能文档
+    ├── AI_TRIP_PLANNER.md       # AI 旅行规划完整方案
+    ├── AI_ROADMAP.md            # AI 功能路线图
+    ├── AI_INTEGRATION_MILESTONE.md  # AI 集成里程碑
+    ├── AI_MVP_SUMMARY.md        # AI MVP 总结
+    ├── AI_MVP_DEPLOYMENT.md     # AI MVP 部署指南
+    ├── AI_DEPLOYMENT_CHECKLIST.md  # AI 部署检查清单
+    ├── AI_PHASE2_RAG_PLAN.md    # AI Phase 2 RAG 计划
+    └── SECURITY_CHECKLIST.md    # 安全检查清单
 ```
 
 ---
@@ -43,34 +70,13 @@ docs/
 **Roamio 生态系统完整 API 文档**
 
 这是 **最重要** 的 API 参考文档（2185 行），涵盖：
-- **Roamio API**：30+ 个端点（认证、用户、旅行、评论）
+- **Roamio API**：30+ 个端点（认证、用户、旅行、评论、AI、Ralendar）
 - **Ralendar API**：20+ 个端点（认证、日程、日历、农历）
 - **融合接口**：跨项目调用、数据同步
 - **技术实现**：代码示例、部署配置、最佳实践
 - **数据模型**：完整的数据库关系图
 
 **适用范围**: Roamio + Ralendar 完整生态
-
-### [API_STANDARDS.md](api/API_STANDARDS.md)
-**统一 API 规范**
-
-详细定义了 Roamio 生态系统的 API 规范，包括：
-- RESTful 设计原则
-- URL 命名规范
-- 请求/响应格式
-- 认证方式（JWT）
-- 错误码系统（1xxx-9xxx）
-- 版本管理策略
-
-**适用范围**: Roamio + Ralendar + Rote + Rapture
-
-### [RALENDAR_API_CONFIG.md](api/RALENDAR_API_CONFIG.md)
-**Ralendar API 配置指南**
-
-为 Ralendar 项目配置 API 文档系统的详细步骤：
-- drf-spectacular 安装和配置
-- API 文档路由设置
-- 与 Roamio 保持一致的配置
 
 ---
 
@@ -113,29 +119,95 @@ docs/
 
 旅行内容分享功能的使用说明：
 - 分享链接生成
-- 社交媒体集成
+- URL 格式说明
 - 权限控制
+
+### [STATIC_RESOURCES_DEPLOYMENT.md](guides/STATIC_RESOURCES_DEPLOYMENT.md)
+**静态资源部署指南**
+
+静态资源（图片、音频、视频）的部署和管理：
+- Nginx 配置
+- CDN 加速
+- 跨项目共享资源
+
+---
+
+## 🔗 集成文档
+
+### [RALENDAR_OAUTH_INTEGRATION_SPEC.md](integration/RALENDAR_OAUTH_INTEGRATION_SPEC.md) ⭐
+**Ralendar OAuth 集成技术规范**
+
+详细的 OAuth 2.0 集成规范：
+- OAuth 2.0 授权码流程
+- API 详细设计
+- 数据模型
+- 安全规范
+- 测试场景
+
+### [RALENDAR_OAUTH_CONFIGURATION.md](integration/RALENDAR_OAUTH_CONFIGURATION.md)
+**Ralendar OAuth 配置指南**
+
+Ralendar OAuth 的配置步骤：
+- 环境变量配置
+- 客户端注册
+- 回调地址设置
+
+### [OAUTH_IMPLEMENTATION_SUMMARY.md](integration/OAUTH_IMPLEMENTATION_SUMMARY.md)
+**OAuth 实现总结**
+
+OAuth 集成的实现总结和最佳实践。
+
+---
+
+## ✨ 功能文档
+
+### [RALENDAR_INTEGRATION.md](features/RALENDAR_INTEGRATION.md)
+**Ralendar 集成功能**
+
+Ralendar 与 Roamio 的功能集成：
+- 日历同步
+- 事件管理
+- 数据互通
+
+### [CORS_AND_API_PROXY.md](features/CORS_AND_API_PROXY.md)
+**CORS 和 API 代理**
+
+跨域资源共享和 API 代理的配置说明。
+
+---
+
+## 🤖 AI 功能文档
+
+### [AI_TRIP_PLANNER.md](AI_TRIP_PLANNER.md) ⭐
+**AI 旅行规划完整方案**
+
+AI 旅行规划功能的完整技术方案：
+- 功能定位和核心价值
+- 技术方案（通义千问集成）
+- 实施计划
+- 成本分析
+
+### [AI_ROADMAP.md](AI_ROADMAP.md)
+**AI 功能路线图**
+
+AI 功能的三阶段实施计划：
+- Phase 1: MVP 基础版（已完成）
+- Phase 2: RAG 增强版（规划中）
+- Phase 3: 智能化（未来）
+
+### [AI_INTEGRATION_MILESTONE.md](AI_INTEGRATION_MILESTONE.md)
+**AI 集成里程碑**
+
+AI 功能集成的里程碑记录和总结。
+
+### [AI_MVP_DEPLOYMENT.md](AI_MVP_DEPLOYMENT.md)
+**AI MVP 部署指南**
+
+AI MVP 功能的部署步骤和测试方法。
 
 ---
 
 ## 📝 工作总结
-
-### [DAILY_SUMMARY_2025_11_07.md](summaries/DAILY_SUMMARY_2025_11_07.md)
-**2025-11-07 工作总结**
-
-记录了当天完成的所有工作：
-- 架构重构（trips → backend）
-- 用户中心功能优化
-- 用户资料卡片开发
-- 项目清理
-
-### [CLEANUP_SUMMARY.md](summaries/CLEANUP_SUMMARY.md)
-**项目清理总结**
-
-记录了项目清理的详细内容：
-- 删除的过期文档
-- 删除的临时文件
-- 保留的核心文档
 
 ### [PROJECT_STATUS.md](summaries/PROJECT_STATUS.md)
 **项目状态报告**
@@ -145,6 +217,11 @@ docs/
 - 正在开发功能
 - 待开发功能
 - 技术债务
+
+### [DAILY_SUMMARY_20251113.md](summaries/DAILY_SUMMARY_20251113.md)
+**2025-11-13 工作总结**
+
+记录了当天完成的所有工作。
 
 ---
 
@@ -159,23 +236,10 @@ Roamio 生态系统的整体规划：
 - 统一用户体系
 - 数据互通方案
 
-### [RALENDAR_INTEGRATION.md](ecosystem/RALENDAR_INTEGRATION.md)
-**Ralendar 融合计划**
+### [INTEGRATION_CHECKLIST.md](ecosystem/INTEGRATION_CHECKLIST.md)
+**集成检查清单**
 
-详细的 Ralendar 与 Roamio 融合方案：
-- 数据库设计
-- API 对接
-- 功能联动
-- 前端集成
-
-### [BUSINESS_PLAN.md](ecosystem/BUSINESS_PLAN.md)
-**商业计划摘要**
-
-项目的商业价值和融资计划：
-- 市场分析
-- 产品定位
-- 盈利模式
-- 融资规划
+Roamio 与 Ralendar 集成的检查清单和测试步骤。
 
 ---
 
@@ -185,21 +249,22 @@ Roamio 生态系统的整体规划：
 
 | 主题 | 文档 |
 |------|------|
-| API 开发 | [API_STANDARDS.md](api/API_STANDARDS.md) |
+| API 开发 | [ECOSYSTEM_API_DOCUMENTATION.md](api/ECOSYSTEM_API_DOCUMENTATION.md) |
 | 架构设计 | [ARCHITECTURE_ANALYSIS.md](architecture/ARCHITECTURE_ANALYSIS.md) |
 | 部署运维 | [TENCENT_COS_SETUP.md](guides/TENCENT_COS_SETUP.md) |
-| 生态融合 | [RALENDAR_INTEGRATION.md](ecosystem/RALENDAR_INTEGRATION.md) |
+| OAuth 集成 | [RALENDAR_OAUTH_INTEGRATION_SPEC.md](integration/RALENDAR_OAUTH_INTEGRATION_SPEC.md) |
+| AI 功能 | [AI_TRIP_PLANNER.md](AI_TRIP_PLANNER.md) |
 | 项目状态 | [PROJECT_STATUS.md](summaries/PROJECT_STATUS.md) |
 
 ### 按角色查找
 
 | 角色 | 推荐文档 |
 |------|----------|
-| 后端开发 | API_STANDARDS, ARCHITECTURE_ANALYSIS |
-| 前端开发 | TRIP_SHARING_GUIDE, API_STANDARDS |
-| 运维工程师 | TENCENT_COS_SETUP, ARCHITECTURE_ANALYSIS |
-| 产品经理 | PROJECT_EVALUATION, ECOSYSTEM_OVERVIEW |
-| 投资人 | BUSINESS_PLAN, PROJECT_EVALUATION |
+| 后端开发 | ECOSYSTEM_API_DOCUMENTATION, ARCHITECTURE_ANALYSIS, RALENDAR_OAUTH_INTEGRATION_SPEC |
+| 前端开发 | TRIP_SHARING_GUIDE, CORS_AND_API_PROXY |
+| 运维工程师 | TENCENT_COS_SETUP, STATIC_RESOURCES_DEPLOYMENT, AI_MVP_DEPLOYMENT |
+| 产品经理 | PROJECT_EVALUATION, ECOSYSTEM_OVERVIEW, AI_ROADMAP |
+| 投资人 | PROJECT_EVALUATION, ECOSYSTEM_OVERVIEW |
 
 ---
 
@@ -232,7 +297,7 @@ Roamio 生态系统的整体规划：
 
 如需添加新文档：
 
-1. 确定文档类型（api/architecture/guides/summaries/ecosystem）
+1. 确定文档类型（api/architecture/guides/integration/features/summaries/ecosystem）
 2. 在对应目录创建文档
 3. 更新本 README 的索引
 4. 提交 Git commit
@@ -243,12 +308,12 @@ Roamio 生态系统的整体规划：
 
 如有疑问或建议，请联系：
 
-- **邮箱**: 2064747320@qq.com
-- **GitHub**: Roamio 项目
+- **项目地址**: https://github.com/ppshuX/roamio
+- **在线演示**: https://roamio.cn/
+- **问题反馈**: [GitHub Issues](https://github.com/ppshuX/roamio/issues)
 
 ---
 
-**最后更新**: 2025-11-07  
+**最后更新**: 2025-11-17  
 **维护者**: Roamio Team  
-**文档版本**: v1.0.0
-
+**文档版本**: v2.0.0

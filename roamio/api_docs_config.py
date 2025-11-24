@@ -36,7 +36,7 @@ SPECTACULAR_SETTINGS = {
     当前版本: **v1**
     
     ## 🌐 多端支持
-    - Web 端: https://app7508.acapp.acwing.com.cn
+    - Web 端: https://roamio.cn
     - 小程序端: 开发中
     - Android 端: 开发中
     

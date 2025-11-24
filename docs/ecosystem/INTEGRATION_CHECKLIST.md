@@ -299,7 +299,7 @@ LIMIT 5;
 
 ```bash
 # 1. 在 Roamio 登录，获取 Token
-curl -X POST https://app7508.acapp.acwing.com.cn/api/v1/auth/login/ \
+curl -X POST https://roamio.cn/api/v1/auth/login/ \
   -H "Content-Type: application/json" \
   -d '{"username": "your_username", "password": "your_password"}'
 
@@ -439,7 +439,7 @@ python3 manage.py shell
 
 ### **测试 1: QQ 登录 + UnionID**
 
-1. 访问 Roamio: `https://app7508.acapp.acwing.com.cn`
+1. 访问 Roamio: `https://roamio.cn`
 2. 退出当前登录
 3. 点击"QQ 一键登录"
 4. 完成 QQ 授权
@@ -487,7 +487,7 @@ curl -X GET https://app7626.acapp.acwing.com.cn/api/v1/events/ \
 
 ### **Roamio 团队**
 - **开发者**: ppshuX
-- **服务器**: app7508.acapp.acwing.com.cn (47.121.137.60)
+- **服务器**: roamio.cn (47.121.137.60)
 - **QQ**: 2064747320
 
 ### **Ralendar 团队**

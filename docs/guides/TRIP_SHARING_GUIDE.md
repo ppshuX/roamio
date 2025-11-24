@@ -7,19 +7,19 @@
 当前项目使用 **Vue Router History模式**，URL格式应该是：
 
 ```
-https://app7508.acapp.acwing.com.cn/trip/{slug}/
+https://roamio.cn/trip/{slug}/
 ```
 
 **示例：**
 ```
-https://app7508.acapp.acwing.com.cn/trip/a1b2c3d4e5f6/
+https://roamio.cn/trip/a1b2c3d4e5f6/
 ```
 
 ### ❌ 错误的URL格式
 
 **不要使用带 `#` 的URL：**
 ```
-❌ https://app7508.acapp.acwing.com.cn/#/trip/a1b2c3d4e5f6/
+❌ https://roamio.cn/#/trip/a1b2c3d4e5f6/
 ```
 
 这种格式**不会工作**，因为项目使用的是History模式，不是Hash模式。
@@ -56,7 +56,7 @@ re_path(r'^(?!admin|api|static|media|trips|accounts).*$', views.vue_app)
 
 1. 创建旅行并设置为**公开**
 2. 点击"查看"进入旅行详情页
-3. 浏览器地址栏显示：`https://app7508.acapp.acwing.com.cn/trip/a1b2c3d4e5f6/`
+3. 浏览器地址栏显示：`https://roamio.cn/trip/a1b2c3d4e5f6/`
 4. 直接复制这个URL即可分享
 
 ### 方法2：在"我的旅行"页面查看
@@ -96,7 +96,7 @@ re_path(r'^(?!admin|api|static|media|trips|accounts).*$', views.vue_app)
 3. **获取分享链接**
    - 点击"查看"按钮
    - 复制浏览器地址栏中的URL
-   - 格式：`https://app7508.acapp.acwing.com.cn/trip/{slug}/`
+   - 格式：`https://roamio.cn/trip/{slug}/`
 
 4. **分享链接**
    - 通过微信、QQ、邮件等分享
@@ -133,7 +133,7 @@ re_path(r'^(?!admin|api|static|media|trips|accounts).*$', views.vue_app)
 
 1. **在新浏览器窗口（或隐私模式）中打开链接**
    ```
-   https://app7508.acapp.acwing.com.cn/trip/{slug}/
+   https://roamio.cn/trip/{slug}/
    ```
 
 2. **验证以下内容：**
@@ -168,5 +168,5 @@ re_path(r'^(?!admin|api|static|media|trips|accounts).*$', views.vue_app)
 
 ---
 
-**最后更新：** 2024年10月
+**最后更新：** 2025年11月
 
