@@ -10,6 +10,9 @@ media/user_avatars/
 backups/
 *.log
 
+# 大文件：音乐文件不应该提交到Git，应该使用CDN或对象存储
+public/music/*.mp3
+dist/music/*.mp3
 
 # local env files
 .env.local

@@ -51,10 +51,12 @@
         <!-- 视频 -->
         <div v-if="comment.video" class="mb-2 comment-media">
           <video
-            :src="comment.video"
+            ref="videoRef"
+            :src="shouldLoadVideo ? comment.video : null"
             controls
-            preload="metadata"
+            :preload="shouldLoadVideo ? 'metadata' : 'none'"
             class="rounded"
+            @loadstart="onVideoLoadStart"
           >
             您的浏览器不支持视频播放
           </video>
@@ -83,7 +85,7 @@
 </template>
 
 <script>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { DEFAULT_AVATAR_SVG } from '@/config/api'
 
 export default {
@@ -120,6 +122,52 @@ export default {
   
   setup(props, { emit }) {
     const localContent = ref(props.comment.content)
+    const videoRef = ref(null)
+    const shouldLoadVideo = ref(false)
+    let observer = null
+    
+    // 视频懒加载：使用 IntersectionObserver
+    onMounted(() => {
+      if (props.comment.video) {
+        // 等待 DOM 渲染完成
+        nextTick(() => {
+          if (videoRef.value) {
+            // 检查浏览器是否支持 IntersectionObserver
+            if ('IntersectionObserver' in window) {
+              observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                  if (entry.isIntersecting) {
+                    shouldLoadVideo.value = true
+                    // 加载后停止观察
+                    if (observer && videoRef.value) {
+                      observer.unobserve(videoRef.value)
+                    }
+                  }
+                })
+              }, {
+                rootMargin: '50px' // 提前50px开始加载
+              })
+              
+              observer.observe(videoRef.value)
+            } else {
+              // 不支持 IntersectionObserver 的浏览器，直接加载
+              shouldLoadVideo.value = true
+            }
+          }
+        })
+      }
+    })
+    
+    onUnmounted(() => {
+      if (observer && videoRef.value) {
+        observer.unobserve(videoRef.value)
+        observer = null
+      }
+    })
+    
+    const onVideoLoadStart = () => {
+      // 视频开始加载时的回调
+    }
     
     watch(() => props.comment.content, (newVal) => {
       localContent.value = newVal
@@ -156,7 +204,10 @@ export default {
       localContent,
       formatDate,
       handleAvatarError,
-      showUserProfile
+      showUserProfile,
+      videoRef,
+      shouldLoadVideo,
+      onVideoLoadStart
     }
   }
 }
