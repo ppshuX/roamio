@@ -129,7 +129,7 @@ DATABASES = {
 # 检查数据库配置
 if not DATABASES['default']['PASSWORD'] or not DATABASES['default']['HOST']:
     raise ValueError(
-        "❌ 数据库配置缺失！请设置环境变量：\n"
+        "❌ 数据库配置缺失！请在项目根目录创建 .env 文件，参考 .env.example：\n"
         "  DB_HOST=your-db-host\n"
         "  DB_PORT=your-db-port\n"
         "  DB_USER=your-db-user\n"
