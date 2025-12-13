@@ -97,3 +97,8 @@ dump.rdb
 
 # Cloud settings (local development only)
 cloud_settings/
+
+# Database backup scripts config (contains sensitive info)
+.roamio_db_config
+*_db_config
+*.db_config

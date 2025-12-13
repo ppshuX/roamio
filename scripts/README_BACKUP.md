@@ -54,11 +54,37 @@ mysql -h gz-cdb-k9ylziyr.sql.tencentcdb.com -P 23768 \
 
 ## 🔧 数据库配置信息
 
-- **主机**: `gz-cdb-k9ylziyr.sql.tencentcdb.com`
-- **端口**: `23768`
-- **数据库名**: `roamio_production`
-- **用户名**: `roamio_user`
-- **密码**: `Roamio@2025!Pass`（在 settings.py 中配置）
+**⚠️ 安全提示：** 数据库配置信息不应提交到 Git！
+
+配置信息需要从环境变量或配置文件中读取：
+
+### 方法1：使用环境变量
+
+```bash
+export DB_HOST='your-db-host'
+export DB_PORT='your-db-port'
+export DB_USER='your-db-user'
+export DB_PASSWORD='your-db-password'
+```
+
+### 方法2：创建配置文件（推荐）
+
+在服务器上创建 `~/.roamio_db_config` 文件：
+
+```bash
+# ~/.roamio_db_config
+DB_HOST='your-db-host'
+DB_PORT='your-db-port'
+DB_USER='your-db-user'
+DB_PASSWORD='your-db-password'
+```
+
+然后设置文件权限：
+```bash
+chmod 600 ~/.roamio_db_config  # 只有所有者可读写
+```
+
+**注意：** 配置文件不应提交到 Git，已在 `.gitignore` 中忽略。
 
 ---
 

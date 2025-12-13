@@ -1,15 +1,42 @@
 #!/bin/bash
 # 腾讯云 MySQL 数据库备份脚本
 # 使用方法: ./backup_database.sh
+# 
+# 配置说明：
+# 从环境变量读取数据库配置，如果没有设置则使用默认值
+# 建议在服务器上创建 ~/.roamio_db_config 文件并设置环境变量
 
 set -e
 
-# 配置信息（从 settings.py 获取）
-DB_HOST="gz-cdb-k9ylziyr.sql.tencentcdb.com"
-DB_PORT="23768"
-DB_NAME="roamio_production"
-DB_USER="roamio_user"
-DB_PASSWORD="Roamio@2025!Pass"
+# 从环境变量读取配置（如果存在配置文件则加载）
+if [ -f ~/.roamio_db_config ]; then
+    source ~/.roamio_db_config
+fi
+
+# 配置信息（从环境变量读取，如果没有则提示错误）
+DB_HOST="${DB_HOST:-}"
+DB_PORT="${DB_PORT:-}"
+DB_NAME="${DB_NAME:-roamio_production}"
+DB_USER="${DB_USER:-}"
+DB_PASSWORD="${DB_PASSWORD:-}"
+
+# 检查必要的配置
+if [ -z "$DB_HOST" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ]; then
+    echo "❌ 错误: 缺少数据库配置信息"
+    echo ""
+    echo "请设置环境变量或创建 ~/.roamio_db_config 文件："
+    echo "  export DB_HOST='your-db-host'"
+    echo "  export DB_PORT='your-db-port'"
+    echo "  export DB_USER='your-db-user'"
+    echo "  export DB_PASSWORD='your-db-password'"
+    echo ""
+    echo "或者创建 ~/.roamio_db_config 文件："
+    echo "  DB_HOST='your-db-host'"
+    echo "  DB_PORT='your-db-port'"
+    echo "  DB_USER='your-db-user'"
+    echo "  DB_PASSWORD='your-db-password'"
+    exit 1
+fi
 
 # 备份目录
 BACKUP_DIR="/backup/roamio_db"
