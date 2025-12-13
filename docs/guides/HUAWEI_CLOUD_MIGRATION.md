@@ -4,10 +4,9 @@
 
 **当前配置：**
 - 云服务商：腾讯云 MySQL
-- 实例ID：`cdb-k9ylziyr`
-- 地址：`gz-cdb-k9ylziyr.sql.tencentcdb.com:23768`
 - 数据库：`roamio_production`
 - 到期时间：2025-12-08
+- ⚠️ 连接信息从环境变量读取，不在此文档中
 
 **目标配置：**
 - 云服务商：华为云 RDS for MySQL
