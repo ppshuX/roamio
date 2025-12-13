@@ -58,10 +58,8 @@ echo ""
 echo "⏳ 正在备份数据库..."
 mysqldump -h ${DB_HOST} -P ${DB_PORT} -u ${DB_USER} -p${DB_PASSWORD} \
     --single-transaction \
-    --routines \
-    --triggers \
-    --events \
     --no-tablespaces \
+    --skip-lock-tables \
     ${DB_NAME} > ${BACKUP_FILE}
 
 # 压缩备份文件
