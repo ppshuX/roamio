@@ -45,8 +45,8 @@
    -- 创建数据库
    CREATE DATABASE roamio_production CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
    
-   -- 创建用户
-   CREATE USER 'roamio_user'@'%' IDENTIFIED BY 'Roamio@2025!Pass';
+   -- 创建用户（请使用强密码）
+   CREATE USER 'roamio_user'@'%' IDENTIFIED BY 'your_strong_password_here';
    GRANT ALL PRIVILEGES ON roamio_production.* TO 'roamio_user'@'%';
    FLUSH PRIVILEGES;
    ```
@@ -97,7 +97,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'roamio_production',
         'USER': 'roamio_user',
-        'PASSWORD': 'Roamio@2025!Pass',
+        'PASSWORD': 'your_strong_password_here',  # ⚠️ 请使用强密码
         'HOST': '<华为云RDS地址>',  # ⭐ 华为云 RDS 地址
         'PORT': '<端口>',  # 通常是 3306
         'OPTIONS': {
