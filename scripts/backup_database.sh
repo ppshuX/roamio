@@ -61,6 +61,7 @@ mysqldump -h ${DB_HOST} -P ${DB_PORT} -u ${DB_USER} -p${DB_PASSWORD} \
     --routines \
     --triggers \
     --events \
+    --no-tablespaces \
     ${DB_NAME} > ${BACKUP_FILE}
 
 # 压缩备份文件
