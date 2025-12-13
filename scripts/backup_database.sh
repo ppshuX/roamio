@@ -11,8 +11,8 @@ DB_NAME="roamio_production"
 DB_USER="roamio_user"
 DB_PASSWORD="Roamio@2025!Pass"
 
-# 备份目录（使用用户目录，避免权限问题）
-BACKUP_DIR="${HOME}/backup/roamio_db"
+# 备份目录
+BACKUP_DIR="/backup/roamio_db"
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="${BACKUP_DIR}/roamio_backup_${DATE}.sql"
 
