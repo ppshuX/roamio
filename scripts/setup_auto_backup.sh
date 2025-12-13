@@ -20,7 +20,9 @@ fi
 chmod +x ${BACKUP_SCRIPT}
 
 # 添加 crontab 任务（每天凌晨2点备份）
-CRON_JOB="0 2 * * * ${BACKUP_SCRIPT} >> /var/log/roamio_backup.log 2>&1"
+# 使用用户目录下的日志文件，避免权限问题
+BACKUP_LOG="${HOME}/backup/roamio_db/backup.log"
+CRON_JOB="0 2 * * * ${BACKUP_SCRIPT} >> ${BACKUP_LOG} 2>&1"
 
 # 检查是否已存在
 if crontab -l 2>/dev/null | grep -q "${BACKUP_SCRIPT}"; then
@@ -43,8 +45,8 @@ echo "✅ 设置完成！"
 echo "====================================="
 echo ""
 echo "💡 提示："
-echo "1. 备份文件保存在: /backup/roamio_db/"
-echo "2. 备份日志保存在: /var/log/roamio_backup.log"
+echo "1. 备份文件保存在: ~/backup/roamio_db/"
+echo "2. 备份日志保存在: ~/backup/roamio_db/backup.log"
 echo "3. 自动保留最近7天的备份"
 echo ""
 

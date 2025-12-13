@@ -25,7 +25,7 @@ cd ~/roamio
 ./scripts/backup_database.sh
 ```
 
-备份文件将保存在：`/backup/roamio_db/roamio_backup_YYYYMMDD_HHMMSS.sql.gz`
+备份文件将保存在：`~/backup/roamio_db/roamio_backup_YYYYMMDD_HHMMSS.sql.gz`
 
 ### 2. 设置自动备份
 
@@ -42,12 +42,12 @@ cd ~/roamio
 
 ```bash
 # 解压备份文件
-gunzip /backup/roamio_db/roamio_backup_20251208_020000.sql.gz
+gunzip ~/backup/roamio_db/roamio_backup_20251208_020000.sql.gz
 
 # 恢复数据库
 mysql -h gz-cdb-k9ylziyr.sql.tencentcdb.com -P 23768 \
       -u roamio_user -p \
-      roamio_production < /backup/roamio_db/roamio_backup_20251208_020000.sql
+      roamio_production < ~/backup/roamio_db/roamio_backup_20251208_020000.sql
 ```
 
 ---
@@ -67,6 +67,7 @@ mysql -h gz-cdb-k9ylziyr.sql.tencentcdb.com -P 23768 \
 - 备份文件会自动压缩（.sql.gz 格式）
 - 自动保留最近7天的备份
 - 旧备份会自动清理
+- 备份目录：`~/backup/roamio_db/`（用户目录下，无需 root 权限）
 
 ---
 
