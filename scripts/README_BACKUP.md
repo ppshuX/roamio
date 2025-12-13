@@ -44,8 +44,8 @@ cd ~/roamio
 # 解压备份文件
 gunzip /backup/roamio_db/roamio_backup_20251208_020000.sql.gz
 
-# 恢复数据库
-mysql -h gz-cdb-k9ylziyr.sql.tencentcdb.com -P 23768 \
+# 恢复数据库（替换为实际的数据库地址）
+mysql -h <your-db-host> -P <your-db-port> \
       -u roamio_user -p \
       roamio_production < /backup/roamio_db/roamio_backup_20251208_020000.sql
 ```
