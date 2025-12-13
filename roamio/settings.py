@@ -116,26 +116,15 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.getenv('DB_NAME', 'roamio_production'),
         'USER': os.getenv('DB_USER', 'roamio_user'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),  # ⚠️ 从环境变量读取，不要硬编码！
-        'HOST': os.getenv('DB_HOST', ''),  # ⚠️ 从环境变量读取
-        'PORT': os.getenv('DB_PORT', '3306'),  # ⚠️ 从环境变量读取
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT', '3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         }
     }
 }
-
-# 检查数据库配置
-if not DATABASES['default']['PASSWORD'] or not DATABASES['default']['HOST']:
-    raise ValueError(
-        "❌ 数据库配置缺失！请在项目根目录创建 .env 文件，参考 .env.example：\n"
-        "  DB_HOST=your-db-host\n"
-        "  DB_PORT=your-db-port\n"
-        "  DB_USER=your-db-user\n"
-        "  DB_PASSWORD=your-db-password\n"
-        "  DB_NAME=roamio_production\n"
-    )
 
 # 旧的 SQLite 配置（已废弃）
 # DATABASES = {
