@@ -30,7 +30,7 @@ DB_PASSWORD=Ralendar@2025!Pass
 
 # Roamio 管理账号（完整权限）
 ADMIN_USER=roamio_user
-ADMIN_PASSWORD=your_strong_password_here  # ⚠️ 请使用强密码
+ADMIN_PASSWORD=Roamio@2025!Pass
 ```
 
 ### Django SECRET_KEY
@@ -46,8 +46,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'roamio_production',
         'USER': 'roamio_user',
-        'PASSWORD': 'your_strong_password_here',  # ⚠️ 请使用强密码
-        'HOST': 'your-db-host-here',
+        'PASSWORD': 'Roamio@2025!Pass',
+        'HOST': 'rm-wz91m3g4wa6io3dfi8o.mysql.rds.aliyuncs.com',
         'PORT': '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
@@ -241,7 +241,7 @@ print(new_secret)
 建议密码格式：
 - 长度：至少 16 位
 - 包含：大小写字母、数字、特殊字符
-- 示例：YourApp@2025!SecureDB#Pass（请使用自己的强密码）
+- 示例：Roamio@2025!SecureDB#Pass
 ```
 
 ### 3. 定期备份

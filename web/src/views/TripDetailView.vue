@@ -400,16 +400,8 @@ export default {
     }
     
     // 更新评论
-    const handleUpdateComment = async (payload) => {
+    const handleUpdateComment = async (commentId, content) => {
       try {
-        // payload 格式: { commentId, content }
-        const { commentId, content } = payload
-        
-        if (!commentId || !content) {
-          console.error('更新评论失败: 缺少必要参数', payload)
-          return
-        }
-        
         await updateComment(commentId, { content })
         await fetchComments()
       } catch (error) {
