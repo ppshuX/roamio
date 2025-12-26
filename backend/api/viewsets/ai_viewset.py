@@ -119,14 +119,17 @@ class AIAssistantViewSet(viewsets.ViewSet):
             
         except AIFormatError as e:
             # 特殊处理：携带原始内容片段，便于管理员调试
-            logger.error(f"AI format error: {e}. Raw snippet: {getattr(e, 'raw_content', '')}")
+            raw_content = getattr(e, 'raw_content', '')
+            logger.error(f"AI format error: {e}. Raw snippet length: {len(raw_content) if raw_content else 0}")
+            logger.error(f"Raw content preview: {raw_content[:500] if raw_content else 'None'}")
+            
             resp = {
                 'code': 400,
-                'message': "AI 返回格式错误，请重试"
+                'message': "AI 返回格式错误，可能是生成内容过长导致。请尝试减少天数或简化需求，然后重试"
             }
             # 仅对管理员返回调试字段，避免普通用户看到冗长内容
             if getattr(request.user, 'is_staff', False):
-                resp['debug_raw'] = getattr(e, 'raw_content', None)
+                resp['debug_raw'] = raw_content
             return Response(resp, status=status.HTTP_400_BAD_REQUEST)
         except ValueError as e:
             logger.error(f"AI generation validation error: {e}")

@@ -42,7 +42,7 @@ class TripPlannerAI:
             self.enabled = False
         
         # 配置参数
-        self.max_tokens = int(os.getenv('AI_MAX_TOKENS', '4000'))
+        self.max_tokens = int(os.getenv('AI_MAX_TOKENS', '8000'))  # 增加到 8000，支持更详细的行程
         self.temperature = float(os.getenv('AI_TEMPERATURE', '0.7'))
         
         # 统计信息
@@ -189,12 +189,20 @@ class TripPlannerAI:
             # 不记录详细异常，避免日志过长；最终会在下面统一记录一段原始内容
             pass
         
-        # 仍然失败，记录一小段原始内容方便排查
-        raw_snippet = text[:1000]
+        # 仍然失败，记录原始内容方便排查
+        # 保存更多内容（前2000字符）以便调试
+        raw_snippet = text[:2000]
         logger.error(
-            "AI response is not valid JSON. Raw snippet: %s",
-            raw_snippet
+            "AI response is not valid JSON. Content length: %d, Preview (first 500 chars): %s",
+            len(text),
+            text[:500]
         )
+        # 检查是否是内容被截断（没有闭合的 JSON）
+        if text.count('{') > text.count('}'):
+            logger.warning("JSON appears to be truncated (unclosed braces)")
+        if text.count('[') > text.count(']'):
+            logger.warning("JSON appears to be truncated (unclosed brackets)")
+        
         # 抛出自定义异常，方便上层在管理员用户下返回调试信息
         raise AIFormatError("AI 返回格式错误，请重试", raw_content=raw_snippet)
     
