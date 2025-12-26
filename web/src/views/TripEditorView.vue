@@ -263,9 +263,17 @@ export default {
       
       saving.value = true
       try {
+        // 确保 budget 结构正确
+        if (!tripData.value.overview.budget) {
+          tripData.value.overview.budget = { items: [], total: 0 }
+        }
+        if (!Array.isArray(tripData.value.overview.budget.items)) {
+          tripData.value.overview.budget.items = []
+        }
+        
         // 计算预算总计
         tripData.value.overview.budget.total = tripData.value.overview.budget.items.reduce(
-          (sum, item) => sum + (item.amount || 0), 0
+          (sum, item) => sum + (parseFloat(item.amount) || 0), 0
         )
         
         if (isEditMode.value) {
@@ -279,7 +287,25 @@ export default {
       } catch (error) {
         console.error('❌ 保存失败:', error)
         console.error('错误详情:', error.response?.data)
-        alert('保存失败：' + (error.response?.data?.detail || error.message))
+        
+        // 显示更详细的错误信息
+        let errorMsg = '保存失败'
+        if (error.response?.data) {
+          const data = error.response.data
+          if (data.detail) {
+            errorMsg += ': ' + data.detail
+          } else if (typeof data === 'object') {
+            // 处理字段级别的错误
+            const fieldErrors = Object.entries(data)
+              .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
+              .join('\n')
+            errorMsg += ':\n' + fieldErrors
+          }
+        } else if (error.message) {
+          errorMsg += ': ' + error.message
+        }
+        
+        alert(errorMsg)
       } finally {
         saving.value = false
       }
@@ -303,8 +329,18 @@ export default {
       publishing.value = true
       try {
         tripData.value.status = 'published'
+        
+        // 确保 budget 结构正确
+        if (!tripData.value.overview.budget) {
+          tripData.value.overview.budget = { items: [], total: 0 }
+        }
+        if (!Array.isArray(tripData.value.overview.budget.items)) {
+          tripData.value.overview.budget.items = []
+        }
+        
+        // 计算预算总计
         tripData.value.overview.budget.total = tripData.value.overview.budget.items.reduce(
-          (sum, item) => sum + (item.amount || 0), 0
+          (sum, item) => sum + (parseFloat(item.amount) || 0), 0
         )
         
         let tripSlug = null
@@ -328,7 +364,25 @@ export default {
       } catch (error) {
         console.error('❌ 发布失败:', error)
         console.error('错误详情:', error.response?.data)
-        alert('发布失败：' + (error.response?.data?.detail || error.message))
+        
+        // 显示更详细的错误信息
+        let errorMsg = '发布失败'
+        if (error.response?.data) {
+          const data = error.response.data
+          if (data.detail) {
+            errorMsg += ': ' + data.detail
+          } else if (typeof data === 'object') {
+            // 处理字段级别的错误
+            const fieldErrors = Object.entries(data)
+              .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
+              .join('\n')
+            errorMsg += ':\n' + fieldErrors
+          }
+        } else if (error.message) {
+          errorMsg += ': ' + error.message
+        }
+        
+        alert(errorMsg)
       } finally {
         publishing.value = false
       }
