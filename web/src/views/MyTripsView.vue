@@ -51,6 +51,15 @@
                 <i class="bi bi-pencil me-1"></i>编辑
               </button>
               
+              <!-- 分享按钮（仅公开旅行显示） -->
+              <button 
+                v-if="trip.visibility === 'public'"
+                class="btn btn-sm btn-outline-info" 
+                @click.stop="shareTrip(trip.slug, trip.title)"
+                title="分享链接">
+                <i class="bi bi-share me-1"></i>分享
+              </button>
+              
               <!-- 管理员可直接添加/移除旅行树 -->
               <template v-if="userStore.isAdmin">
                 <button 
@@ -277,6 +286,67 @@ export default {
       return date.toLocaleDateString('zh-CN')
     }
     
+    // 分享旅行链接
+    const shareTrip = async (slug, title) => {
+      if (!slug) {
+        alert('错误：无法获取旅行计划标识')
+        return
+      }
+      
+      const shareUrl = `${window.location.origin}/trip/${slug}/`
+      const shareText = `分享我的旅行：${title || '旅行计划'}`
+      
+      // 优先使用 Web Share API（移动端友好）
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: shareText,
+            text: shareText,
+            url: shareUrl
+          })
+          // Web Share API 成功（不需要额外提示，系统会处理）
+          return
+        } catch (error) {
+          // 用户取消分享或出错，继续使用复制到剪贴板的方式
+          if (error.name !== 'AbortError') {
+            console.error('Web Share API 失败:', error)
+          }
+        }
+      }
+      
+      // 回退方案：复制到剪贴板
+      try {
+        await navigator.clipboard.writeText(shareUrl)
+        alert(`✅ 链接已复制到剪贴板！\n\n${shareUrl}\n\n你可以粘贴分享给朋友了~`)
+      } catch (error) {
+        // 如果 Clipboard API 不可用，使用传统方法
+        console.error('Clipboard API 不可用，使用传统方法:', error)
+        const textArea = document.createElement('textarea')
+        textArea.value = shareUrl
+        textArea.style.position = 'fixed'
+        textArea.style.left = '-999999px'
+        textArea.style.top = '-999999px'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        
+        try {
+          const successful = document.execCommand('copy')
+          if (successful) {
+            alert(`✅ 链接已复制到剪贴板！\n\n${shareUrl}\n\n你可以粘贴分享给朋友了~`)
+          } else {
+            throw new Error('execCommand 失败')
+          }
+        } catch (err) {
+          console.error('复制失败:', err)
+          // 最后回退：显示链接让用户手动复制
+          prompt('请手动复制以下链接：', shareUrl)
+        } finally {
+          document.body.removeChild(textArea)
+        }
+      }
+    }
+    
     onMounted(() => {
       if (!userStore.isLoggedIn) {
         alert('请先登录')
@@ -294,6 +364,7 @@ export default {
       createNew,
       editTrip,
       viewTrip,
+      shareTrip,
       showAdvancedSettings,
       closeModal,
       confirmDeleteTrip,
