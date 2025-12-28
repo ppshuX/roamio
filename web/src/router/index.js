@@ -89,6 +89,15 @@ const routes = [
       requiresAuth: false
     }
   },
+  {
+    path: '/app7581',
+    name: 'redirect-app7581',
+    component: () => import('@/views/RedirectPage.vue'),
+    meta: {
+      title: '正在跳转...',
+      requiresAuth: false
+    }
+  }
 ]
 
 const router = createRouter({
