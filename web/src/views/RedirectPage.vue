@@ -54,7 +54,7 @@
             <i class="bi bi-box-arrow-up-right" style="font-size: 64px;"></i>
           </div>
           
-          <h2 class="redirect-title">跳转到 Ralendar</h2>
+          <h2 class="redirect-title">跳转到年度总结网站</h2>
           
           <p class="redirect-description">
             即将离开 Roamio，跳转到外部链接
@@ -225,6 +225,13 @@ export default {
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 2rem 1rem;
+}
+
+.redirect-page .container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .redirect-container {
