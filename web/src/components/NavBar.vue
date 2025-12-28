@@ -3,7 +3,7 @@
     <div class="container-fluid">
       <!-- Logo -->
       <router-link to="/" class="navbar-brand d-flex align-items-center">
-        <img src="/images/logo_Roamio.png" alt="Roamio Logo" class="brand-logo me-2">
+        <img src="/static/images/logo_Roamio.png" alt="Roamio Logo" class="brand-logo me-2">
         <span class="brand-text">Roamio</span>
       </router-link>
       
