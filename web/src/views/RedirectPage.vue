@@ -124,6 +124,11 @@ export default {
     
     onMounted(() => {
       isWeChat.value = detectWeChat()
+      // 如果不是微信浏览器（理论上不应该到这里，但为了安全还是检查一下）
+      if (!isWeChat.value) {
+        // 直接跳转
+        window.location.href = targetUrl
+      }
     })
     
     // 普通浏览器直接跳转

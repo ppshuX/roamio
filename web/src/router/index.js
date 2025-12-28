@@ -96,6 +96,21 @@ const routes = [
     meta: {
       title: '正在跳转...',
       requiresAuth: false
+    },
+    beforeEnter: (to, from, next) => {
+      // 检测是否在微信浏览器中
+      const ua = navigator.userAgent.toLowerCase()
+      const isWeChat = ua.indexOf('micromessenger') !== -1
+      const targetUrl = 'https://app7581.acapp.acwing.com.cn/'
+      
+      // 如果不是微信浏览器，直接跳转
+      if (!isWeChat) {
+        window.location.href = targetUrl
+        return
+      }
+      
+      // 如果是微信浏览器，显示中间页面
+      next()
     }
   }
 ]
