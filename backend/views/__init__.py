@@ -6,6 +6,7 @@
 from .base_views import (
     main_menu,
     vue_app,
+    redirect_to_app7581,
 )
 
 # 认证相关视图
@@ -59,6 +60,7 @@ __all__ = [
     # 基础页面
     'main_menu',
     'vue_app',
+    'redirect_to_app7581',
     # 认证
     'custom_login',
     'register',

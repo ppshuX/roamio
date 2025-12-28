@@ -31,3 +31,10 @@ def vue_app(request):
             status=404
         )
 
+
+def redirect_to_app7581(request):
+    """
+    重定向到 app7581.acapp.acwing.com.cn
+    """
+    from django.shortcuts import redirect
+    return redirect('https://app7581.acapp.acwing.com.cn/', permanent=False)

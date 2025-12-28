@@ -82,8 +82,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://app7508.acapp.acwing.com.cn',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
-    'http://localhost:8080',
-    'http://127.0.0.1:8080',
+    
 ]
 CSRF_COOKIE_SECURE = False  # 开发环境设为 False
 CSRF_COOKIE_SAMESITE = 'Lax'
