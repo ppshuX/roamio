@@ -90,8 +90,8 @@ const routes = [
     }
   },
   {
-    path: '/app7581',
-    name: 'redirect-app7581',
+    path: '/2025_review',
+    name: 'redirect-2025-review',
     component: () => import('@/views/RedirectPage.vue'),
     meta: {
       title: '正在跳转...',
