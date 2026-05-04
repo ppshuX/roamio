@@ -19,7 +19,7 @@
         </div>
         <button
           class="btn btn-danger w-100"
-          @click="$emit('delete-account')"
+          @click="emit('delete-account')"
         >
           🗑️ 删除账号
         </button>
@@ -31,28 +31,18 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'AdvancedSettingsModal',
-  
-  props: {
-    show: {
-      type: Boolean,
-      required: true
-    }
-  },
-  
-  emits: ['close', 'delete-account'],
-  
-  setup(props, { emit }) {
-    const close = () => {
-      emit('close')
-    }
-    
-    return {
-      close
-    }
+<script setup>
+defineProps({
+  show: {
+    type: Boolean,
+    required: true
   }
+})
+
+const emit = defineEmits(['close', 'delete-account'])
+
+const close = () => {
+  emit('close')
 }
 </script>
 

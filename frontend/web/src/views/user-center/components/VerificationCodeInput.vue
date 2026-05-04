@@ -10,7 +10,7 @@
           type="email"
           class="form-control"
           :value="email"
-          @input="$emit('update:email', $event.target.value)"
+          @input="emit('update:email', $event.target.value)"
           :disabled="disabled"
           :placeholder="placeholder"
           required
@@ -19,7 +19,7 @@
           type="button"
           class="btn btn-outline-primary"
           :disabled="!email || sending || countdown > 0 || disabled"
-          @click="$emit('send-code')"
+          @click="emit('send-code')"
         >
           <span v-if="sending" class="spinner-border spinner-border-sm me-1"></span>
           <span v-else-if="countdown > 0">{{ countdown }}秒</span>
@@ -38,7 +38,7 @@
         type="text"
         class="form-control"
         :value="code"
-        @input="$emit('update:code', $event.target.value)"
+        @input="emit('update:code', $event.target.value)"
         :disabled="disabled"
         placeholder="请输入6位验证码"
         maxlength="6"
@@ -48,51 +48,47 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'VerificationCodeInput',
-  
-  props: {
-    email: {
-      type: String,
-      default: ''
-    },
-    code: {
-      type: String,
-      default: ''
-    },
-    label: {
-      type: String,
-      default: '邮箱地址'
-    },
-    placeholder: {
-      type: String,
-      default: '请输入邮箱地址'
-    },
-    sending: {
-      type: Boolean,
-      default: false
-    },
-    codeSent: {
-      type: Boolean,
-      default: false
-    },
-    countdown: {
-      type: Number,
-      default: 0
-    },
-    disabled: {
-      type: Boolean,
-      default: false
-    },
-    successMessage: {
-      type: String,
-      default: '验证码已发送，请查收邮箱'
-    }
+<script setup>
+defineProps({
+  email: {
+    type: String,
+    default: ''
   },
-  
-  emits: ['update:email', 'update:code', 'send-code']
-}
+  code: {
+    type: String,
+    default: ''
+  },
+  label: {
+    type: String,
+    default: '邮箱地址'
+  },
+  placeholder: {
+    type: String,
+    default: '请输入邮箱地址'
+  },
+  sending: {
+    type: Boolean,
+    default: false
+  },
+  codeSent: {
+    type: Boolean,
+    default: false
+  },
+  countdown: {
+    type: Number,
+    default: 0
+  },
+  disabled: {
+    type: Boolean,
+    default: false
+  },
+  successMessage: {
+    type: String,
+    default: '验证码已发送，请查收邮箱'
+  }
+})
+
+const emit = defineEmits(['update:email', 'update:code', 'send-code'])
 </script>
 
 <style scoped>

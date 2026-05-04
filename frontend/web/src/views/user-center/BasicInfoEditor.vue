@@ -72,92 +72,78 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, watch } from 'vue'
 
-export default {
-  name: 'BasicInfoEditor',
-  
-  props: {
-    username: {
-      type: String,
-      default: ''
-    },
-    birthday: {
-      type: String,
-      default: ''
-    },
-    updating: {
-      type: Boolean,
-      default: false
-    },
-    forceEdit: {
-      type: Boolean,
-      default: false
-    }
+const props = defineProps({
+  username: {
+    type: String,
+    default: ''
   },
-  
-  emits: ['update', 'cancel'],
-  
-  setup(props, { emit }) {
-    const isEditing = ref(false)
-    const formData = ref({
-      username: '',
-      birthday: ''
-    })
-    
-    // 监听props变化，更新表单数据
-    watch([() => props.username, () => props.birthday], ([username, birthday]) => {
-      formData.value = { username, birthday }
-    }, { immediate: true })
-    
-    // 监听 forceEdit，外部触发编辑模式
-    watch(() => props.forceEdit, (newVal) => {
-      if (newVal && !isEditing.value) {
-        startEdit()
-      } else if (!newVal && isEditing.value) {
-        // 外部取消编辑时，也取消内部编辑
-        handleCancel()
-      }
-    })
-    
-    const startEdit = () => {
-      formData.value = {
-        username: props.username,
-        birthday: props.birthday
-      }
-      isEditing.value = true
-    }
-    
-    const handleSave = () => {
-      emit('update', { ...formData.value })
-    }
-    
-    const handleCancel = () => {
-      formData.value = {
-        username: props.username,
-        birthday: props.birthday
-      }
-      isEditing.value = false
-      emit('cancel')
-    }
-    
-    // 当更新完成时，退出编辑模式
-    watch(() => props.updating, (newVal) => {
-      if (!newVal && isEditing.value) {
-        isEditing.value = false
-      }
-    })
-    
-    return {
-      isEditing,
-      formData,
-      startEdit,
-      handleSave,
-      handleCancel
-    }
+  birthday: {
+    type: String,
+    default: ''
+  },
+  updating: {
+    type: Boolean,
+    default: false
+  },
+  forceEdit: {
+    type: Boolean,
+    default: false
   }
+})
+
+const emit = defineEmits(['update', 'cancel'])
+
+const isEditing = ref(false)
+const formData = ref({
+  username: '',
+  birthday: ''
+})
+
+// 监听props变化，更新表单数据
+watch([() => props.username, () => props.birthday], ([username, birthday]) => {
+  formData.value = { username, birthday }
+}, { immediate: true })
+
+// 监听 forceEdit，外部触发编辑模式
+watch(() => props.forceEdit, (newVal) => {
+  if (newVal && !isEditing.value) {
+    startEdit()
+  } else if (!newVal && isEditing.value) {
+    // 外部取消编辑时，也取消内部编辑
+    handleCancel()
+  }
+})
+
+const startEdit = () => {
+  formData.value = {
+    username: props.username,
+    birthday: props.birthday
+  }
+  isEditing.value = true
 }
+
+const handleSave = () => {
+  emit('update', { ...formData.value })
+}
+
+const handleCancel = () => {
+  formData.value = {
+    username: props.username,
+    birthday: props.birthday
+  }
+  isEditing.value = false
+  emit('cancel')
+}
+
+// 当更新完成时，退出编辑模式
+watch(() => props.updating, (newVal) => {
+  if (!newVal && isEditing.value) {
+    isEditing.value = false
+  }
+})
 </script>
 
 <style scoped>

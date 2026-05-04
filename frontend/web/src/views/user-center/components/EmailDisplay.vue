@@ -5,7 +5,7 @@
       <div class="alert alert-success">
         <strong>已绑定邮箱：</strong> {{ email }}
       </div>
-      <button class="btn btn-outline-primary btn-sm" @click="$emit('change-request')">
+      <button class="btn btn-outline-primary btn-sm" @click="emit('change-request')">
         🔄 更改邮箱
       </button>
     </div>
@@ -20,23 +20,19 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'EmailDisplay',
-  
-  props: {
-    email: {
-      type: String,
-      default: ''
-    },
-    verified: {
-      type: Boolean,
-      default: false
-    }
+<script setup>
+defineProps({
+  email: {
+    type: String,
+    default: ''
   },
-  
-  emits: ['change-request']
-}
+  verified: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const emit = defineEmits(['change-request'])
 </script>
 
 <style scoped>

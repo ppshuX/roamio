@@ -27,7 +27,7 @@
         <button
           type="button"
           class="btn btn-outline-secondary"
-          @click="$emit('cancel')"
+          @click="emit('cancel')"
           :disabled="processing"
         >
           取消
@@ -37,75 +37,58 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, watch } from 'vue'
 import VerificationCodeInput from './VerificationCodeInput.vue'
 
-export default {
-  name: 'EmailBindForm',
-  
-  components: {
-    VerificationCodeInput
+const props = defineProps({
+  currentEmail: {
+    type: String,
+    default: ''
   },
-  
-  props: {
-    currentEmail: {
-      type: String,
-      default: ''
-    },
-    sending: {
-      type: Boolean,
-      default: false
-    },
-    processing: {
-      type: Boolean,
-      default: false
-    },
-    codeSent: {
-      type: Boolean,
-      default: false
-    },
-    countdown: {
-      type: Number,
-      default: 0
-    }
+  sending: {
+    type: Boolean,
+    default: false
   },
-  
-  emits: ['send-code', 'bind', 'cancel'],
-  
-  setup(props, { emit }) {
-    const localEmail = ref(props.currentEmail || '')
-    const localCode = ref('')
-    
-    // 监听 props 变化
-    watch(() => props.currentEmail, (newVal) => {
-      localEmail.value = newVal || ''
-    })
-    
-    const handleSendCode = () => {
-      if (!localEmail.value) {
-        return
-      }
-      emit('send-code', localEmail.value)
-    }
-    
-    const handleSubmit = () => {
-      if (!localCode.value || localCode.value.length !== 6) {
-        return
-      }
-      emit('bind', {
-        email: localEmail.value,
-        code: localCode.value
-      })
-    }
-    
-    return {
-      localEmail,
-      localCode,
-      handleSendCode,
-      handleSubmit
-    }
+  processing: {
+    type: Boolean,
+    default: false
+  },
+  codeSent: {
+    type: Boolean,
+    default: false
+  },
+  countdown: {
+    type: Number,
+    default: 0
   }
+})
+
+const emit = defineEmits(['send-code', 'bind', 'cancel'])
+
+const localEmail = ref(props.currentEmail || '')
+const localCode = ref('')
+
+// 监听 props 变化
+watch(() => props.currentEmail, (newVal) => {
+  localEmail.value = newVal || ''
+})
+
+const handleSendCode = () => {
+  if (!localEmail.value) {
+    return
+  }
+  emit('send-code', localEmail.value)
+}
+
+const handleSubmit = () => {
+  if (!localCode.value || localCode.value.length !== 6) {
+    return
+  }
+  emit('bind', {
+    email: localEmail.value,
+    code: localCode.value
+  })
 }
 </script>
 

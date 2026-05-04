@@ -32,7 +32,7 @@
         <button
           type="button"
           class="btn btn-outline-secondary"
-          @click="$emit('cancel')"
+          @click="emit('cancel')"
           :disabled="processing"
         >
           取消
@@ -42,77 +42,60 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref } from 'vue'
 import VerificationCodeInput from './VerificationCodeInput.vue'
 
-export default {
-  name: 'EmailChangeForm',
-  
-  components: {
-    VerificationCodeInput
+const props = defineProps({
+  currentEmail: {
+    type: String,
+    required: true
   },
-  
-  props: {
-    currentEmail: {
-      type: String,
-      required: true
-    },
-    sending: {
-      type: Boolean,
-      default: false
-    },
-    processing: {
-      type: Boolean,
-      default: false
-    },
-    codeSent: {
-      type: Boolean,
-      default: false
-    },
-    countdown: {
-      type: Number,
-      default: 0
-    }
+  sending: {
+    type: Boolean,
+    default: false
   },
-  
-  emits: ['send-code', 'change', 'cancel'],
-  
-  setup(props, { emit }) {
-    const localNewEmail = ref('')
-    const localCode = ref('')
-    
-    const handleSendCode = () => {
-      if (!localNewEmail.value) {
-        return
-      }
-      
-      // 检查新邮箱是否与当前邮箱相同
-      if (localNewEmail.value.toLowerCase() === props.currentEmail.toLowerCase()) {
-        emit('error', '新邮箱不能与当前邮箱相同')
-        return
-      }
-      
-      emit('send-code', localNewEmail.value)
-    }
-    
-    const handleSubmit = () => {
-      if (!localCode.value || localCode.value.length !== 6) {
-        return
-      }
-      emit('change', {
-        newEmail: localNewEmail.value,
-        code: localCode.value
-      })
-    }
-    
-    return {
-      localNewEmail,
-      localCode,
-      handleSendCode,
-      handleSubmit
-    }
+  processing: {
+    type: Boolean,
+    default: false
+  },
+  codeSent: {
+    type: Boolean,
+    default: false
+  },
+  countdown: {
+    type: Number,
+    default: 0
   }
+})
+
+const emit = defineEmits(['send-code', 'change', 'cancel'])
+
+const localNewEmail = ref('')
+const localCode = ref('')
+
+const handleSendCode = () => {
+  if (!localNewEmail.value) {
+    return
+  }
+  
+  // 检查新邮箱是否与当前邮箱相同
+  if (localNewEmail.value.toLowerCase() === props.currentEmail.toLowerCase()) {
+    emit('error', '新邮箱不能与当前邮箱相同')
+    return
+  }
+  
+  emit('send-code', localNewEmail.value)
+}
+
+const handleSubmit = () => {
+  if (!localCode.value || localCode.value.length !== 6) {
+    return
+  }
+  emit('change', {
+    newEmail: localNewEmail.value,
+    code: localCode.value
+  })
 }
 </script>
 

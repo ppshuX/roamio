@@ -2,7 +2,7 @@
   <div class="card shadow-sm mt-3">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
       <h5 class="mb-0">📊 我的统计</h5>
-      <button class="btn btn-sm btn-outline-secondary" @click="$emit('refresh')" title="刷新统计">
+      <button class="btn btn-sm btn-outline-secondary" @click="emit('refresh')" title="刷新统计">
         🔄
       </button>
     </div>
@@ -31,22 +31,20 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'UserStats',
-  
-  props: {
-    stats: {
-      type: Object,
-      required: true,
-      default: () => ({
-        comments_count: 0,
-        trips_count: 0,
-        public_trips_count: 0
-      })
-    }
+<script setup>
+defineProps({
+  stats: {
+    type: Object,
+    required: true,
+    default: () => ({
+      comments_count: 0,
+      trips_count: 0,
+      public_trips_count: 0
+    })
   }
-}
+})
+
+const emit = defineEmits(['refresh'])
 </script>
 
 <style scoped>

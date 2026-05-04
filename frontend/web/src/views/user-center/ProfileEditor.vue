@@ -114,132 +114,115 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, watch, computed } from 'vue'
 
-export default {
-  name: 'ProfileEditor',
-  
-  props: {
-    bio: {
-      type: String,
-      default: ''
-    },
-    tags: {
-      type: String,
-      default: ''
-    },
-    visitedCountries: {
-      type: String,
-      default: ''
-    },
-    level: {
-      type: String,
-      default: 'novice'
-    },
-    updating: {
-      type: Boolean,
-      default: false
-    }
+const props = defineProps({
+  bio: {
+    type: String,
+    default: ''
   },
-  
-  emits: ['update', 'cancel'],
-  
-  setup(props, { emit }) {
-    const isEditing = ref(false)
-    const formData = ref({
-      bio: '',
-      tags: '',
-      visited_countries: '',
-      level: 'novice'
-    })
-    
-    const profileData = computed(() => ({
-      bio: props.bio,
-      tags: props.tags,
-      visited_countries: props.visitedCountries,
-      level: props.level
-    }))
-    
-    // 监听props变化，更新表单数据
-    watch(() => [props.bio, props.tags, props.visitedCountries], ([bio, tags, visitedCountries]) => {
-      formData.value.bio = bio || ''
-      formData.value.tags = tags || ''
-      formData.value.visited_countries = visitedCountries || ''
-    }, { immediate: true })
-    
-    // 等级文本
-    const getLevelText = (level) => {
-      const levels = {
-        'novice': '新手',
-        'explorer': '探索者',
-        'wanderer': '漫游者',
-        'adventurer': '冒险家',
-        'master': '旅行大师'
-      }
-      return levels[level] || '新手'
-    }
-    
-    // 等级样式类
-    const getLevelClass = (level) => {
-      const classes = {
-        'novice': 'level-novice',
-        'explorer': 'level-explorer',
-        'wanderer': 'level-wanderer',
-        'adventurer': 'level-adventurer',
-        'master': 'level-master'
-      }
-      return classes[level] || 'level-novice'
-    }
-    
-    const startEdit = () => {
-      formData.value = {
-        bio: props.bio || '',
-        tags: props.tags || '',
-        visited_countries: props.visitedCountries || '',
-        level: props.level || 'novice'
-      }
-      isEditing.value = true
-    }
-    
-    const handleSave = () => {
-      emit('update', {
-        bio: formData.value.bio,
-        tags: formData.value.tags,
-        visited_countries: formData.value.visited_countries
-      })
-    }
-    
-    const handleCancel = () => {
-      formData.value = {
-        bio: props.bio || '',
-        tags: props.tags || '',
-        visited_countries: props.visitedCountries || '',
-        level: props.level || 'novice'
-      }
-      isEditing.value = false
-      emit('cancel')
-    }
-    
-    // 当更新完成时，退出编辑模式
-    watch(() => props.updating, (newVal) => {
-      if (!newVal && isEditing.value) {
-        isEditing.value = false
-      }
-    })
-    
-    return {
-      isEditing,
-      formData,
-      profileData,
-      startEdit,
-      handleSave,
-      handleCancel,
-      getLevelText,
-      getLevelClass
-    }
+  tags: {
+    type: String,
+    default: ''
+  },
+  visitedCountries: {
+    type: String,
+    default: ''
+  },
+  level: {
+    type: String,
+    default: 'novice'
+  },
+  updating: {
+    type: Boolean,
+    default: false
   }
+})
+
+const emit = defineEmits(['update', 'cancel'])
+
+const isEditing = ref(false)
+const formData = ref({
+  bio: '',
+  tags: '',
+  visited_countries: '',
+  level: 'novice'
+})
+
+const profileData = computed(() => ({
+  bio: props.bio,
+  tags: props.tags,
+  visited_countries: props.visitedCountries,
+  level: props.level
+}))
+
+// 监听props变化，更新表单数据
+watch(() => [props.bio, props.tags, props.visitedCountries], ([bio, tags, visitedCountries]) => {
+  formData.value.bio = bio || ''
+  formData.value.tags = tags || ''
+  formData.value.visited_countries = visitedCountries || ''
+}, { immediate: true })
+
+// 等级文本
+const getLevelText = (level) => {
+  const levels = {
+    'novice': '新手',
+    'explorer': '探索者',
+    'wanderer': '漫游者',
+    'adventurer': '冒险家',
+    'master': '旅行大师'
+  }
+  return levels[level] || '新手'
 }
+
+// 等级样式类
+const getLevelClass = (level) => {
+  const classes = {
+    'novice': 'level-novice',
+    'explorer': 'level-explorer',
+    'wanderer': 'level-wanderer',
+    'adventurer': 'level-adventurer',
+    'master': 'level-master'
+  }
+  return classes[level] || 'level-novice'
+}
+
+const startEdit = () => {
+  formData.value = {
+    bio: props.bio || '',
+    tags: props.tags || '',
+    visited_countries: props.visitedCountries || '',
+    level: props.level || 'novice'
+  }
+  isEditing.value = true
+}
+
+const handleSave = () => {
+  emit('update', {
+    bio: formData.value.bio,
+    tags: formData.value.tags,
+    visited_countries: formData.value.visited_countries
+  })
+}
+
+const handleCancel = () => {
+  formData.value = {
+    bio: props.bio || '',
+    tags: props.tags || '',
+    visited_countries: props.visitedCountries || '',
+    level: props.level || 'novice'
+  }
+  isEditing.value = false
+  emit('cancel')
+}
+
+// 当更新完成时，退出编辑模式
+watch(() => props.updating, (newVal) => {
+  if (!newVal && isEditing.value) {
+    isEditing.value = false
+  }
+})
 </script>
 
 <style scoped>

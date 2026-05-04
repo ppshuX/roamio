@@ -49,72 +49,60 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref } from 'vue'
 
-export default {
-  name: 'UserProfileCard',
-  
-  props: {
-    username: {
-      type: String,
-      required: true
-    },
-    email: {
-      type: String,
-      default: ''
-    },
-    avatar: {
-      type: String,
-      required: true
-    },
-    isAdmin: {
-      type: Boolean,
-      default: false
-    },
-    level: {
-      type: String,
-      required: true
-    },
-    dateJoined: {
-      type: String,
-      required: true
-    },
-    getLevelText: {
-      type: Function,
-      required: true
-    },
-    getLevelClass: {
-      type: Function,
-      required: true
-    },
-    formatDate: {
-      type: Function,
-      required: true
-    }
+defineProps({
+  username: {
+    type: String,
+    required: true
   },
-  
-  emits: ['avatar-change'],
-  
-  setup(props, { emit }) {
-    const avatarInput = ref(null)
-    
-    const triggerFileInput = () => {
-      avatarInput.value.click()
-    }
-    
-    const handleAvatarChange = (event) => {
-      const file = event.target.files[0]
-      if (file) {
-        emit('avatar-change', file)
-      }
-    }
-    
-    return {
-      avatarInput,
-      triggerFileInput,
-      handleAvatarChange
-    }
+  email: {
+    type: String,
+    default: ''
+  },
+  avatar: {
+    type: String,
+    required: true
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
+  },
+  level: {
+    type: String,
+    required: true
+  },
+  dateJoined: {
+    type: String,
+    required: true
+  },
+  getLevelText: {
+    type: Function,
+    required: true
+  },
+  getLevelClass: {
+    type: Function,
+    required: true
+  },
+  formatDate: {
+    type: Function,
+    required: true
+  }
+})
+
+const emit = defineEmits(['avatar-change'])
+
+const avatarInput = ref(null)
+
+const triggerFileInput = () => {
+  avatarInput.value.click()
+}
+
+const handleAvatarChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    emit('avatar-change', file)
   }
 }
 </script>

@@ -254,7 +254,7 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
@@ -268,21 +268,6 @@ import EmailBindingEditor from './EmailBindingEditor.vue'
 import RalendarAccountManager from '@/components/ralendar/RalendarAccountManager.vue'
 import BasicInfoEditor from './BasicInfoEditor.vue'
 
-export default {
-  name: 'UserCenterView',
-  
-  components: {
-    NavBar,
-    UserProfileCard,
-    UserStats,
-    Footer,
-    AdvancedSettingsModal,
-    EmailBindingEditor,
-    RalendarAccountManager,
-    BasicInfoEditor
-  },
-  
-  setup() {
     const router = useRouter()
     const userStore = useUserStore()
     
@@ -549,30 +534,6 @@ export default {
       }
     }
     
-    // 更新用户信息
-    const handleUpdateInfo = async () => {
-      updating.value = true
-      
-      try {
-        const v = isValidUsername(editForm.value.username)
-        if (!v.ok) { alert(v.msg); throw new Error(v.msg) }
-        await updateUser(userInfo.value.id, editForm.value)
-        
-        // 重新获取用户信息
-        await userStore.fetchUserInfo()
-        initEditForm()
-        
-        isEditingBasic.value = false
-        alert('更新成功！')
-      } catch (error) {
-        console.error('更新失败:', error)
-        alert('更新失败，请稍后重试')
-      } finally {
-        updating.value = false
-      }
-    }
-    
-    
     // 上传头像
     const handleAvatarChange = async (file) => {
       if (!file) return
@@ -652,18 +613,6 @@ export default {
       }
     }
     
-    // 退出登录
-    const handleLogout = async () => {
-      if (!confirm('确定要退出登录吗？')) return
-      
-      try {
-        await userStore.logout()
-        router.push('/login')
-      } catch (error) {
-        console.error('退出失败:', error)
-      }
-    }
-    
     // Ralendar 相关方法
     const handleRalendarConnect = () => {
       // 实际的连接逻辑在 RalendarAccountManager 组件中处理
@@ -700,48 +649,6 @@ export default {
       }
     })
     
-    return {
-      loading,
-      updating,
-      updatingProfile,
-      savingAll,
-      isEditingBasic,
-      isEditingProfile,
-      showAdvancedSettings,
-      stats,
-      editForm,
-      profileData,
-      userInfo,
-      username,
-      email,
-      isEmailVerified,
-      isAdmin,
-      userAvatar,
-      loadStats,
-      formatDate,
-      getLevelTextClass,
-      goBack,
-      handleUpdateInfo,
-      handleUpdateBasicInfo,
-      handleUpdateProfile,
-      cancelBasicEdit,
-      cancelProfileEdit,
-      startEditing,
-      cancelAllEdit,
-      saveAllChanges,
-      getLevelText,
-      getLevelClass,
-      handleAvatarChange,
-      handleLogout,
-      handleDeleteAccount,
-      confirmAndDeleteAccount,
-      handleEmailBound,
-      handleRefreshUserInfo,
-      handleRalendarConnect,
-      handleRalendarUpdate
-    }
-  }
-}
 </script>
 
 <style scoped>
@@ -1100,4 +1007,3 @@ h2 {
   }
 }
 </style>
-
