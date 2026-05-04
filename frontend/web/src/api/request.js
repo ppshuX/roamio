@@ -2,7 +2,7 @@
  * 基于fetch的Ajax请求封装
  * 支持文件上传进度回调（使用 XMLHttpRequest）
  */
-const baseURL = process.env.VUE_APP_API_BASE_URL || '/api/v1'
+const baseURL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 
 // 默认超时时间（毫秒）
 const DEFAULT_TIMEOUT = 300000 // 5 分钟（支持大文件上传）
@@ -210,4 +210,3 @@ const request = {
 }
 
 export default request
-

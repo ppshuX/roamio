@@ -11,7 +11,7 @@
         <div class="sidebar-header">
           <h5>
             <img 
-              src="/static/images/Ralendar_logo.png" 
+              src="/images/qq_logo.png" 
               alt="Ralendar"
               class="sidebar-logo"
             >
