@@ -9,7 +9,11 @@ from django.urls import path, include, re_path
 from backend import views
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.static import serve as static_serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+import os
+
+WEB_DIST_ROOT = os.path.join(settings.BASE_DIR, 'backend', 'web_dist')
 
 urlpatterns = [
     # ==================== RESTful API路由 ⭐（必须在最前面） ====================
@@ -33,11 +37,17 @@ urlpatterns = [
     path('cetapp/', include('backend.urls')),  # 旧URL路径兼容
     path('accounts/login/', views.custom_login, name='login'),
     path('accounts/logout/', views.custom_logout, name='logout'),
+
+    # ==================== Vite 构建产物（开发/回退场景） ====================
+    # 生产环境通常由 Nginx 直接服务这些文件；这里保留 Django 侧兜底，避免本地 runserver 白屏。
+    path('roamio.ico', static_serve, {'path': 'roamio.ico', 'document_root': WEB_DIST_ROOT}),
+    re_path(r'^assets/(?P<path>.*)$', static_serve, {'document_root': os.path.join(WEB_DIST_ROOT, 'assets')}),
+    re_path(r'^images/(?P<path>.*)$', static_serve, {'document_root': os.path.join(WEB_DIST_ROOT, 'images')}),
     
     # ==================== Vue单页应用 ⭐（必须在最后） ====================
     path('', views.vue_app, name='home'),  # 首页
     # Catch-all：匹配非管理路径和非静态资源路径
-    re_path(r'^(?!admin|api|static|media|trips|accounts).*$', views.vue_app),
+    re_path(r'^(?!admin|api|static|media|assets|images|roamio\.ico|trips|accounts).*$', views.vue_app),
 ]
 
 # 静态文件和媒体文件
