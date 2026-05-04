@@ -281,6 +281,21 @@ SIMPLE_JWT = {
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
 
+# Refresh Token Cookie（HttpOnly）
+AUTH_REFRESH_COOKIE_NAME = os.getenv('AUTH_REFRESH_COOKIE_NAME', 'roamio_refresh_token')
+AUTH_REFRESH_COOKIE_SECURE = os.getenv(
+    'AUTH_REFRESH_COOKIE_SECURE',
+    '1' if not DEBUG else '0'
+) == '1'
+AUTH_REFRESH_COOKIE_SAMESITE = os.getenv('AUTH_REFRESH_COOKIE_SAMESITE', 'Lax')
+AUTH_REFRESH_COOKIE_PATH = os.getenv('AUTH_REFRESH_COOKIE_PATH', '/api/v1/auth/')
+AUTH_REFRESH_COOKIE_AGE = int(
+    os.getenv(
+        'AUTH_REFRESH_COOKIE_AGE',
+        str(int(SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()))
+    )
+)
+
 # ==================== drf-spectacular API文档配置 ====================
 # API 文档配置已移至独立文件，方便管理和维护
 from roamio.api_docs_config import SPECTACULAR_SETTINGS

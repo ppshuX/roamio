@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import pinia from '@/stores'
+import { useUserStore } from '@/stores/user'
 
 const routes = [
   {
@@ -97,12 +99,20 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   // 设置页面标题（不带平台后缀）
   document.title = to.meta.title || ''
 
+  const userStore = useUserStore(pinia)
+  userStore.migrateLegacyTokens()
+
+  // 需要登录页面：优先尝试 refresh cookie 自动续期 access token
+  if (to.meta.requiresAuth && !userStore.accessToken) {
+    await userStore.restoreAccessToken()
+  }
+
   // 权限检查
-  const token = localStorage.getItem('access_token')
+  const token = userStore.accessToken
 
   if (to.meta.requiresAuth && !token) {
     // 需要登录但未登录，跳转到登录页

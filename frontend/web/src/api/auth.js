@@ -23,8 +23,7 @@ export const login = (data) => {
  * 用户登出
  */
 export const logout = () => {
-    const refresh = localStorage.getItem('refresh_token')
-    return request.post('/auth/logout/', { refresh })
+    return request.post('/auth/logout/')
 }
 
 /**
@@ -38,8 +37,8 @@ export const getCurrentUser = () => {
  * 刷新Token
  * @param {string} refresh - refresh token
  */
-export const refreshToken = (refresh) => {
-    return request.post('/token/refresh/', { refresh })
+export const refreshToken = () => {
+    return request.post('/auth/refresh/')
 }
 
 /**

@@ -1,116 +1,150 @@
 /**
- * 用户状态管理
+ * 用户状态管理（Vue 3 setup store 风格）
  */
+import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { login, register, logout, getCurrentUser } from '@/api/auth'
+import { login as loginApi, register as registerApi, logout as logoutApi, getCurrentUser } from '@/api/auth'
 import { getAvatarUrl } from '@/config/api'
 
-export const useUserStore = defineStore('user', {
-    state: () => ({
-        token: localStorage.getItem('access_token') || '',
-        refreshToken: localStorage.getItem('refresh_token') || '',
-        userInfo: JSON.parse(localStorage.getItem('user_info') || 'null'),
-    }),
+export const useUserStore = defineStore('user', () => {
+  const accessToken = ref('')
+  // 仅为兼容旧代码保留；refresh token 已迁移到 HttpOnly Cookie
+  const refreshToken = ref('')
+  const userInfo = ref(JSON.parse(localStorage.getItem('user_info') || 'null'))
 
-    getters: {
-        // 是否已登录
-        isLoggedIn: (state) => !!state.token,
-
-        // 用户名
-        username: (state) => state.userInfo?.username || '',
-
-        // 用户头像
-        avatar: (state) => getAvatarUrl(state.userInfo?.profile?.avatar_url),
-
-        // 是否是管理员
-        isAdmin: (state) => {
-            const isSuperuser = state.userInfo?.is_superuser || false
-            const isStaff = state.userInfo?.is_staff || false
-            return isSuperuser || isStaff
-        },
-    },
-
-    actions: {
-        // 用户登录
-        async login(credentials) {
-            try {
-                const data = await login(credentials)
-
-                this.token = data.access
-                this.refreshToken = data.refresh
-                this.userInfo = data.user
-
-                // 保存到localStorage
-                localStorage.setItem('access_token', data.access)
-                localStorage.setItem('refresh_token', data.refresh)
-                localStorage.setItem('user_info', JSON.stringify(data.user))
-
-                return data
-            } catch (error) {
-                console.error('登录失败:', error)
-                if (error.response?.data) {
-                    console.error('错误详情:', error.response.data)
-                }
-                throw error
-            }
-        },
-
-        // 用户注册
-        async register(data) {
-            try {
-                const result = await register(data)
-
-                this.token = result.access
-                this.refreshToken = result.refresh
-                this.userInfo = result.user
-
-                // 保存到localStorage
-                localStorage.setItem('access_token', result.access)
-                localStorage.setItem('refresh_token', result.refresh)
-                localStorage.setItem('user_info', JSON.stringify(result.user))
-
-                return result
-            } catch (error) {
-                console.error('注册失败:', error)
-                throw error
-            }
-        },
-
-        // 用户登出
-        async logout() {
-            try {
-                await logout()
-            } catch (error) {
-                console.error('登出失败:', error)
-            } finally {
-                // 清除状态
-                this.token = ''
-                this.refreshToken = ''
-                this.userInfo = null
-
-                // 清除localStorage
-                localStorage.removeItem('access_token')
-                localStorage.removeItem('refresh_token')
-                localStorage.removeItem('user_info')
-            }
-        },
-
-        // 获取用户信息
-        async fetchUserInfo() {
-            if (!this.token) return
-
-            try {
-                const userInfo = await getCurrentUser()
-                this.userInfo = userInfo
-                localStorage.setItem('user_info', JSON.stringify(userInfo))
-                return userInfo
-            } catch (error) {
-                console.error('获取用户信息失败:', error)
-                // 如果获取失败，清除登录状态
-                this.logout()
-                throw error
-            }
-        },
+  // 兼容旧字段名 userStore.token
+  const token = computed({
+    get: () => accessToken.value,
+    set: (value) => {
+      accessToken.value = value || ''
     }
+  })
+
+  const isLoggedIn = computed(() => !!accessToken.value)
+  const username = computed(() => userInfo.value?.username || '')
+  const avatar = computed(() => getAvatarUrl(userInfo.value?.profile?.avatar_url))
+  const isAdmin = computed(() => {
+    const isSuperuser = userInfo.value?.is_superuser || false
+    const isStaff = userInfo.value?.is_staff || false
+    return isSuperuser || isStaff
+  })
+
+  function setAccessToken(nextToken) {
+    accessToken.value = nextToken || ''
+  }
+
+  function clearAuthState() {
+    accessToken.value = ''
+    refreshToken.value = ''
+    userInfo.value = null
+    localStorage.removeItem('user_info')
+  }
+
+  function migrateLegacyTokens() {
+    const legacyAccessToken = localStorage.getItem('access_token')
+    if (legacyAccessToken && !accessToken.value) {
+      accessToken.value = legacyAccessToken
+    }
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+  }
+
+  async function restoreAccessToken() {
+    if (accessToken.value) {
+      return accessToken.value
+    }
+
+    migrateLegacyTokens()
+    if (accessToken.value) {
+      return accessToken.value
+    }
+
+    try {
+      const { refreshAccessToken } = await import('@/api/api')
+      const nextToken = await refreshAccessToken()
+      return nextToken || ''
+    } catch (error) {
+      clearAuthState()
+      return ''
+    }
+  }
+
+  async function login(credentials) {
+    try {
+      const data = await loginApi(credentials)
+      setAccessToken(data.access)
+      userInfo.value = data.user
+      localStorage.setItem('user_info', JSON.stringify(data.user))
+      return data
+    } catch (error) {
+      console.error('登录失败:', error)
+      if (error.response?.data) {
+        console.error('错误详情:', error.response.data)
+      }
+      throw error
+    }
+  }
+
+  async function register(data) {
+    try {
+      const result = await registerApi(data)
+      setAccessToken(result.access)
+      userInfo.value = result.user
+      localStorage.setItem('user_info', JSON.stringify(result.user))
+      return result
+    } catch (error) {
+      console.error('注册失败:', error)
+      throw error
+    }
+  }
+
+  async function logout() {
+    try {
+      await logoutApi()
+    } catch (error) {
+      console.error('登出失败:', error)
+    } finally {
+      clearAuthState()
+    }
+  }
+
+  // 刷新失败等场景：只清浏览器内状态，不额外请求后端
+  function logoutLocal() {
+    clearAuthState()
+  }
+
+  async function fetchUserInfo() {
+    if (!accessToken.value) return null
+    try {
+      const info = await getCurrentUser()
+      userInfo.value = info
+      localStorage.setItem('user_info', JSON.stringify(info))
+      return info
+    } catch (error) {
+      console.error('获取用户信息失败:', error)
+      logoutLocal()
+      throw error
+    }
+  }
+
+  return {
+    accessToken,
+    token,
+    refreshToken,
+    userInfo,
+    isLoggedIn,
+    username,
+    avatar,
+    isAdmin,
+    setAccessToken,
+    clearAuthState,
+    migrateLegacyTokens,
+    restoreAccessToken,
+    login,
+    register,
+    logout,
+    logoutLocal,
+    fetchUserInfo
+  }
 })
 

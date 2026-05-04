@@ -9,8 +9,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +50,24 @@ import traceback
 class AuthViewSet(viewsets.GenericViewSet):
     """认证相关ViewSet"""
     permission_classes = [AllowAny]
+
+    def _set_refresh_cookie(self, response, refresh_token):
+        response.set_cookie(
+            settings.AUTH_REFRESH_COOKIE_NAME,
+            refresh_token,
+            max_age=settings.AUTH_REFRESH_COOKIE_AGE,
+            httponly=True,
+            secure=settings.AUTH_REFRESH_COOKIE_SECURE,
+            samesite=settings.AUTH_REFRESH_COOKIE_SAMESITE,
+            path=settings.AUTH_REFRESH_COOKIE_PATH,
+        )
+
+    def _clear_refresh_cookie(self, response):
+        response.delete_cookie(
+            settings.AUTH_REFRESH_COOKIE_NAME,
+            path=settings.AUTH_REFRESH_COOKIE_PATH,
+            samesite=settings.AUTH_REFRESH_COOKIE_SAMESITE,
+        )
     
     def _assert_email_available(self, email, current_user=None, include_remote=True):
         """
@@ -81,12 +101,12 @@ class AuthViewSet(viewsets.GenericViewSet):
         
         # 生成JWT Token
         refresh = RefreshToken.for_user(user)
-        
-        return Response({
+        response = Response({
             'user': UserSerializer(user).data,
             'access': str(refresh.access_token),
-            'refresh': str(refresh),
         }, status=status.HTTP_201_CREATED)
+        self._set_refresh_cookie(response, str(refresh))
+        return response
     
     @action(detail=False, methods=['post'])
     def login(self, request):
@@ -96,24 +116,46 @@ class AuthViewSet(viewsets.GenericViewSet):
         
         user = serializer.validated_data['user']
         refresh = RefreshToken.for_user(user)
-        
-        return Response({
+        response = Response({
             'access': str(refresh.access_token),
-            'refresh': str(refresh),
             'user': UserSerializer(user).data,
         })
+        self._set_refresh_cookie(response, str(refresh))
+        return response
     
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def logout(self, request):
         """用户登出"""
+        response = Response({'detail': '登出成功'}, status=status.HTTP_200_OK)
         try:
-            refresh_token = request.data.get('refresh')
+            refresh_token = request.data.get('refresh') or request.COOKIES.get(settings.AUTH_REFRESH_COOKIE_NAME)
             if refresh_token:
                 token = RefreshToken(refresh_token)
                 token.blacklist()
-            return Response({'detail': '登出成功'}, status=status.HTTP_200_OK)
+            self._clear_refresh_cookie(response)
+            return response
         except Exception as e:
-            return Response({'detail': '登出失败'}, status=status.HTTP_400_BAD_REQUEST)
+            self._clear_refresh_cookie(response)
+            return response
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def refresh(self, request):
+        """使用 HttpOnly Cookie 中的 refresh token 刷新 access token。"""
+        refresh_token = request.COOKIES.get(settings.AUTH_REFRESH_COOKIE_NAME) or request.data.get('refresh')
+        if not refresh_token:
+            return Response({'detail': '缺少 refresh token'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        serializer = TokenRefreshSerializer(data={'refresh': refresh_token})
+        serializer.is_valid(raise_exception=True)
+
+        response = Response({'access': serializer.validated_data['access']}, status=status.HTTP_200_OK)
+
+        # 当启用 refresh 轮换时，simplejwt 会返回新的 refresh token
+        rotated_refresh = serializer.validated_data.get('refresh')
+        if rotated_refresh:
+            self._set_refresh_cookie(response, rotated_refresh)
+
+        return response
     
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
@@ -449,14 +491,15 @@ class AuthViewSet(viewsets.GenericViewSet):
             # 刷新用户数据以获取最新邮箱
             user.refresh_from_db()
             
-            return Response({
+            response = Response({
                 'success': True,
                 'access': str(refresh.access_token),
-                'refresh': str(refresh),
                 'user': UserSerializer(user).data,
                 'message': '登录成功',
                 'email_auto_bound': bool(user.email)  # 🌟 是否自动绑定了邮箱
             }, status=status.HTTP_200_OK)
+            self._set_refresh_cookie(response, str(refresh))
+            return response
             
         except SocialAccount.DoesNotExist:
             # 未绑定，首次QQ登录：直接创建账号，邮箱可选
@@ -553,16 +596,17 @@ class AuthViewSet(viewsets.GenericViewSet):
                 # 刷新用户数据以获取最新邮箱
                 user.refresh_from_db()
                 
-                return Response({
+                response = Response({
                     'success': True,
                     'access': str(refresh.access_token),
-                    'refresh': str(refresh),
                     'user': UserSerializer(user).data,
                     'message': 'QQ登录成功',
                     'email_auto_bound': bool(user.email),  # 🌟 是否自动绑定了邮箱
                     'email_optional': not bool(user.email),  # 如果已绑定，则不需要提示
                     'tip': '已自动绑定邮箱' if user.email else '建议在个人中心绑定邮箱以便接收重要通知'
                 }, status=status.HTTP_200_OK)
+                self._set_refresh_cookie(response, str(refresh))
+                return response
             except Exception as e:
                 # 捕获并记录详细错误信息
                 error_detail = traceback.format_exc()
@@ -690,13 +734,14 @@ class AuthViewSet(viewsets.GenericViewSet):
         # 生成JWT Token
         refresh = RefreshToken.for_user(user)
         
-        return Response({
+        response = Response({
             'success': True,
             'access': str(refresh.access_token),
-            'refresh': str(refresh),
             'user': UserSerializer(user).data,
             'message': 'QQ绑定成功'
         }, status=status.HTTP_200_OK)
+        self._set_refresh_cookie(response, str(refresh))
+        return response
     
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def qq_bind_existing(self, request):

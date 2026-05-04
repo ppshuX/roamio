@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.conf import settings
 from django.db.models.signals import post_save
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -55,6 +56,32 @@ class AuthAccessTests(UserSignalSafeTestCase):
         self.assertNotEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("slug", response.data)
+
+
+class AuthCookieFlowTests(UserSignalSafeTestCase):
+    """M4 smoke: refresh token via HttpOnly cookie."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="cookie_user",
+            email="cookie@example.com",
+            password="test-pass-123",
+        )
+
+    def test_login_sets_refresh_cookie_and_refresh_endpoint_returns_access(self):
+        login_response = self.client.post(
+            "/api/v1/auth/login/",
+            {"username": "cookie_user", "password": "test-pass-123"},
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        self.assertIn(settings.AUTH_REFRESH_COOKIE_NAME, login_response.cookies)
+        self.assertIn("access", login_response.data)
+
+        refresh_response = self.client.post("/api/v1/auth/refresh/", {}, format="json")
+        self.assertEqual(refresh_response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", refresh_response.data)
 
 
 class TripApiSmokeTests(TestCase):
