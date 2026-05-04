@@ -14,6 +14,7 @@ This folder is the working record for the Roamio cleanup. It keeps problem disco
 - [08_DEPENDENCY_TRIM.md](08_DEPENDENCY_TRIM.md) - Python dependency slimming and install-path notes.
 - [09_SECOND_DOC_CLEANUP.md](09_SECOND_DOC_CLEANUP.md) - Second sensitive/stale documentation cleanup pass.
 - [10_RESTRUCTURE_VITE_CODEX_SPEC.md](10_RESTRUCTURE_VITE_CODEX_SPEC.md) - **Single spec**: repo layout (`backend/` + `frontend/`), Vite migration, PR order, optional Django app rename, Codex handoff (中文).
+- [11_M4_ROUTE_BOUNDARY_FREEZE.md](11_M4_ROUTE_BOUNDARY_FREEZE.md) - M4 route governance matrix: mainline `/api/v1`, compatibility freeze scope, and legacy removal gates.
 
 ## Working Rules
 
