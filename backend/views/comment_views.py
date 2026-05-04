@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from ..models import Comment
-from ..utils.file_upload_handler import FileUploadHandler
+from ..utils.storage.file_upload_handler import FileUploadHandler
 
 
 @csrf_exempt

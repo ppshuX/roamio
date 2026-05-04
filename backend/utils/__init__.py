@@ -33,8 +33,8 @@ from .external import (
     send_verification_code,
 )
 
-# 存储模块（保持向后兼容，从旧文件导入）
-from .avatar_downloader import download_avatar_from_url, set_user_avatar_from_url
+# 存储模块
+from .storage.avatar_downloader import download_avatar_from_url, set_user_avatar_from_url
 
 # 辅助工具
 from .helpers import add_trip_page_urls

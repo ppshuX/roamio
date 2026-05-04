@@ -18,7 +18,7 @@ from ...serializers import (
     UserProfileUpdateSerializer,
     AvatarUploadSerializer,
 )
-from ...utils.file_upload_handler import FileUploadHandler
+from ...utils.storage.file_upload_handler import FileUploadHandler
 
 logger = logging.getLogger(__name__)
 

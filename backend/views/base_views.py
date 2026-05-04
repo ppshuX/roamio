@@ -27,14 +27,8 @@ def vue_app(request):
     except FileNotFoundError:
         return HttpResponse(
             '<h1>Vue应用未构建</h1>'
-            '<p>请先运行: <code>cd web && npm run build</code></p>',
+            '<p>请先运行: <code>cd frontend/web && npm run build</code></p>',
             status=404
         )
 
 
-def redirect_to_app7581(request):
-    """
-    重定向到 app7581.acapp.acwing.com.cn
-    """
-    from django.shortcuts import redirect
-    return redirect('https://app7581.acapp.acwing.com.cn/', permanent=False)

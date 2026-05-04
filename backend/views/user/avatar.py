@@ -5,7 +5,7 @@ import logging
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from ...utils.file_upload_handler import FileUploadHandler
+from ...utils.storage.file_upload_handler import FileUploadHandler
 
 logger = logging.getLogger(__name__)
 

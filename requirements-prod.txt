@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Linux deployment only. uWSGI does not install cleanly on Windows.
+uwsgi==2.0.23

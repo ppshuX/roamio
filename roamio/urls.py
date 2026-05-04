@@ -26,12 +26,9 @@ urlpatterns = [
     # Django Admin
     path('admin/', admin.site.urls),
     
-    # ==================== 外部链接重定向 ====================
-    # 重定向到 app7581（如果需要 Django 处理，取消注释）
-    # path('app7581/', views.redirect_to_app7581, name='redirect-app7581'),
-    
     # ==================== 旧路由（向后兼容，重定向到前端） ====================
     # 这些路由已由 Nginx 处理重定向，这里保留用于开发环境
+    # Legacy compatibility routes are frozen. New backend behavior belongs under /api/v1/.
     path('trips/', include('backend.urls')),
     path('cetapp/', include('backend.urls')),  # 旧URL路径兼容
     path('accounts/login/', views.custom_login, name='login'),

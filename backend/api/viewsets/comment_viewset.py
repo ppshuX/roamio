@@ -21,7 +21,7 @@ from ...serializers import (
     CommentCreateSerializer,
     CommentUpdateSerializer,
 )
-from ...utils.file_upload_handler import FileUploadHandler
+from ...utils.storage.file_upload_handler import FileUploadHandler
 
 
 class NoPagination(PageNumberPagination):

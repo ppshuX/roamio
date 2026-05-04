@@ -434,7 +434,7 @@ class AuthViewSet(viewsets.GenericViewSet):
                 
                 # 如果用户没有头像，自动设置 QQ 头像
                 if not user.profile.avatar:
-                    from ...utils.avatar_downloader import set_user_avatar_from_url
+                    from ...utils.storage.avatar_downloader import set_user_avatar_from_url
                     try:
                         success, message = set_user_avatar_from_url(user, qq_info.get('avatar_url'))
                         if success:
@@ -540,7 +540,7 @@ class AuthViewSet(viewsets.GenericViewSet):
                 
                 # 自动下载并设置QQ头像（如果QQ头像URL存在）
                 if qq_info.get('avatar_url'):
-                    from ...utils.avatar_downloader import set_user_avatar_from_url
+                    from ...utils.storage.avatar_downloader import set_user_avatar_from_url
                     try:
                         set_user_avatar_from_url(user, qq_info.get('avatar_url'))
                     except Exception as e:
@@ -677,7 +677,7 @@ class AuthViewSet(viewsets.GenericViewSet):
         
         # 自动下载并设置QQ头像（如果QQ头像URL存在且用户还没有头像）
         if qq_info.get('avatar_url') and not user.profile.avatar:
-            from ...utils.avatar_downloader import set_user_avatar_from_url
+            from ...utils.storage.avatar_downloader import set_user_avatar_from_url
             try:
                 set_user_avatar_from_url(user, qq_info.get('avatar_url'))
             except Exception as e:
@@ -756,7 +756,7 @@ class AuthViewSet(viewsets.GenericViewSet):
         
         # 自动下载并设置QQ头像（如果QQ头像URL存在且用户还没有头像）
         if qq_info.get('avatar_url') and not request.user.profile.avatar:
-            from ...utils.avatar_downloader import set_user_avatar_from_url
+            from ...utils.storage.avatar_downloader import set_user_avatar_from_url
             try:
                 set_user_avatar_from_url(request.user, qq_info.get('avatar_url'))
             except Exception as e:

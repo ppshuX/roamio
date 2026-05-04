@@ -227,11 +227,9 @@ class TripPlannerAI:
         
         return f"""你是 Roamio 旅行规划助手。根据用户需求生成结构清晰、内容适中且**必须是有效 JSON** 的旅行计划。
 
-【重要】必须包含所有必需字段，特别是 trip_title（行程标题）！
-
 【输出格式】严格的 JSON 格式：
 {{
-  "trip_title": "行程标题（简洁有吸引力，必填！）",
+  "trip_title": "行程标题（简洁有吸引力）",
   "summary": "行程概述（80字内，突出亮点）",
   "destination": "目的地",
   "days": 天数,
@@ -362,34 +360,29 @@ class TripPlannerAI:
     
     def _validate_and_clean(self, trip_plan, preferences):
         """验证和清洗数据"""
-        # 1. 基础字段验证（带容错处理）
+        # 1. 基础字段验证（trip_title 由下面的容错逻辑补齐）
         required_fields = ['summary', 'days', 'days_detail']
         for field in required_fields:
             if field not in trip_plan:
                 raise ValueError(f"缺少必需字段: {field}")
-        
-        # trip_title 容错处理：如果缺失，尝试从其他字段生成
+
+        # trip_title 容错处理：模型偶尔会漏掉标题，不能因此让整条生成链路失败
         if 'trip_title' not in trip_plan or not trip_plan.get('trip_title'):
-            # 尝试从 destination 生成
             if trip_plan.get('destination'):
                 trip_plan['trip_title'] = f"{trip_plan['destination']}之旅"
-            # 尝试从第一天标题生成
             elif trip_plan.get('days_detail') and len(trip_plan['days_detail']) > 0:
                 first_day = trip_plan['days_detail'][0]
                 if first_day.get('title'):
-                    # 提取 "Day 1: xxx" 中的 xxx 部分
                     title = first_day['title'].replace('Day 1:', '').replace('Day 1：', '').strip()
                     trip_plan['trip_title'] = title if title else "我的旅行计划"
                 else:
                     trip_plan['trip_title'] = "我的旅行计划"
-            # 尝试从 summary 提取关键词
             elif trip_plan.get('summary'):
-                summary = trip_plan['summary'][:20]  # 取前20字
-                trip_plan['trip_title'] = f"{summary}..."
+                trip_plan['trip_title'] = f"{trip_plan['summary'][:20]}..."
             else:
                 trip_plan['trip_title'] = "我的旅行计划"
-            
-            logger.warning(f"AI 返回缺少 trip_title，已自动生成: {trip_plan['trip_title']}")
+
+            logger.warning("AI response missing trip_title; generated fallback: %s", trip_plan['trip_title'])
         
         # 2. 天数验证
         expected_days = preferences.get('days')
@@ -513,4 +506,3 @@ class TripPlannerAI:
         except Exception as e:
             logger.error(f"Trip refinement error: {e}")
             raise
-
