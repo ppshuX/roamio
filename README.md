@@ -31,7 +31,7 @@ Do not treat old planning or integration documents as source of truth until audi
 - Frontend app: `frontend/web/src/main.js`
 - Frontend routes: `frontend/web/src/router/index.js`
 - Frontend API wrappers: `frontend/web/src/api/`
-- Transitional frontend build output: `web/dist/`
+- Frontend build output: `backend/web_dist/`
 
 ## Local Development
 
@@ -64,6 +64,8 @@ Build frontend:
 cd frontend/web
 npm run build
 ```
+
+The Vite build writes the SPA bundle to `backend/web_dist/`, which is the directory Django and deployment configs should serve.
 
 ## Security
 

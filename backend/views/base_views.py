@@ -18,7 +18,7 @@ def vue_app(request):
     Vue单页应用入口
     提供Vue构建后的index.html
     """
-    vue_index_path = os.path.join(settings.BASE_DIR, 'web', 'dist', 'index.html')
+    vue_index_path = os.path.join(settings.BASE_DIR, 'backend', 'web_dist', 'index.html')
     
     try:
         with open(vue_index_path, 'r', encoding='utf-8') as f:

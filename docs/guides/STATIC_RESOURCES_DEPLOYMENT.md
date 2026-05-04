@@ -48,7 +48,7 @@ backend/static/
 # Static files (CSS, JavaScript, Images)
 # 
 # 前后端分离架构：
-# - 前端静态文件: web/dist/ (由 Nginx 直接访问)
+# - 前端静态文件: backend/web_dist/ (由 Vite 构建，Nginx 直接访问)
 # - Django Admin 静态文件: staticfiles/ (由 collectstatic 收集)
 # - 公共资源: backend/static/ (跨项目共享，由 Nginx 直接访问)
 
@@ -59,6 +59,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # 这些资源会被提交到 Git，供 Roamio、Ralendar 等所有生态产品使用
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'backend/static'),  # 公共资源：images, audios, videos
+    os.path.join(BASE_DIR, 'backend', 'web_dist'),  # Vite 前端构建输出
 ]
 ```
 
@@ -79,7 +80,7 @@ server {
     
     # ==================== 前端静态文件 ====================
     location / {
-        root /home/acs/roamio/web/dist;
+        root /home/acs/roamio/backend/web_dist;
         try_files $uri $uri/ /index.html;
         
         # 缓存策略
@@ -298,10 +299,16 @@ git push
 cd ~/roamio
 git pull
 
-# 3. 重新收集静态文件
+# 3. 构建前端 SPA 到 backend/web_dist/
+cd frontend/web
+npm install
+npm run build
+cd ../..
+
+# 4. 重新收集 Django Admin 静态文件
 python3 manage.py collectstatic --noinput
 
-# 4. 清除 CDN 缓存（如果使用了 CDN）
+# 5. 清除 CDN 缓存（如果使用了 CDN）
 # 或等待缓存自动过期
 ```
 
@@ -342,6 +349,8 @@ Glide.with(this)
 部署前确认：
 
 - [ ] `backend/static/` 目录已创建
+- [ ] `frontend/web` 已执行 `npm run build`
+- [ ] `backend/web_dist/index.html` 已生成
 - [ ] 公共资源已复制到对应目录
 - [ ] Django `STATICFILES_DIRS` 已配置
 - [ ] `.gitignore` 已更新

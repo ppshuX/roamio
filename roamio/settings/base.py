@@ -188,7 +188,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 # 
 # 前后端分离架构：
-# - 前端静态文件: web/dist/ (由 Nginx 直接访问)
+# - 前端静态文件: backend/web_dist/ (由 Vite 构建，Nginx 或 Django SPA 入口读取)
 # - Django Admin 静态文件: staticfiles/ (由 collectstatic 收集)
 # - 公共资源: backend/static/ (跨项目共享，由 Nginx 直接访问)
 
@@ -199,7 +199,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # 这些资源会被提交到 Git，供 Roamio、Ralendar 等所有生态产品使用
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'backend/static'),  # 公共资源：images, audios, videos
-    os.path.join(BASE_DIR, 'web/dist'),  # Vue 前端构建输出
+    os.path.join(BASE_DIR, 'backend', 'web_dist'),  # Vite 前端构建输出
 ]
 
 MEDIA_URL = '/media/'
