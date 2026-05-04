@@ -33,6 +33,7 @@ urlpatterns = [
     # ==================== 旧路由（向后兼容，重定向到前端） ====================
     # 这些路由已由 Nginx 处理重定向，这里保留用于开发环境
     # Legacy compatibility routes are frozen. New backend behavior belongs under /api/v1/.
+    # Removal gates are tracked in docs/remediation/11_M4_ROUTE_BOUNDARY_FREEZE.md.
     path('trips/', include('backend.urls')),
     path('cetapp/', include('backend.urls')),  # 旧URL路径兼容
     path('accounts/login/', views.custom_login, name='login'),
