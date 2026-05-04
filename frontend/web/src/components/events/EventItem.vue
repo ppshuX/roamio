@@ -89,27 +89,22 @@
   </div>
 </template>
 
-<script>
-import { computed, defineComponent } from 'vue'
+<script setup>
+import { computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 
-export default defineComponent({
-  name: 'EventItem',
-  
-  props: {
-    event: {
-      type: Object,
-      required: true
-    },
-    isLocal: {
-      type: Boolean,
-      default: false
-    }
+const props = defineProps({
+  event: {
+    type: Object,
+    required: true
   },
-  
-  emits: ['edit', 'delete', 'move-to-cloud'],
-  
-  setup(props, { emit }) {
+  isLocal: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const emit = defineEmits(['edit', 'delete', 'move-to-cloud'])
 
 const userStore = useUserStore()
 const isLoggedIn = computed(() => userStore.isLoggedIn)
@@ -198,20 +193,6 @@ const handleDelete = () => {
 const handleMoveToCloud = () => {
   emit('move-to-cloud', props.event)
 }
-
-    return {
-      isLoggedIn,
-      formatTime,
-      getLocationName,
-      getReminderInfo,
-      viewInRalendar,
-      navigateInRalendar,
-      handleEdit,
-      handleDelete,
-      handleMoveToCloud
-    }
-  }
-})
 </script>
 
 <style scoped>
@@ -317,4 +298,3 @@ const handleMoveToCloud = () => {
   }
 }
 </style>
-

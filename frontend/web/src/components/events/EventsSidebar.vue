@@ -73,32 +73,22 @@
   </div>
 </template>
 
-<script>
-import { ref, computed, onMounted, watch, defineComponent } from 'vue'
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { getEvents, deleteEvent as deleteEventAPI } from '@/api/events'
 import EventForm from './EventForm.vue'
 import EventItem from './EventItem.vue'
 
-export default defineComponent({
-  name: 'EventsSidebar',
-  
-  components: {
-    EventForm,
-    EventItem
-  },
-  
-  props: {
-    tripId: {
-      type: Number,
-      required: true
-    }
-  },
-  
-  emits: ['update-count'],
-  
-  setup(props, { emit }) {
+const props = defineProps({
+  tripId: {
+    type: Number,
+    required: true
+  }
+})
+
+const emit = defineEmits(['update-count'])
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -193,21 +183,6 @@ const goToLogin = () => {
 watch(cloudEvents, () => {
   emit('update-count', cloudEvents.value.length)
 }, { immediate: true })
-
-    return {
-      isLoggedIn,
-      showEventForm,
-      editingEvent,
-      cloudEvents,
-      loading,
-      handleSave,
-      handleEdit,
-      handleDelete,
-      closeEventForm,
-      goToLogin
-    }
-  }
-})
 </script>
 
 <style scoped>
@@ -321,4 +296,3 @@ watch(cloudEvents, () => {
   }
 }
 </style>
-

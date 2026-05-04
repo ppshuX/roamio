@@ -134,187 +134,167 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted } from 'vue'
+import { getLocationByIP, getWeatherByCity } from '@/api/weather'
 
-export default {
-  name: 'WeatherWidget',
+const loading = ref(true)
+const error = ref(false)
+const weather = ref({
+  city: '',
+  weather: '',
+  temperature: '',
+  windDirection: '',
+  windPower: '',
+  humidity: '',
+  reportTime: ''
+})
+
+// 热门城市列表
+const hotCities = ['北京', '上海', '广州', '深圳', '成都', '杭州', '西安', '南京']
+
+// 自定义城市输入
+const customCity = ref('')
+
+// 保存成功提示
+const savedNotice = ref(false)
+
+// 显示设置面板
+const showSettings = ref(false)
+
+// 获取天气图标
+const getWeatherIcon = (weatherText) => {
+  if (!weatherText) return 'bi bi-cloud'
   
-  setup() {
-    const loading = ref(true)
-    const error = ref(false)
-    const weather = ref({
-      city: '',
-      weather: '',
-      temperature: '',
-      windDirection: '',
-      windPower: '',
-      humidity: '',
-      reportTime: ''
-    })
+  const text = weatherText.toLowerCase()
+  if (text.includes('晴')) return 'bi bi-brightness-high'
+  if (text.includes('云') || text.includes('阴')) return 'bi bi-cloud'
+  if (text.includes('雨')) return 'bi bi-cloud-rain'
+  if (text.includes('雪')) return 'bi bi-cloud-snow'
+  if (text.includes('雷')) return 'bi bi-cloud-lightning'
+  if (text.includes('雾') || text.includes('霾')) return 'bi bi-cloud-haze'
+  return 'bi bi-cloud'
+}
+
+// 获取天气数据（调用后端API）
+const fetchWeather = async () => {
+  loading.value = true
+  error.value = false
+  
+  try {
+    // 1. 先尝试从localStorage获取缓存的城市
+    let city = localStorage.getItem('weatherCity')
     
-    // 热门城市列表
-    const hotCities = ['北京', '上海', '广州', '深圳', '成都', '杭州', '西安', '南京']
-    
-    // 自定义城市输入
-    const customCity = ref('')
-    
-    // 保存成功提示
-    const savedNotice = ref(false)
-    
-    // 显示设置面板
-    const showSettings = ref(false)
-    
-    // 获取天气图标
-    const getWeatherIcon = (weatherText) => {
-      if (!weatherText) return 'bi bi-cloud'
-      
-      const text = weatherText.toLowerCase()
-      if (text.includes('晴')) return 'bi bi-brightness-high'
-      if (text.includes('云') || text.includes('阴')) return 'bi bi-cloud'
-      if (text.includes('雨')) return 'bi bi-cloud-rain'
-      if (text.includes('雪')) return 'bi bi-cloud-snow'
-      if (text.includes('雷')) return 'bi bi-cloud-lightning'
-      if (text.includes('雾') || text.includes('霾')) return 'bi bi-cloud-haze'
-      return 'bi bi-cloud'
+    // 立即验证 city 是否为有效字符串
+    if (city && typeof city === 'string' && city.trim() !== '') {
+      // 使用缓存的城市
+      city = city.trim()
+    } else {
+      // 缓存无效，清除并重新获取
+      city = null
+      localStorage.removeItem('weatherCity')
+      localStorage.removeItem('weatherCacheTime')
     }
     
-    // 获取天气数据（调用后端API）
-    const fetchWeather = async () => {
-      loading.value = true
-      error.value = false
-      
+    // 2. 如果没有有效缓存，调用后端IP定位接口获取城市
+    if (!city) {
       try {
-        // 1. 先尝试从localStorage获取缓存的城市
-        let city = localStorage.getItem('weatherCity')
+        const locationData = await getLocationByIP()
         
-        // 立即验证 city 是否为有效字符串
-        if (city && typeof city === 'string' && city.trim() !== '') {
-          // 使用缓存的城市
-          city = city.trim()
-        } else {
-          // 缓存无效，清除并重新获取
-          city = null
-          localStorage.removeItem('weatherCity')
-          localStorage.removeItem('weatherCacheTime')
-        }
-        
-        // 2. 如果没有有效缓存，调用后端IP定位接口获取城市
-        if (!city) {
-          try {
-            const locationRes = await fetch('/api/v1/location/')
-            const locationData = await locationRes.json()
-            
-            if (locationData.success && locationData.data && locationData.data.city) {
-              city = String(locationData.data.city).trim()
-              if (city) {
-                // 缓存位置信息（24小时）
-                localStorage.setItem('weatherCity', city)
-                localStorage.setItem('weatherCacheTime', Date.now().toString())
-              }
-            }
-          } catch (err) {
-            console.warn('IP定位失败:', err)
+        if (locationData.success && locationData.data && locationData.data.city) {
+          city = String(locationData.data.city).trim()
+          if (city) {
+            // 缓存位置信息（24小时）
+            localStorage.setItem('weatherCity', city)
+            localStorage.setItem('weatherCacheTime', Date.now().toString())
           }
-        }
-        
-        // 3. 最后的保底：如果还是没有有效城市，使用默认值
-        if (!city) {
-          city = '北京'
-          localStorage.setItem('weatherCity', city)
-          localStorage.setItem('weatherCacheTime', Date.now().toString())
-        }
-        
-        // 4. 调用后端天气接口获取天气信息
-        const weatherRes = await fetch(`/api/v1/weather/?location=${encodeURIComponent(city)}`)
-        const weatherData = await weatherRes.json()
-        
-        if (weatherData.success) {
-          const data = weatherData.data
-          weather.value = {
-            city: data.location,
-            weather: data.weather,
-            temperature: data.temperature,
-            windDirection: data.windDir,
-            windPower: data.windScale,
-            humidity: data.humidity,
-            reportTime: data.updateTime
-          }
-        } else {
-          throw new Error(weatherData.message || '无法获取天气信息')
         }
       } catch (err) {
-        console.error('获取天气失败:', err)
-        error.value = true
-        // 清除可能已损坏的缓存
-        localStorage.removeItem('weatherCity')
-        localStorage.removeItem('weatherCacheTime')
-      } finally {
-        loading.value = false
+        console.warn('IP定位失败:', err)
       }
     }
     
-    // 检查缓存是否过期（24小时）
-    const isCacheExpired = () => {
-      const cacheTime = localStorage.getItem('weatherCacheTime')
-      if (!cacheTime) return true
-      const now = Date.now()
-      const diff = now - parseInt(cacheTime)
-      return diff > 24 * 60 * 60 * 1000 // 24小时
-    }
-    
-    // 切换城市
-    const changeCity = (city) => {
-      if (!city || typeof city !== 'string' || city.trim() === '') {
-        return
-      }
-      
-      city = city.trim()
-      
-      // 更新缓存（保存为默认城市）
+    // 3. 最后的保底：如果还是没有有效城市，使用默认值
+    if (!city) {
+      city = '北京'
       localStorage.setItem('weatherCity', city)
       localStorage.setItem('weatherCacheTime', Date.now().toString())
-      
-      // 清空输入框
-      customCity.value = ''
-      
-      // 显示保存成功提示
-      savedNotice.value = true
-      setTimeout(() => {
-        savedNotice.value = false
-      }, 2000)
-      
-      // 重新获取天气
-      fetchWeather()
     }
     
-    onMounted(() => {
-      // 清理旧版本的缓存键（兼容性清理）
-      localStorage.removeItem('weatherAdcode')
-      
-      // 检查缓存是否过期
-      if (isCacheExpired()) {
-        localStorage.removeItem('weatherCity')
-        localStorage.removeItem('weatherCacheTime')
+    // 4. 调用后端天气接口获取天气信息
+    const weatherData = await getWeatherByCity(city)
+    
+    if (weatherData.success) {
+      const data = weatherData.data
+      weather.value = {
+        city: data.location,
+        weather: data.weather,
+        temperature: data.temperature,
+        windDirection: data.windDir,
+        windPower: data.windScale,
+        humidity: data.humidity,
+        reportTime: data.updateTime
       }
-      
-      fetchWeather()
-    })
-    
-    return {
-      loading,
-      error,
-      weather,
-      hotCities,
-      customCity,
-      savedNotice,
-      showSettings,
-      getWeatherIcon,
-      fetchWeather,
-      changeCity
+    } else {
+      throw new Error(weatherData.message || '无法获取天气信息')
     }
+  } catch (err) {
+    console.error('获取天气失败:', err)
+    error.value = true
+    // 清除可能已损坏的缓存
+    localStorage.removeItem('weatherCity')
+    localStorage.removeItem('weatherCacheTime')
+  } finally {
+    loading.value = false
   }
 }
+
+// 检查缓存是否过期（24小时）
+const isCacheExpired = () => {
+  const cacheTime = localStorage.getItem('weatherCacheTime')
+  if (!cacheTime) return true
+  const now = Date.now()
+  const diff = now - parseInt(cacheTime)
+  return diff > 24 * 60 * 60 * 1000 // 24小时
+}
+
+// 切换城市
+const changeCity = (city) => {
+  if (!city || typeof city !== 'string' || city.trim() === '') {
+    return
+  }
+  
+  city = city.trim()
+  
+  // 更新缓存（保存为默认城市）
+  localStorage.setItem('weatherCity', city)
+  localStorage.setItem('weatherCacheTime', Date.now().toString())
+  
+  // 清空输入框
+  customCity.value = ''
+  
+  // 显示保存成功提示
+  savedNotice.value = true
+  setTimeout(() => {
+    savedNotice.value = false
+  }, 2000)
+  
+  // 重新获取天气
+  fetchWeather()
+}
+
+onMounted(() => {
+  // 清理旧版本的缓存键（兼容性清理）
+  localStorage.removeItem('weatherAdcode')
+  
+  // 检查缓存是否过期
+  if (isCacheExpired()) {
+    localStorage.removeItem('weatherCity')
+    localStorage.removeItem('weatherCacheTime')
+  }
+  
+  fetchWeather()
+})
 </script>
 
 <style scoped>
@@ -774,5 +754,4 @@ export default {
   }
 }
 </style>
-
 

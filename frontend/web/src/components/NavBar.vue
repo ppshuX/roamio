@@ -96,54 +96,37 @@
   </nav>
 </template>
 
-<script>
+<script setup>
 import { computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
 import WeatherWidget from './WeatherWidget.vue'
 
-export default {
-  name: 'NavBar',
-  components: {
-    WeatherWidget
-  },
+const router = useRouter()
+const userStore = useUserStore()
+const toggleRalendarSidebar = inject('toggleRalendarSidebar', null)
+
+const isLoggedIn = computed(() => userStore.isLoggedIn)
+const username = computed(() => userStore.username)
+const avatar = computed(() => userStore.avatar)
+
+const handleLogout = async () => {
+  if (!confirm('确定要退出登录吗？')) return
   
-  setup() {
-    const router = useRouter()
-    const userStore = useUserStore()
-    const toggleRalendarSidebar = inject('toggleRalendarSidebar', null)
-    
-    const isLoggedIn = computed(() => userStore.isLoggedIn)
-    const username = computed(() => userStore.username)
-    const avatar = computed(() => userStore.avatar)
-    
-    const handleLogout = async () => {
-      if (!confirm('确定要退出登录吗？')) return
-      
-      try {
-        await userStore.logout()
-        router.push('/login')
-      } catch (error) {
-        console.error('退出失败:', error)
-      }
-    }
-    
-    const handleRalendarClick = () => {
-      // 统一行为：切换右侧栏（手机端和桌面端都一样）
-      if (toggleRalendarSidebar) {
-        toggleRalendarSidebar()
-      } else {
-        console.error('toggleRalendarSidebar not available')
-      }
-    }
-    
-    return {
-      isLoggedIn,
-      username,
-      avatar,
-      handleRalendarClick,
-      handleLogout
-    }
+  try {
+    await userStore.logout()
+    router.push('/login')
+  } catch (error) {
+    console.error('退出失败:', error)
+  }
+}
+
+const handleRalendarClick = () => {
+  // 统一行为：切换右侧栏（手机端和桌面端都一样）
+  if (toggleRalendarSidebar) {
+    toggleRalendarSidebar()
+  } else {
+    console.error('toggleRalendarSidebar not available')
   }
 }
 </script>

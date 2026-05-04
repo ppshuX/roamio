@@ -127,32 +127,28 @@
   </div>
 </template>
 
-<script>
-import { ref, computed, watch, defineComponent } from 'vue'
+<script setup>
+import { ref, computed, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { createEvent, updateEvent } from '@/api/events'
 import LocalEventStorage from '@/utils/localEventStorage'
 
-export default defineComponent({
-  name: 'EventForm',
-  
-  props: {
-    tripId: {
-      type: Number,
-      required: true
-    },
-    event: {
-      type: Object,
-      default: null
-    }
+const props = defineProps({
+  tripId: {
+    type: Number,
+    required: true
   },
-  
-  emits: ['save', 'close'],
-  
-  setup(props, { emit }) {
-    const userStore = useUserStore()
-    const isLoggedIn = computed(() => userStore.isLoggedIn)
-    const isEdit = computed(() => !!props.event)
+  event: {
+    type: Object,
+    default: null
+  }
+})
+
+const emit = defineEmits(['save', 'close'])
+
+const userStore = useUserStore()
+const isLoggedIn = computed(() => userStore.isLoggedIn)
+const isEdit = computed(() => !!props.event)
 
 const saving = ref(false)
 const errors = ref({})
@@ -308,20 +304,6 @@ const saveToCloud = async () => {
 const handleClose = () => {
   emit('close')
 }
-
-    return {
-      isLoggedIn,
-      isEdit,
-      saving,
-      errors,
-      form,
-      clearError,
-      saveToLocal,
-      saveToCloud,
-      handleClose
-    }
-  }
-})
 </script>
 
 <style scoped>
@@ -425,4 +407,3 @@ const handleClose = () => {
   }
 }
 </style>
-
