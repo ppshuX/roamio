@@ -184,338 +184,313 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
 import { getQQLoginUrl, sendVerificationCode, verifyCode } from '@/api/auth'
 import NavBar from '@/components/NavBar.vue'
 
-export default {
-  name: 'RegisterView',
-  components: { NavBar },
+const router = useRouter()
+const userStore = useUserStore()
+
+const formData = ref({
+  username: '',
+  email: '',
+  password: '',
+  password2: '',
+  verification_code: '',
+  verification_token: ''
+})
+
+const errors = ref({})
+const errorMessage = ref('')
+const successMessage = ref('')
+const submitting = ref(false)
+const qqLoginLoading = ref(false)
+const sendingCode = ref(false)
+const verifyingCode = ref(false)
+const codeSent = ref(false)
+const codeVerified = ref(false)
+const countdown = ref(0)
+let countdownTimer = null
+
+// 表单验证
+const validateForm = () => {
+  errors.value = {}
   
-  setup() {
-    const router = useRouter()
-    const userStore = useUserStore()
-    
-    const formData = ref({
-      username: '',
-      email: '',
-      password: '',
-      password2: '',
-      verification_code: '',
-      verification_token: ''
+  if (!formData.value.username) {
+    errors.value.username = '请输入用户名'
+    return false
+  }
+  
+  if (formData.value.username.length < 3) {
+    errors.value.username = '用户名至少3个字符'
+    return false
+  }
+  
+  if (!formData.value.email) {
+    errors.value.email = '请输入邮箱'
+    return false
+  }
+  
+  // 验证邮箱格式
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(formData.value.email)) {
+    errors.value.email = '请输入有效的邮箱地址'
+    return false
+  }
+  
+  if (!codeVerified.value) {
+    errors.value.verification_token = '请先完成邮箱验证'
+    return false
+  }
+  
+  if (!formData.value.password) {
+    errors.value.password = '请输入密码'
+    return false
+  }
+  
+  if (formData.value.password.length < 8) {
+    errors.value.password = '密码至少8位'
+    return false
+  }
+  
+  if (!formData.value.password2) {
+    errors.value.password2 = '请再次输入密码'
+    return false
+  }
+  
+  if (formData.value.password !== formData.value.password2) {
+    errors.value.password2 = '两次密码不一致'
+    return false
+  }
+  
+  return true
+}
+
+// 发送验证码
+const handleSendCode = async () => {
+  errors.value.email = ''
+  errorMessage.value = ''
+  
+  if (!formData.value.email) {
+    errors.value.email = '请先输入邮箱'
+    return
+  }
+  
+  // 验证邮箱格式
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(formData.value.email)) {
+    errors.value.email = '请输入有效的邮箱地址'
+    return
+  }
+  
+  sendingCode.value = true
+  
+  try {
+    await sendVerificationCode({
+      email: formData.value.email,
+      type: 'register'
     })
     
-    const errors = ref({})
-    const errorMessage = ref('')
-    const successMessage = ref('')
-    const submitting = ref(false)
-    const qqLoginLoading = ref(false)
-    const sendingCode = ref(false)
-    const verifyingCode = ref(false)
-    const codeSent = ref(false)
-    const codeVerified = ref(false)
-    const countdown = ref(0)
-    let countdownTimer = null
+    codeSent.value = true
+    countdown.value = 60 // 60秒倒计时
+    startCountdown()
     
-    // 表单验证
-    const validateForm = () => {
-      errors.value = {}
-      
-      if (!formData.value.username) {
-        errors.value.username = '请输入用户名'
-        return false
+  } catch (error) {
+    console.error('发送验证码失败:', error)
+    if (error.response?.data) {
+      const data = error.response.data
+      if (data.error) {
+        errorMessage.value = data.error
+      } else if (data.email) {
+        errors.value.email = Array.isArray(data.email) ? data.email[0] : data.email
+      } else {
+        errorMessage.value = '发送验证码失败，请稍后重试'
       }
-      
-      if (formData.value.username.length < 3) {
-        errors.value.username = '用户名至少3个字符'
-        return false
-      }
-      
-      if (!formData.value.email) {
-        errors.value.email = '请输入邮箱'
-        return false
-      }
-      
-      // 验证邮箱格式
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(formData.value.email)) {
-        errors.value.email = '请输入有效的邮箱地址'
-        return false
-      }
-      
-      if (!codeVerified.value) {
-        errors.value.verification_token = '请先完成邮箱验证'
-        return false
-      }
-      
-      if (!formData.value.password) {
-        errors.value.password = '请输入密码'
-        return false
-      }
-      
-      if (formData.value.password.length < 8) {
-        errors.value.password = '密码至少8位'
-        return false
-      }
-      
-      if (!formData.value.password2) {
-        errors.value.password2 = '请再次输入密码'
-        return false
-      }
-      
-      if (formData.value.password !== formData.value.password2) {
-        errors.value.password2 = '两次密码不一致'
-        return false
-      }
-      
-      return true
+    } else {
+      errorMessage.value = '网络错误，请检查网络连接'
     }
-    
-    // 发送验证码
-    const handleSendCode = async () => {
-      errors.value.email = ''
-      errorMessage.value = ''
-      
-      if (!formData.value.email) {
-        errors.value.email = '请先输入邮箱'
-        return
-      }
-      
-      // 验证邮箱格式
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(formData.value.email)) {
-        errors.value.email = '请输入有效的邮箱地址'
-        return
-      }
-      
-      sendingCode.value = true
-      
-      try {
-        await sendVerificationCode({
-          email: formData.value.email,
-          type: 'register'
-        })
-        
-        codeSent.value = true
-        countdown.value = 60 // 60秒倒计时
-        startCountdown()
-        
-      } catch (error) {
-        console.error('发送验证码失败:', error)
-        if (error.response?.data) {
-          const data = error.response.data
-          if (data.error) {
-            errorMessage.value = data.error
-          } else if (data.email) {
-            errors.value.email = Array.isArray(data.email) ? data.email[0] : data.email
-          } else {
-            errorMessage.value = '发送验证码失败，请稍后重试'
-          }
-        } else {
-          errorMessage.value = '网络错误，请检查网络连接'
-        }
-      } finally {
-        sendingCode.value = false
-      }
-    }
-    
-    // 验证验证码
-    const handleVerifyCode = async () => {
-      errors.value.verification_code = ''
-      errorMessage.value = ''
-      
-      if (!formData.value.verification_code) {
-        errors.value.verification_code = '请输入验证码'
-        return
-      }
-      
-      if (formData.value.verification_code.length !== 6) {
-        errors.value.verification_code = '验证码为6位数字'
-        return
-      }
-      
-      verifyingCode.value = true
-      
-      try {
-        const response = await verifyCode({
-          email: formData.value.email,
-          code: formData.value.verification_code,
-          type: 'register'
-        })
-        
-        if (response.success && response.verification_token) {
-          formData.value.verification_token = response.verification_token
-          codeVerified.value = true
-          successMessage.value = '邮箱验证成功！可以完成注册了'
-        } else {
-          errors.value.verification_code = '验证失败，请检查验证码'
-        }
-        
-      } catch (error) {
-        console.error('验证码验证失败:', error)
-        if (error.response?.data) {
-          const data = error.response.data
-          if (data.error) {
-            errors.value.verification_code = data.error
-          } else if (data.code) {
-            errors.value.verification_code = Array.isArray(data.code) ? data.code[0] : data.code
-          } else {
-            errors.value.verification_code = '验证码无效或已过期'
-          }
-        } else {
-          errors.value.verification_code = '验证失败，请稍后重试'
-        }
-      } finally {
-        verifyingCode.value = false
-      }
-    }
-    
-    // 倒计时函数
-    const startCountdown = () => {
-      if (countdownTimer) {
-        clearInterval(countdownTimer)
-      }
-      
-      countdownTimer = setInterval(() => {
-        if (countdown.value > 0) {
-          countdown.value--
-        } else {
-          clearInterval(countdownTimer)
-          countdownTimer = null
-        }
-      }, 1000)
-    }
-    
-    // 清理定时器
-    onUnmounted(() => {
-      if (countdownTimer) {
-        clearInterval(countdownTimer)
-      }
+  } finally {
+    sendingCode.value = false
+  }
+}
+
+// 验证验证码
+const handleVerifyCode = async () => {
+  errors.value.verification_code = ''
+  errorMessage.value = ''
+  
+  if (!formData.value.verification_code) {
+    errors.value.verification_code = '请输入验证码'
+    return
+  }
+  
+  if (formData.value.verification_code.length !== 6) {
+    errors.value.verification_code = '验证码为6位数字'
+    return
+  }
+  
+  verifyingCode.value = true
+  
+  try {
+    const response = await verifyCode({
+      email: formData.value.email,
+      code: formData.value.verification_code,
+      type: 'register'
     })
     
-    // 处理注册
-    const handleRegister = async () => {
-      errorMessage.value = ''
-      successMessage.value = ''
-      
-      if (!validateForm()) {
-        return
+    if (response.success && response.verification_token) {
+      formData.value.verification_token = response.verification_token
+      codeVerified.value = true
+      successMessage.value = '邮箱验证成功！可以完成注册了'
+    } else {
+      errors.value.verification_code = '验证失败，请检查验证码'
+    }
+    
+  } catch (error) {
+    console.error('验证码验证失败:', error)
+    if (error.response?.data) {
+      const data = error.response.data
+      if (data.error) {
+        errors.value.verification_code = data.error
+      } else if (data.code) {
+        errors.value.verification_code = Array.isArray(data.code) ? data.code[0] : data.code
+      } else {
+        errors.value.verification_code = '验证码无效或已过期'
       }
+    } else {
+      errors.value.verification_code = '验证失败，请稍后重试'
+    }
+  } finally {
+    verifyingCode.value = false
+  }
+}
+
+// 倒计时函数
+const startCountdown = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+  }
+  
+  countdownTimer = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value--
+    } else {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+    }
+  }, 1000)
+}
+
+// 清理定时器
+onUnmounted(() => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+  }
+})
+
+// 处理注册
+const handleRegister = async () => {
+  errorMessage.value = ''
+  successMessage.value = ''
+  
+  if (!validateForm()) {
+    return
+  }
+  
+  submitting.value = true
+  
+  try {
+    await userStore.register({
+      username: formData.value.username,
+      email: formData.value.email,
+      password: formData.value.password,
+      password2: formData.value.password2,
+      verification_token: formData.value.verification_token
+    })
+    
+    successMessage.value = '注册成功！正在跳转...'
+    
+    // 2秒后跳转到首页
+    setTimeout(() => {
+      router.push('/')
+    }, 2000)
+    
+  } catch (error) {
+    console.error('注册失败:', error)
+    
+    // 处理错误信息
+    if (error.response?.data) {
+      const data = error.response.data
       
-      submitting.value = true
-      
-      try {
-        await userStore.register({
-          username: formData.value.username,
-          email: formData.value.email,
-          password: formData.value.password,
-          password2: formData.value.password2,
-          verification_token: formData.value.verification_token
-        })
+      // 如果是字段错误
+      if (typeof data === 'object') {
+        if (data.username) {
+          errors.value.username = Array.isArray(data.username) ? data.username[0] : data.username
+        }
+        if (data.email) {
+          errors.value.email = Array.isArray(data.email) ? data.email[0] : data.email
+        }
+        if (data.password) {
+          errors.value.password = Array.isArray(data.password) ? data.password[0] : data.password
+        }
+        if (data.password2) {
+          errors.value.password2 = Array.isArray(data.password2) ? data.password2[0] : data.password2
+        }
+        if (data.verification_code) {
+          errors.value.verification_code = Array.isArray(data.verification_code) ? data.verification_code[0] : data.verification_code
+        }
         
-        successMessage.value = '注册成功！正在跳转...'
+        // 处理非字段错误
+        if (data.non_field_errors) {
+          errorMessage.value = Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : data.non_field_errors
+        }
         
-        // 2秒后跳转到首页
-        setTimeout(() => {
-          router.push('/')
-        }, 2000)
-        
-      } catch (error) {
-        console.error('注册失败:', error)
-        
-        // 处理错误信息
-        if (error.response?.data) {
-          const data = error.response.data
-          
-          // 如果是字段错误
-          if (typeof data === 'object') {
-            if (data.username) {
-              errors.value.username = Array.isArray(data.username) ? data.username[0] : data.username
-            }
-            if (data.email) {
-              errors.value.email = Array.isArray(data.email) ? data.email[0] : data.email
-            }
-            if (data.password) {
-              errors.value.password = Array.isArray(data.password) ? data.password[0] : data.password
-            }
-            if (data.password2) {
-              errors.value.password2 = Array.isArray(data.password2) ? data.password2[0] : data.password2
-            }
-            if (data.verification_code) {
-              errors.value.verification_code = Array.isArray(data.verification_code) ? data.verification_code[0] : data.verification_code
-            }
-            
-            // 处理非字段错误
-            if (data.non_field_errors) {
-              errorMessage.value = Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : data.non_field_errors
-            }
-            
-            // 处理验证token错误
-            if (data.verification_token) {
-              errors.value.verification_token = Array.isArray(data.verification_token) ? data.verification_token[0] : data.verification_token
-              if (!errorMessage.value) {
-                errorMessage.value = '注册需要邮箱验证，请先完成邮箱验证'
-              }
-            }
-            
-            // 如果有通用错误消息
-            if (!errorMessage.value && (data.detail || data.message || data.error)) {
-              errorMessage.value = data.detail || data.message || data.error
-            }
-            
-            if (!errorMessage.value) {
-              errorMessage.value = '注册失败，请稍后重试'
-            }
-          } else {
-            errorMessage.value = '注册失败，请稍后重试'
+        // 处理验证token错误
+        if (data.verification_token) {
+          errors.value.verification_token = Array.isArray(data.verification_token) ? data.verification_token[0] : data.verification_token
+          if (!errorMessage.value) {
+            errorMessage.value = '注册需要邮箱验证，请先完成邮箱验证'
           }
-        } else {
-          errorMessage.value = '网络错误，请检查网络连接'
         }
-      } finally {
-        submitting.value = false
-      }
-    }
-    
-    const handleQQLogin = async () => {
-      qqLoginLoading.value = true
-      try {
-        const response = await getQQLoginUrl()
-        if (response.authorize_url && response.state) {
-          // 保存state到sessionStorage用于验证
-          sessionStorage.setItem('qq_oauth_state', response.state)
-          // 跳转到QQ授权页面
-          window.location.href = response.authorize_url
-        } else {
-          errorMessage.value = '获取QQ登录链接失败，请重试'
-          qqLoginLoading.value = false
+        
+        // 如果有通用错误消息
+        if (!errorMessage.value && (data.detail || data.message || data.error)) {
+          errorMessage.value = data.detail || data.message || data.error
         }
-      } catch (err) {
-        errorMessage.value = err.response?.data?.error || 'QQ登录失败，请重试'
-        qqLoginLoading.value = false
+        
+        if (!errorMessage.value) {
+          errorMessage.value = '注册失败，请稍后重试'
+        }
+      } else {
+        errorMessage.value = '注册失败，请稍后重试'
       }
+    } else {
+      errorMessage.value = '网络错误，请检查网络连接'
     }
-    
-    return {
-      formData,
-      errors,
-      errorMessage,
-      successMessage,
-      submitting,
-      qqLoginLoading,
-      sendingCode,
-      verifyingCode,
-      codeSent,
-      codeVerified,
-      countdown,
-      handleRegister,
-      handleQQLogin,
-      handleSendCode,
-      handleVerifyCode
+  } finally {
+    submitting.value = false
+  }
+}
+
+const handleQQLogin = async () => {
+  qqLoginLoading.value = true
+  try {
+    const response = await getQQLoginUrl()
+    if (response.authorize_url && response.state) {
+      // 保存state到sessionStorage用于验证
+      sessionStorage.setItem('qq_oauth_state', response.state)
+      // 跳转到QQ授权页面
+      window.location.href = response.authorize_url
+    } else {
+      errorMessage.value = '获取QQ登录链接失败，请重试'
+      qqLoginLoading.value = false
     }
+  } catch (err) {
+    errorMessage.value = err.response?.data?.error || 'QQ登录失败，请重试'
+    qqLoginLoading.value = false
   }
 }
 </script>

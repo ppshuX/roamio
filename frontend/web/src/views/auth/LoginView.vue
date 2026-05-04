@@ -91,93 +91,77 @@
     </div>
 </template>
 
-<script>
+<script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
 import { getQQLoginUrl } from '@/api/auth'
 import NavBar from '@/components/NavBar.vue'
 
-export default {
-  name: 'LoginView',
-  components: { NavBar },
+const router = useRouter()
+const userStore = useUserStore()
+
+const form = ref({
+  username: '',
+  password: ''
+})
+
+const loading = ref(false)
+const error = ref('')
+const qqLoginLoading = ref(false)
+
+const handleLogin = async () => {
+  loading.value = true
+  error.value = ''
   
-  setup() {
-    const router = useRouter()
-    const userStore = useUserStore()
+  try {
+    await userStore.login(form.value)
     
-    const form = ref({
-      username: '',
-      password: ''
-    })
-    
-    const loading = ref(false)
-    const error = ref('')
-    const qqLoginLoading = ref(false)
-    
-    const handleLogin = async () => {
-      loading.value = true
-      error.value = ''
+    // 登录成功，跳转到首页
+    router.push('/')
+  } catch (err) {
+    // 优先显示API返回的中文错误信息
+    if (err.response?.data) {
+      const data = err.response.data
       
-      try {
-        await userStore.login(form.value)
-        
-        // 登录成功，跳转到首页
-        router.push('/')
-      } catch (err) {
-        // 优先显示API返回的中文错误信息
-        if (err.response?.data) {
-          const data = err.response.data
-          
-          // 处理字段错误
-          if (data.username && Array.isArray(data.username)) {
-            error.value = data.username[0]
-          } else if (data.password && Array.isArray(data.password)) {
-            error.value = data.password[0]
-          } else if (data.non_field_errors && Array.isArray(data.non_field_errors)) {
-            error.value = data.non_field_errors[0]
-          } else if (typeof data === 'string') {
-            error.value = data
-          } else if (data.detail) {
-            error.value = data.detail
-          } else {
-            error.value = '登录失败，请检查用户名和密码'
-          }
-        } else {
-          error.value = err.message || '登录失败，请检查用户名和密码'
-        }
-      } finally {
-        loading.value = false
+      // 处理字段错误
+      if (data.username && Array.isArray(data.username)) {
+        error.value = data.username[0]
+      } else if (data.password && Array.isArray(data.password)) {
+        error.value = data.password[0]
+      } else if (data.non_field_errors && Array.isArray(data.non_field_errors)) {
+        error.value = data.non_field_errors[0]
+      } else if (typeof data === 'string') {
+        error.value = data
+      } else if (data.detail) {
+        error.value = data.detail
+      } else {
+        error.value = '登录失败，请检查用户名和密码'
       }
+    } else {
+      error.value = err.message || '登录失败，请检查用户名和密码'
     }
-    
-    const handleQQLogin = async () => {
-      qqLoginLoading.value = true
-      try {
-        const response = await getQQLoginUrl()
-        if (response.authorize_url && response.state) {
-          // 保存state到sessionStorage用于验证
-          sessionStorage.setItem('qq_oauth_state', response.state)
-          // 跳转到QQ授权页面
-          window.location.href = response.authorize_url
-        } else {
-          error.value = '获取QQ登录链接失败，请重试'
-          qqLoginLoading.value = false
-        }
-      } catch (err) {
-        error.value = err.response?.data?.error || 'QQ登录失败，请重试'
-        qqLoginLoading.value = false
-      }
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleQQLogin = async () => {
+  qqLoginLoading.value = true
+  try {
+    const response = await getQQLoginUrl()
+    if (response.authorize_url && response.state) {
+      // 保存state到sessionStorage用于验证
+      sessionStorage.setItem('qq_oauth_state', response.state)
+      // 跳转到QQ授权页面
+      window.location.href = response.authorize_url
+    } else {
+      error.value = '获取QQ登录链接失败，请重试'
+      qqLoginLoading.value = false
     }
-    
-    return {
-      form,
-      loading,
-      error,
-      qqLoginLoading,
-      handleLogin,
-      handleQQLogin
-    }
+  } catch (err) {
+    error.value = err.response?.data?.error || 'QQ登录失败，请重试'
+    qqLoginLoading.value = false
   }
 }
 </script>

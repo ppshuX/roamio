@@ -71,115 +71,101 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { handleRalendarCallback } from '@/api/ralendarOAuth'
 
-export default {
-  name: 'RalendarCallback',
-  setup() {
-    const route = useRoute()
-    const router = useRouter()
+const route = useRoute()
+const router = useRouter()
 
-    const status = ref('loading')  // loading, success, error, cancelled
-    const errorMessage = ref('')
-    const accountInfo = ref(null)
-    const countdown = ref(3)
-    let countdownTimer = null
+const status = ref('loading')  // loading, success, error, cancelled
+const errorMessage = ref('')
+const accountInfo = ref(null)
+const countdown = ref(3)
+let countdownTimer = null
 
-    // 处理 OAuth 回调
-    const processCallback = async () => {
-      const code = route.query.code
-      const state = route.query.state
-      const error = route.query.error
+// 处理 OAuth 回调
+const processCallback = async () => {
+  const code = route.query.code
+  const state = route.query.state
+  const error = route.query.error
 
-      // 用户取消授权
-      if (error === 'access_denied') {
-        status.value = 'cancelled'
-        return
-      }
+  // 用户取消授权
+  if (error === 'access_denied') {
+    status.value = 'cancelled'
+    return
+  }
 
-      // 缺少必要参数
-      if (!code || !state) {
-        status.value = 'error'
-        errorMessage.value = '缺少必要参数，请重试'
-        return
-      }
+  // 缺少必要参数
+  if (!code || !state) {
+    status.value = 'error'
+    errorMessage.value = '缺少必要参数，请重试'
+    return
+  }
 
-      try {
-        // 调用后端处理回调
-        const response = await handleRalendarCallback(code, state)
-        
-        if (response.success) {
-          status.value = 'success'
-          accountInfo.value = response.account
-          
-          // 启动倒计时
-          startCountdown()
-        } else {
-          status.value = 'error'
-          errorMessage.value = response.message || '连接失败，请重试'
-        }
-      } catch (err) {
-        console.error('处理回调失败:', err)
-        status.value = 'error'
-        
-        const errData = err.response?.data
-        if (errData?.code === 'INVALID_STATE') {
-          errorMessage.value = '授权已过期，请重新尝试'
-        } else if (errData?.code === 'TOKEN_EXCHANGE_FAILED') {
-          errorMessage.value = '授权失败，请检查网络连接后重试'
-        } else {
-          errorMessage.value = errData?.error || '连接失败，请重试'
-        }
-      }
+  try {
+    // 调用后端处理回调
+    const response = await handleRalendarCallback(code, state)
+    
+    if (response.success) {
+      status.value = 'success'
+      accountInfo.value = response.account
+      
+      // 启动倒计时
+      startCountdown()
+    } else {
+      status.value = 'error'
+      errorMessage.value = response.message || '连接失败，请重试'
     }
-
-    // 启动倒计时
-    const startCountdown = () => {
-      countdownTimer = setInterval(() => {
-        countdown.value--
-        if (countdown.value <= 0) {
-          clearInterval(countdownTimer)
-          redirectToOrigin()
-        }
-      }, 1000)
-    }
-
-    // 重试
-    const retry = () => {
-      router.push('/user/center')  // 跳转到个人中心重新连接
-    }
-
-    // 返回来源页面
-    const redirectToOrigin = () => {
-      // 优先跳转到 sessionStorage 保存的来源页面
-      const origin = sessionStorage.getItem('ralendar_auth_origin') || '/user/center'
-      sessionStorage.removeItem('ralendar_auth_origin')
-      router.push(origin)
-    }
-
-    onMounted(() => {
-      processCallback()
-    })
-
-    onBeforeUnmount(() => {
-      if (countdownTimer) {
-        clearInterval(countdownTimer)
-      }
-    })
-
-    return {
-      status,
-      errorMessage,
-      accountInfo,
-      countdown,
-      retry,
-      redirectToOrigin
+  } catch (err) {
+    console.error('处理回调失败:', err)
+    status.value = 'error'
+    
+    const errData = err.response?.data
+    if (errData?.code === 'INVALID_STATE') {
+      errorMessage.value = '授权已过期，请重新尝试'
+    } else if (errData?.code === 'TOKEN_EXCHANGE_FAILED') {
+      errorMessage.value = '授权失败，请检查网络连接后重试'
+    } else {
+      errorMessage.value = errData?.error || '连接失败，请重试'
     }
   }
 }
+
+// 启动倒计时
+const startCountdown = () => {
+  countdownTimer = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      clearInterval(countdownTimer)
+      redirectToOrigin()
+    }
+  }, 1000)
+}
+
+// 重试
+const retry = () => {
+  router.push('/user/center')  // 跳转到个人中心重新连接
+}
+
+// 返回来源页面
+const redirectToOrigin = () => {
+  // 优先跳转到 sessionStorage 保存的来源页面
+  const origin = sessionStorage.getItem('ralendar_auth_origin') || '/user/center'
+  sessionStorage.removeItem('ralendar_auth_origin')
+  router.push(origin)
+}
+
+onMounted(() => {
+  processCallback()
+})
+
+onBeforeUnmount(() => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+  }
+})
 </script>
 
 <style scoped>

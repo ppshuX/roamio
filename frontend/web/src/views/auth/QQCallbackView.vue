@@ -9,82 +9,70 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores'
 import { qqCallback } from '@/api/auth'
 
-export default {
-  name: 'QQCallbackView',
-  
-  setup() {
-    const router = useRouter()
-    const route = useRoute()
-    const userStore = useUserStore()
+const router = useRouter()
+const route = useRoute()
+const userStore = useUserStore()
+
+const message = ref('正在处理QQ登录...')
+
+onMounted(async () => {
+  try {
+    // 获取URL参数
+    const code = route.query.code
+    const state = route.query.state
     
-    const message = ref('正在处理QQ登录...')
-    
-    onMounted(async () => {
-      try {
-        // 获取URL参数
-        const code = route.query.code
-        const state = route.query.state
-        
-        if (!code || !state) {
-          message.value = '缺少必要的参数，请重新登录'
-          setTimeout(() => {
-            router.push('/login/')
-          }, 2000)
-          return
-        }
-        
-        // 调用后端API处理QQ登录
-        message.value = '正在验证QQ登录信息...'
-        const response = await qqCallback({ code, state })
-        
-        if (response.success && response.access) {
-          // 登录成功
-          userStore.token = response.access
-          userStore.refreshToken = response.refresh
-          userStore.userInfo = response.user
-          
-          localStorage.setItem('access_token', response.access)
-          localStorage.setItem('refresh_token', response.refresh)
-          localStorage.setItem('user_info', JSON.stringify(response.user))
-          
-          // 如果邮箱为空，提示用户后续绑定
-          if (response.email_optional && !response.user?.email) {
-            message.value = '登录成功！建议在个人中心绑定邮箱以便接收重要通知'
-          } else {
-            message.value = '登录成功！正在跳转...'
-          }
-          
-          setTimeout(() => {
-            router.push('/')
-          }, response.email_optional ? 2500 : 1000)
-        } else {
-          message.value = response.error || 'QQ登录失败，请重试'
-          setTimeout(() => {
-            router.push('/login/')
-          }, 2000)
-        }
-        
-      } catch (error) {
-        console.error('QQ登录处理失败:', error)
-        message.value = error.response?.data?.error || error.message || 'QQ登录失败，请重试'
-        
-        setTimeout(() => {
-          router.push('/login/')
-        }, 2000)
-      }
-    })
-    
-    return {
-      message
+    if (!code || !state) {
+      message.value = '缺少必要的参数，请重新登录'
+      setTimeout(() => {
+        router.push('/login/')
+      }, 2000)
+      return
     }
+    
+    // 调用后端API处理QQ登录
+    message.value = '正在验证QQ登录信息...'
+    const response = await qqCallback({ code, state })
+    
+    if (response.success && response.access) {
+      // 登录成功
+      userStore.token = response.access
+      userStore.refreshToken = ''
+      userStore.userInfo = response.user
+
+      localStorage.setItem('user_info', JSON.stringify(response.user))
+      
+      // 如果邮箱为空，提示用户后续绑定
+      if (response.email_optional && !response.user?.email) {
+        message.value = '登录成功！建议在个人中心绑定邮箱以便接收重要通知'
+      } else {
+        message.value = '登录成功！正在跳转...'
+      }
+      
+      setTimeout(() => {
+        router.push('/')
+      }, response.email_optional ? 2500 : 1000)
+    } else {
+      message.value = response.error || 'QQ登录失败，请重试'
+      setTimeout(() => {
+        router.push('/login/')
+      }, 2000)
+    }
+    
+  } catch (error) {
+    console.error('QQ登录处理失败:', error)
+    message.value = error.response?.data?.error || error.message || 'QQ登录失败，请重试'
+    
+    setTimeout(() => {
+      router.push('/login/')
+    }, 2000)
   }
-}
+})
 </script>
 
 <style scoped>
@@ -112,4 +100,3 @@ export default {
   margin-top: 1rem;
 }
 </style>
-

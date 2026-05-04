@@ -217,256 +217,229 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { sendVerificationCode, verifyCode, resetPassword } from '@/api/auth'
 
-export default {
-  name: 'ForgotPasswordView',
-  
-  setup() {
-    const router = useRouter()
-    
-    const step = ref(1) // 1: 输入邮箱, 2: 验证码, 3: 设置密码, 4: 成功
-    const formData = ref({
-      email: '',
-      verification_code: '',
-      verification_token: '',
-      new_password: '',
-      new_password2: ''
+const router = useRouter()
+
+const step = ref(1) // 1: 输入邮箱, 2: 验证码, 3: 设置密码, 4: 成功
+const formData = ref({
+  email: '',
+  verification_code: '',
+  verification_token: '',
+  new_password: '',
+  new_password2: ''
+})
+
+const errors = ref({})
+const errorMessage = ref('')
+const successMessage = ref('')
+const submitting = ref(false)
+const sendingCode = ref(false)
+const verifyingCode = ref(false)
+const codeSent = ref(false)
+const codeVerified = ref(false)
+const countdown = ref(0)
+let countdownTimer = null
+
+// 发送验证码
+const handleSendCode = async () => {
+  errors.value = {}
+  errorMessage.value = ''
+
+  if (!formData.value.email) {
+    errors.value.email = '请先输入邮箱'
+    return
+  }
+
+  // 验证邮箱格式
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(formData.value.email)) {
+    errors.value.email = '请输入有效的邮箱地址'
+    return
+  }
+
+  sendingCode.value = true
+
+  try {
+    await sendVerificationCode({
+      email: formData.value.email,
+      type: 'reset_password'
     })
-    
-    const errors = ref({})
-    const errorMessage = ref('')
-    const successMessage = ref('')
-    const submitting = ref(false)
-    const sendingCode = ref(false)
-    const verifyingCode = ref(false)
-    const codeSent = ref(false)
-    const codeVerified = ref(false)
-    const countdown = ref(0)
-    let countdownTimer = null
-    
-    // 发送验证码
-    const handleSendCode = async () => {
-      errors.value = {}
-      errorMessage.value = ''
-      
-      if (!formData.value.email) {
-        errors.value.email = '请先输入邮箱'
-        return
+
+    codeSent.value = true
+    countdown.value = 60 // 60秒倒计时
+    startCountdown()
+    successMessage.value = '验证码已发送到您的邮箱'
+
+    // 清除成功消息（3秒后）
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+  } catch (error) {
+    console.error('发送验证码失败:', error)
+    if (error.response?.data) {
+      const data = error.response.data
+      if (data.error) {
+        errorMessage.value = data.error
+      } else if (data.email) {
+        errors.value.email = Array.isArray(data.email) ? data.email[0] : data.email
+      } else {
+        errorMessage.value = '发送验证码失败，请稍后重试'
       }
-      
-      // 验证邮箱格式
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(formData.value.email)) {
-        errors.value.email = '请输入有效的邮箱地址'
-        return
-      }
-      
-      sendingCode.value = true
-      
-      try {
-        await sendVerificationCode({
-          email: formData.value.email,
-          type: 'reset_password'
-        })
-        
-        codeSent.value = true
-        countdown.value = 60 // 60秒倒计时
-        startCountdown()
-        successMessage.value = '验证码已发送到您的邮箱'
-        
-        // 清除成功消息（3秒后）
-        setTimeout(() => {
-          successMessage.value = ''
-        }, 3000)
-        
-      } catch (error) {
-        console.error('发送验证码失败:', error)
-        if (error.response?.data) {
-          const data = error.response.data
-          if (data.error) {
-            errorMessage.value = data.error
-          } else if (data.email) {
-            errors.value.email = Array.isArray(data.email) ? data.email[0] : data.email
-          } else {
-            errorMessage.value = '发送验证码失败，请稍后重试'
-          }
-        } else {
-          errorMessage.value = '网络错误，请检查网络连接'
-        }
-      } finally {
-        sendingCode.value = false
-      }
+    } else {
+      errorMessage.value = '网络错误，请检查网络连接'
     }
-    
-    // 验证验证码
-    const handleVerifyCode = async () => {
-      errors.value = {}
-      errorMessage.value = ''
-      
-      if (!formData.value.verification_code) {
-        errors.value.verification_code = '请输入验证码'
-        return
-      }
-      
-      if (formData.value.verification_code.length !== 6) {
-        errors.value.verification_code = '验证码为6位数字'
-        return
-      }
-      
-      verifyingCode.value = true
-      
-      try {
-        const response = await verifyCode({
-          email: formData.value.email,
-          code: formData.value.verification_code,
-          type: 'reset_password'
-        })
-        
-        if (response.success && response.verification_token) {
-          formData.value.verification_token = response.verification_token
-          codeVerified.value = true
-          successMessage.value = '验证成功！'
-          
-          // 自动进入下一步
-          setTimeout(() => {
-            step.value = 3
-          }, 1000)
-        } else {
-          errors.value.verification_code = '验证失败，请检查验证码'
-        }
-        
-      } catch (error) {
-        console.error('验证码验证失败:', error)
-        if (error.response?.data) {
-          const data = error.response.data
-          if (data.error) {
-            errors.value.verification_code = data.error
-          } else if (data.code) {
-            errors.value.verification_code = Array.isArray(data.code) ? data.code[0] : data.code
-          } else {
-            errors.value.verification_code = '验证码无效或已过期'
-          }
-        } else {
-          errors.value.verification_code = '验证失败，请稍后重试'
-        }
-      } finally {
-        verifyingCode.value = false
-      }
-    }
-    
-    // 重置密码
-    const handleResetPassword = async () => {
-      errors.value = {}
-      errorMessage.value = ''
-      
-      if (!formData.value.new_password) {
-        errors.value.new_password = '请输入新密码'
-        return
-      }
-      
-      if (formData.value.new_password.length < 8) {
-        errors.value.new_password = '密码长度至少为8位'
-        return
-      }
-      
-      if (formData.value.new_password !== formData.value.new_password2) {
-        errors.value.new_password2 = '两次输入的密码不一致'
-        return
-      }
-      
-      submitting.value = true
-      
-      try {
-        await resetPassword({
-          email: formData.value.email,
-          verification_token: formData.value.verification_token,
-          new_password: formData.value.new_password,
-          new_password2: formData.value.new_password2
-        })
-        
-        // 重置成功
-        step.value = 4
-        
-      } catch (error) {
-        console.error('重置密码失败:', error)
-        if (error.response?.data) {
-          const data = error.response.data
-          
-          if (data.new_password) {
-            errors.value.new_password = Array.isArray(data.new_password) ? data.new_password[0] : data.new_password
-          }
-          if (data.new_password2) {
-            errors.value.new_password2 = Array.isArray(data.new_password2) ? data.new_password2[0] : data.new_password2
-          }
-          if (data.verification_token) {
-            errorMessage.value = '验证token无效，请重新验证邮箱'
-          }
-          if (data.error) {
-            errorMessage.value = data.error
-          }
-          
-          if (!errorMessage.value && !errors.value.new_password && !errors.value.new_password2) {
-            errorMessage.value = '重置密码失败，请稍后重试'
-          }
-        } else {
-          errorMessage.value = '网络错误，请检查网络连接'
-        }
-      } finally {
-        submitting.value = false
-      }
-    }
-    
-    // 倒计时函数
-    const startCountdown = () => {
-      if (countdownTimer) {
-        clearInterval(countdownTimer)
-      }
-      
-      countdownTimer = setInterval(() => {
-        if (countdown.value > 0) {
-          countdown.value--
-        } else {
-          clearInterval(countdownTimer)
-          countdownTimer = null
-        }
-      }, 1000)
-    }
-    
-    // 跳转到登录页
-    const goToLogin = () => {
-      router.push('/login/')
-    }
-    
-    // 清理定时器
-    onUnmounted(() => {
-      if (countdownTimer) {
-        clearInterval(countdownTimer)
-      }
-    })
-    
-    return {
-      step,
-      formData,
-      errors,
-      errorMessage,
-      successMessage,
-      submitting,
-      sendingCode,
-      verifyingCode,
-      codeSent,
-      codeVerified,
-      countdown,
-      handleSendCode,
-      handleVerifyCode,
-      handleResetPassword,
-      goToLogin
-    }
+  } finally {
+    sendingCode.value = false
   }
 }
+
+// 验证验证码
+const handleVerifyCode = async () => {
+  errors.value = {}
+  errorMessage.value = ''
+
+  if (!formData.value.verification_code) {
+    errors.value.verification_code = '请输入验证码'
+    return
+  }
+
+  if (formData.value.verification_code.length !== 6) {
+    errors.value.verification_code = '验证码为6位数字'
+    return
+  }
+
+  verifyingCode.value = true
+
+  try {
+    const response = await verifyCode({
+      email: formData.value.email,
+      code: formData.value.verification_code,
+      type: 'reset_password'
+    })
+
+    if (response.success && response.verification_token) {
+      formData.value.verification_token = response.verification_token
+      codeVerified.value = true
+      successMessage.value = '验证成功！'
+
+      // 自动进入下一步
+      setTimeout(() => {
+        step.value = 3
+      }, 1000)
+    } else {
+      errors.value.verification_code = '验证失败，请检查验证码'
+    }
+  } catch (error) {
+    console.error('验证码验证失败:', error)
+    if (error.response?.data) {
+      const data = error.response.data
+      if (data.error) {
+        errors.value.verification_code = data.error
+      } else if (data.code) {
+        errors.value.verification_code = Array.isArray(data.code) ? data.code[0] : data.code
+      } else {
+        errors.value.verification_code = '验证码无效或已过期'
+      }
+    } else {
+      errors.value.verification_code = '验证失败，请稍后重试'
+    }
+  } finally {
+    verifyingCode.value = false
+  }
+}
+
+// 重置密码
+const handleResetPassword = async () => {
+  errors.value = {}
+  errorMessage.value = ''
+
+  if (!formData.value.new_password) {
+    errors.value.new_password = '请输入新密码'
+    return
+  }
+
+  if (formData.value.new_password.length < 8) {
+    errors.value.new_password = '密码长度至少为8位'
+    return
+  }
+
+  if (formData.value.new_password !== formData.value.new_password2) {
+    errors.value.new_password2 = '两次输入的密码不一致'
+    return
+  }
+
+  submitting.value = true
+
+  try {
+    await resetPassword({
+      email: formData.value.email,
+      verification_token: formData.value.verification_token,
+      new_password: formData.value.new_password,
+      new_password2: formData.value.new_password2
+    })
+
+    // 重置成功
+    step.value = 4
+  } catch (error) {
+    console.error('重置密码失败:', error)
+    if (error.response?.data) {
+      const data = error.response.data
+
+      if (data.new_password) {
+        errors.value.new_password = Array.isArray(data.new_password) ? data.new_password[0] : data.new_password
+      }
+      if (data.new_password2) {
+        errors.value.new_password2 = Array.isArray(data.new_password2) ? data.new_password2[0] : data.new_password2
+      }
+      if (data.verification_token) {
+        errorMessage.value = '验证token无效，请重新验证邮箱'
+      }
+      if (data.error) {
+        errorMessage.value = data.error
+      }
+
+      if (!errorMessage.value && !errors.value.new_password && !errors.value.new_password2) {
+        errorMessage.value = '重置密码失败，请稍后重试'
+      }
+    } else {
+      errorMessage.value = '网络错误，请检查网络连接'
+    }
+  } finally {
+    submitting.value = false
+  }
+}
+
+// 倒计时函数
+const startCountdown = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+  }
+
+  countdownTimer = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value--
+    } else {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+    }
+  }, 1000)
+}
+
+// 跳转到登录页
+const goToLogin = () => {
+  router.push('/login/')
+}
+
+// 清理定时器
+onUnmounted(() => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+  }
+})
 </script>
 
 <style scoped>
