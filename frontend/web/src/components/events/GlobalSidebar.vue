@@ -339,6 +339,12 @@
 import { ref, computed, watch, defineComponent, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { getRalendarAuthorizeUrl, getRalendarAccounts } from '@/api/ralendarOAuth'
+import {
+  getRalendarEvents,
+  createRalendarEvent,
+  updateRalendarEvent,
+  deleteRalendarEvent
+} from '@/api/ralendar'
 import MapPicker from '@/components/map/MapPicker.vue'
 
 export default defineComponent({
@@ -434,66 +440,33 @@ export default defineComponent({
       
       loading.value = true
       try {
-        const token = localStorage.getItem('access_token')
-        if (!token) return
+        const data = await getRalendarEvents()
+        allEvents.value = data.results || data || []
         
-        // 通过 Roamio 后端代理调用 Ralendar API
-        const response = await fetch('/api/v1/ralendar/trips/events/', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        
-        if (response.ok) {
-          const data = await response.json()
-          allEvents.value = data.results || data || []
-          
-          // 同时保存到本地存储（备份）
-          localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
-        } else {
-          // 尝试解析错误信息
-          let errorMessage = '加载失败'
-          let errorCode = null
-          try {
-            const errorData = await response.json()
-            errorMessage = errorData.detail || errorData.error || errorMessage
-            errorCode = errorData.code
-            
-            // 输出详细错误信息到控制台
-            console.error('加载待办失败:', {
-              code: errorCode,
-              message: errorMessage,
-              status: response.status,
-              fullError: errorData
-            })
-            
-            // 根据错误代码显示不同的提示
-            if (errorData.code === 'NO_RALENDAR_ACCOUNT') {
-              console.error('❌ 尚未绑定 Ralendar 账号，请先在个人中心绑定')
-            } else if (errorData.code === 'NO_USER_IDENTIFIER') {
-              console.error('❌ 无法识别用户身份，请确保已通过 QQ 登录')
-            } else if (errorData.code === 'TOKEN_EXPIRED') {
-              console.error('❌ Ralendar Token 已过期，请重新授权')
-            } else {
-              console.error('❌ 错误:', errorMessage)
-            }
-          } catch (e) {
-            // 无法解析 JSON，使用默认错误信息
-            console.error('无法解析错误响应:', e)
-            console.error('HTTP 状态码:', response.status)
-          }
-          
-          // 加载失败时，尝试从本地存储恢复
-          const stored = localStorage.getItem('ralendar_events')
-          if (stored) {
-            allEvents.value = JSON.parse(stored)
-          } else {
-            allEvents.value = []
-          }
-        }
+        // 同时保存到本地存储（备份）
+        localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
       } catch (error) {
-        console.error('加载待办失败:', error)
+        const errorData = error.response?.data
+        const errorMessage = errorData?.detail || errorData?.error || error.message || '加载失败'
+
+        // 输出详细错误信息到控制台
+        console.error('加载待办失败:', {
+          code: errorData?.code,
+          message: errorMessage,
+          status: error.response?.status,
+          fullError: errorData
+        })
+
+        // 根据错误代码显示不同的提示
+        if (errorData?.code === 'NO_RALENDAR_ACCOUNT') {
+          console.error('❌ 尚未绑定 Ralendar 账号，请先在个人中心绑定')
+        } else if (errorData?.code === 'NO_USER_IDENTIFIER') {
+          console.error('❌ 无法识别用户身份，请确保已通过 QQ 登录')
+        } else if (errorData?.code === 'TOKEN_EXPIRED') {
+          console.error('❌ Ralendar Token 已过期，请重新授权')
+        } else {
+          console.error('❌ 错误:', errorMessage)
+        }
         
         // 加载失败时，尝试从本地存储恢复
         try {
@@ -533,13 +506,6 @@ export default defineComponent({
       submitting.value = true
       
       try {
-        // 获取用户 Token
-        const token = localStorage.getItem('access_token')
-        if (!token) {
-          alert('请先登录')
-          return
-        }
-        
         // 准备事件数据
         const eventData = {
           title: newEvent.value.title,
@@ -561,52 +527,8 @@ export default defineComponent({
         }
         
         if (editingEventId.value) {
-      // 编辑模式：通过 Roamio 后端代理更新（使用独立的事件API）
-      const response = await fetch(`/api/v1/ralendar/events/${editingEventId.value}/`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(eventData)
-      })
-          
-          if (!response.ok) {
-            // 尝试解析错误信息
-            let errorMessage = '更新失败'
-            try {
-              const errorData = await response.json()
-              errorMessage = errorData.detail || errorData.error || errorMessage
-              
-              // 输出详细错误信息到控制台
-              console.error('更新事件失败:', {
-                code: errorData.code,
-                message: errorMessage,
-                status: response.status,
-                eventId: editingEventId.value,
-                fullError: errorData
-              })
-              
-              // 根据错误代码显示不同的提示
-              if (errorData.code === 'NO_RALENDAR_ACCOUNT') {
-                console.error('❌ 尚未绑定 Ralendar 账号，请先在个人中心绑定')
-              } else if (errorData.code === 'NO_USER_IDENTIFIER') {
-                console.error('❌ 无法识别用户身份，请确保已通过 QQ 登录')
-              } else if (errorData.code === 'TOKEN_EXPIRED') {
-                console.error('❌ Ralendar Token 已过期，请重新授权')
-              } else if (errorData.code === 'RALENDAR_API_ERROR') {
-                console.error('❌ Ralendar API 错误:', errorMessage)
-              } else {
-                console.error('❌ 更新失败:', errorMessage)
-              }
-            } catch (e) {
-              console.error('无法解析错误响应:', e)
-              console.error('HTTP 状态码:', response.status)
-            }
-            throw new Error(errorMessage)
-          }
-          
-          const result = await response.json()
+          // 编辑模式：通过 Roamio 后端代理更新（使用独立的事件 API）
+          const result = await updateRalendarEvent(editingEventId.value, eventData)
           
           // 更新列表中的事件
           const index = allEvents.value.findIndex(e => e.id === editingEventId.value)
@@ -620,50 +542,7 @@ export default defineComponent({
           alert('更新成功！')
         } else {
           // 创建模式
-          const response = await fetch('/api/v1/ralendar/trips/events/create/', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(eventData)
-          })
-          
-          if (!response.ok) {
-            // 尝试解析错误信息
-            let errorMessage = '创建失败'
-            try {
-              const errorData = await response.json()
-              errorMessage = errorData.detail || errorData.error || errorMessage
-              
-              // 输出详细错误信息到控制台
-              console.error('创建事件失败:', {
-                code: errorData.code,
-                message: errorMessage,
-                status: response.status,
-                fullError: errorData
-              })
-              
-              // 根据错误代码显示不同的提示
-              if (errorData.code === 'NO_RALENDAR_ACCOUNT') {
-                console.error('❌ 尚未绑定 Ralendar 账号，请先在个人中心绑定')
-              } else if (errorData.code === 'NO_USER_IDENTIFIER') {
-                console.error('❌ 无法识别用户身份，请确保已通过 QQ 登录')
-              } else if (errorData.code === 'TOKEN_EXPIRED') {
-                console.error('❌ Ralendar Token 已过期，请重新授权')
-              } else if (errorData.code === 'RALENDAR_API_ERROR') {
-                console.error('❌ Ralendar API 错误:', errorMessage)
-              } else {
-                console.error('❌ 创建失败:', errorMessage)
-              }
-            } catch (e) {
-              console.error('无法解析错误响应:', e)
-              console.error('HTTP 状态码:', response.status)
-            }
-            throw new Error(errorMessage)
-          }
-          
-          const result = await response.json()
+          const result = await createRalendarEvent(eventData)
           
           // 添加到列表
           allEvents.value.unshift(result)
@@ -688,8 +567,33 @@ export default defineComponent({
         showAddForm.value = false
         
       } catch (error) {
-        console.error('操作失败:', error)
-        console.error('错误详情:', error.message || '操作失败，请稍后重试')
+        const errorData = error.response?.data
+        const errorMessage = errorData?.detail || errorData?.error || error.message || '操作失败，请稍后重试'
+        
+        if (errorData) {
+          console.error('事件操作失败:', {
+            code: errorData.code,
+            message: errorMessage,
+            status: error.response?.status,
+            eventId: editingEventId.value,
+            fullError: errorData
+          })
+        } else {
+          console.error('操作失败:', error)
+        }
+        
+        // 根据错误代码显示不同的提示
+        if (errorData?.code === 'NO_RALENDAR_ACCOUNT') {
+          console.error('❌ 尚未绑定 Ralendar 账号，请先在个人中心绑定')
+        } else if (errorData?.code === 'NO_USER_IDENTIFIER') {
+          console.error('❌ 无法识别用户身份，请确保已通过 QQ 登录')
+        } else if (errorData?.code === 'TOKEN_EXPIRED') {
+          console.error('❌ Ralendar Token 已过期，请重新授权')
+        } else if (errorData?.code === 'RALENDAR_API_ERROR') {
+          console.error('❌ Ralendar API 错误:', errorMessage)
+        } else {
+          console.error('❌ 错误详情:', errorMessage)
+        }
       } finally {
         submitting.value = false
       }
@@ -746,23 +650,8 @@ export default defineComponent({
       }
       
       try {
-        const token = localStorage.getItem('access_token')
-        if (!token) {
-          alert('请先登录')
-          return
-        }
-        
-    // 通过 Roamio 后端代理删除事件（使用独立的事件API）
-    const response = await fetch(`/api/v1/ralendar/events/${event.id}/`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-        
-        if (!response.ok) {
-          throw new Error('删除失败')
-        }
+        // 通过 Roamio 后端代理删除事件（使用独立的事件 API）
+        await deleteRalendarEvent(event.id)
         
         // 从列表中移除
         const index = allEvents.value.findIndex(e => e.id === event.id)

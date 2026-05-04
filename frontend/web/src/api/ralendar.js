@@ -34,3 +34,22 @@ export const createRalendarEvent = (eventData) => {
   return request.post('/ralendar/trips/events/create/', eventData)
 }
 
+/**
+ * 更新 Ralendar 事件
+ * @param {number} eventId - 事件 ID
+ * @param {Object} eventData - 事件数据
+ * @returns {Promise} API 响应
+ */
+export const updateRalendarEvent = (eventId, eventData) => {
+  return request.put(`/ralendar/events/${eventId}/`, eventData)
+}
+
+/**
+ * 删除 Ralendar 事件
+ * @param {number} eventId - 事件 ID
+ * @returns {Promise} API 响应
+ */
+export const deleteRalendarEvent = (eventId) => {
+  return request.delete(`/ralendar/events/${eventId}/`)
+}
+
