@@ -11,6 +11,10 @@ def require_env(name):
     return value
 
 
+def _env_truthy(name):
+    return os.getenv(name, '').strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
 DEBUG = False
 
 SECRET_KEY = require_env('SECRET_KEY')
@@ -34,20 +38,29 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
-DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.mysql'),
-        'NAME': require_env('DB_NAME'),
-        'USER': require_env('DB_USER'),
-        'PASSWORD': require_env('DB_PASSWORD'),
-        'HOST': require_env('DB_HOST'),
-        'PORT': os.getenv('DB_PORT', '3306'),
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+# 云数据库不可用时：设 ROAMIO_USE_SQLITE=1，使用项目根下 db.sqlite3（与 dev 同路径），不再要求 DB_*。
+if _env_truthy('ROAMIO_USE_SQLITE'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.mysql'),
+            'NAME': require_env('DB_NAME'),
+            'USER': require_env('DB_USER'),
+            'PASSWORD': require_env('DB_PASSWORD'),
+            'HOST': require_env('DB_HOST'),
+            'PORT': os.getenv('DB_PORT', '3306'),
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
+    }
 
 SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True').lower() == 'true'
 SESSION_COOKIE_SECURE = True

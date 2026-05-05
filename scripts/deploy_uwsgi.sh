@@ -98,6 +98,35 @@ log "Using PYTHON_BIN=${PYTHON_BIN}"
 
 cd "${APP_ROOT}"
 
+# 云库过期等场景：.env 里写 ROAMIO_USE_SQLITE=1 时，prod 走 SQLite；需在加载 prod 的 dotenv 之前探测，以便 manage.py check 与 uwsgi 子进程一致。
+_sniff_env_path_to_source() {
+  if [[ -n "${ENV_FILE:-}" && -f "${ENV_FILE}" ]]; then
+    printf '%s' "${ENV_FILE}"
+    return 0
+  fi
+  if [[ -f "${APP_ROOT}/.env.prod" ]]; then
+    printf '%s' "${APP_ROOT}/.env.prod"
+    return 0
+  fi
+  if [[ -f "${APP_ROOT}/.env" ]]; then
+    printf '%s' "${APP_ROOT}/.env"
+    return 0
+  fi
+  return 1
+}
+
+_sniff_roamio_sqlite_flag() {
+  local _ef
+  if ! _ef="$(_sniff_env_path_to_source)"; then
+    return 0
+  fi
+  if grep -Eq '^[[:space:]]*ROAMIO_USE_SQLITE[[:space:]]*=[[:space:]]*(1|true|yes|on)([[:space:]]|$)' "${_ef}" 2>/dev/null; then
+    export ROAMIO_USE_SQLITE=1
+    log "发现 ${_ef} 中 ROAMIO_USE_SQLITE：Django prod 将使用 SQLite（跳过 MySQL DB_*）"
+  fi
+}
+_sniff_roamio_sqlite_flag
+
 log "Checking git workspace"
 if [[ -n "$(git status --porcelain)" ]]; then
   if [[ "${AUTO_STASH}" == "1" ]]; then
@@ -184,7 +213,7 @@ _load_dotenv_prod
 if [[ "${RUN_DJANGO_CHECK}" == "1" ]]; then
   log "Running Django system check"
   cd "${BACKEND_DIR}"
-  ROAMIO_SETTINGS="${ROAMIO_SETTINGS}" "${PYTHON_BIN}" manage.py check
+  ROAMIO_SETTINGS="${ROAMIO_SETTINGS}" ROAMIO_USE_SQLITE="${ROAMIO_USE_SQLITE:-}" "${PYTHON_BIN}" manage.py check
 fi
 
 log "Building frontend assets"
@@ -209,7 +238,11 @@ else
   echo "[deploy] WARN: pgrep/killall not found; uwsgi restart may spawn duplicates" >&2
 fi
 sleep 1
-uwsgi --env "ROAMIO_SETTINGS=${ROAMIO_SETTINGS}" --ini "${UWSGI_INI}" --processes "${UWSGI_PROCESSES}" --daemonize "${UWSGI_LOG}"
+_uwsgi_extra=()
+if [[ -n "${ROAMIO_USE_SQLITE:-}" ]]; then
+  _uwsgi_extra+=(--env "ROAMIO_USE_SQLITE=${ROAMIO_USE_SQLITE}")
+fi
+uwsgi --env "ROAMIO_SETTINGS=${ROAMIO_SETTINGS}" "${_uwsgi_extra[@]}" --ini "${UWSGI_INI}" --processes "${UWSGI_PROCESSES}" --daemonize "${UWSGI_LOG}"
 sleep 2
 
 log "Running health checks"
