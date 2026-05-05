@@ -113,15 +113,24 @@ fi
 log "Pulling latest code from ${REMOTE}/${BRANCH}"
 git pull --ff-only "${REMOTE}" "${BRANCH}"
 
-# prod 下 Django 需要 ALLOWED_HOSTS、SECRET_KEY、DB_* 等；与 manage.py / 本 shell 启动的 uwsgi 子进程共享
+# prod：自动加载环境变量（与 manage.py / 同 shell 里启动的 uwsgi 共享）
 _load_dotenv_prod() {
   [[ "${ROAMIO_SETTINGS:-}" != "prod" ]] && return 0
-  local eff="${ENV_FILE:-${APP_ROOT}/.env.prod}"
-  if [[ ! -f "${eff}" ]]; then
+  local eff=""
+  if [[ -n "${ENV_FILE:-}" ]]; then
+    if [[ ! -f "${ENV_FILE}" ]]; then
+      echo "[deploy] ENV_FILE 指向的文件不存在: ${ENV_FILE}" >&2
+      exit 1
+    fi
+    eff="${ENV_FILE}"
+  elif [[ -f "${APP_ROOT}/.env.prod" ]]; then
+    eff="${APP_ROOT}/.env.prod"
+  elif [[ -f "${APP_ROOT}/.env" ]]; then
+    eff="${APP_ROOT}/.env"
+    log "未找到 .env.prod，使用已有的 .env（不用再复制一份配置）"
+  else
     cat <<EOF >&2
-[deploy] ROAMIO_SETTINGS=prod 但未找到环境文件: ${eff}
-[deploy] 在服务器执行: cp "${APP_ROOT}/env.prod.example" "${APP_ROOT}/.env.prod" 并填写密钥与数据库等信息。
-[deploy] 若文件放在其他路径: ENV_FILE=/path/to/secret.env bash scripts/deploy_uwsgi.sh
+[deploy] ROAMIO_SETTINGS=prod：请在 ${APP_ROOT}/.env 中配置 ALLOWED_HOSTS、SECRET_KEY、数据库等（或通过 ENV_FILE / .env.prod 指定文件）。
 EOF
     exit 1
   fi
