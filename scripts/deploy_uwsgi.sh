@@ -196,7 +196,18 @@ npm run build
 
 cd "${APP_ROOT}"
 log "Restarting uWSGI"
-pkill -9 -f uwsgi || true
+# 禁止使用 pkill -f uwsgi：会误匹配 bash 命令行里的 scripts/deploy_uwsgi.sh
+if command -v pgrep >/dev/null 2>&1; then
+  _uwsgi_pids="$(pgrep -x uwsgi 2>/dev/null || true)"
+  if [[ -n "${_uwsgi_pids}" ]]; then
+    # shellcheck disable=SC2086
+    kill -9 ${_uwsgi_pids} 2>/dev/null || true
+  fi
+elif command -v killall >/dev/null 2>&1; then
+  killall -9 uwsgi 2>/dev/null || true
+else
+  echo "[deploy] WARN: pgrep/killall not found; uwsgi restart may spawn duplicates" >&2
+fi
 sleep 1
 uwsgi --env "ROAMIO_SETTINGS=${ROAMIO_SETTINGS}" --ini "${UWSGI_INI}" --processes "${UWSGI_PROCESSES}" --daemonize "${UWSGI_LOG}"
 sleep 2
