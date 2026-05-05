@@ -131,7 +131,7 @@ class TripApiSmokeTests(UserSignalSafeTestCase):
         self.assertEqual(trip_item["name"], self.public_trip.title)
         self.assertIn("stats", trip_item)
 
-    def test_trip_list_uses_fallback_slug_for_legacy_empty_slug(self):
+    def test_trip_list_excludes_legacy_empty_slug_trip(self):
         legacy_trip = Trip.objects.create(
             author=self.author,
             title="福州旅行",
@@ -143,9 +143,8 @@ class TripApiSmokeTests(UserSignalSafeTestCase):
 
         response = self.client.get("/api/v1/trips/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        trip_item = next(item for item in response.data["results"] if item["name"] == "福州旅行")
-        self.assertEqual(trip_item["slug"], f"trip-{legacy_trip.id}")
-        self.assertTrue(trip_item["slug"])
+        names = [item["name"] for item in response.data["results"]]
+        self.assertNotIn("福州旅行", names)
 
     def test_legacy_trip_detail_increments_views(self):
         before = self.stat.views

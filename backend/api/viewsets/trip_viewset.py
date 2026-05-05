@@ -28,6 +28,10 @@ class TripViewSet(viewsets.ReadOnlyModelViewSet):
             return Trip.objects.filter(
                 status='published',
                 visibility='public',
+            ).exclude(
+                slug='',
+            ).exclude(
+                title__in=['<SLUG>', '<slug>', 'SLUG', 'slug'],
             ).order_by('-created_at')
         return SiteStat.objects.exclude(page__startswith='tp:').order_by('-id')
 
