@@ -10,7 +10,14 @@ UWSGI_INI="${UWSGI_INI:-${APP_ROOT}/scripts/uwsgi.ini}"
 UWSGI_PROCESSES="${UWSGI_PROCESSES:-2}"
 UWSGI_LOG="${UWSGI_LOG:-/tmp/uwsgi.log}"
 ROAMIO_SETTINGS="${ROAMIO_SETTINGS:-dev}"
-PYTHON_BIN="${PYTHON_BIN:-python}"
+# Ubuntu 等环境常无 `python` 命令，仅提供 python3。
+if [[ -z "${PYTHON_BIN:-}" ]]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  else
+    PYTHON_BIN="python"
+  fi
+fi
 RUN_NPM_CI="${RUN_NPM_CI:-0}"
 RUN_DJANGO_CHECK="${RUN_DJANGO_CHECK:-1}"
 AUTO_STASH="${AUTO_STASH:-0}"
@@ -75,6 +82,8 @@ require_cmd npm
 require_cmd curl
 require_cmd uwsgi
 require_cmd "${PYTHON_BIN}"
+
+log "Using PYTHON_BIN=${PYTHON_BIN}"
 
 cd "${APP_ROOT}"
 
