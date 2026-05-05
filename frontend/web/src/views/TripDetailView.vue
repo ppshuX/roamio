@@ -139,8 +139,8 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
 import Footer from '@/components/Footer.vue'
-import { getTripDetail, likeTrip, getTripStats, getTripPlanStats, likeTripPlan, viewTripPlan } from '@/api/trip'
-import { getCommentList, createComment, deleteComment, addCommentImage, updateComment, getCommentReplies, likeComment } from '@/api/comment'
+import { getTripDetail, likeTrip, getTripStats, getTripPlanStats, likeTripPlan, viewTripPlan, getTripComments } from '@/api/trip'
+import { createComment, deleteComment, addCommentImage, updateComment, getCommentReplies, likeComment } from '@/api/comment'
 import { getAvatarUrl } from '@/config/api'
 import { getTripConfig } from '@/config/tripConfig'
 
@@ -197,7 +197,8 @@ export default {
     const musicSrc = computed(() => {
       const bg = trip.value?.background_music
       if (bg === '') return ''
-      return bg || '/music/rain.mp3'
+      // 不再默认回退到固定 mp3，避免静态资源缺失导致浏览器报 NotSupportedError
+      return bg || ''
     })
     
     // 评论区引用
@@ -209,6 +210,8 @@ export default {
       return trip.value?.author?.id === userStore.userInfo?.id
     })
     const isAuthenticated = computed(() => userStore.isLoggedIn)
+    const isFallbackTripSlug = computed(() => /^trip-\d+$/.test(String(trip.value?.slug || '')))
+    const shouldUseTripPlanStats = computed(() => Boolean(trip.value?.overview) && !isFallbackTripSlug.value)
     
     // 是否有行程安排
     const hasItinerary = computed(() => {
@@ -249,12 +252,15 @@ export default {
         // 并行加载评论和统计（不阻塞首屏）
         const promises = [fetchComments()]
         
-        if (trip.value.overview) {
+        if (shouldUseTripPlanStats.value) {
           promises.push(
             viewTripPlan(slug).then(async () => {
               const statsResponse = await getTripPlanStats(slug)
               trip.value.stats.views = statsResponse.views
               trip.value.stats.likes = statsResponse.likes
+            }).catch((statsErr) => {
+              // trip-plan stats 失败时不阻塞页面（兼容 fallback slug 或历史数据）
+              console.warn('trip-plan stats fallback:', statsErr?.response?.status || statsErr?.message)
             })
           )
         }
@@ -288,8 +294,9 @@ export default {
       fetchingComments = true
       
       try {
-        // 后端 CommentFilter 使用 'trip' 参数映射到 'page' 字段
-        const response = await getCommentList({ trip: trip.value.slug })
+        // 使用旅行详情评论接口，后端会聚合兼容多种历史 page key（slug / tp:slug / legacy page）。
+        const slug = route.params.slug || trip.value?.slug
+        const response = await getTripComments(slug)
         comments.value = response.results || response || []
       } catch (error) {
         console.error('❌ 获取评论失败:', error)
@@ -308,14 +315,14 @@ export default {
         trip.value.stats.likes += 1
         
         // 发送点赞请求
-        if (trip.value.overview) {
+        if (shouldUseTripPlanStats.value) {
           await likeTripPlan(trip.value.slug)
         } else {
           await likeTrip(tripId.value)
         }
         
         // 后台刷新统计（确保数据准确）
-        const statsResponse = trip.value.overview 
+        const statsResponse = shouldUseTripPlanStats.value
           ? await getTripPlanStats(trip.value.slug)
           : await getTripStats(tripId.value)
         
@@ -472,11 +479,14 @@ export default {
     // 切换音乐
     const toggleMusic = () => {
       if (!audioPlayer.value) return
+      if (!musicSrc.value) return
       
       if (isPlaying.value) {
         audioPlayer.value.pause()
       } else {
-        audioPlayer.value.play()
+        audioPlayer.value.play().catch((error) => {
+          console.warn('背景音乐播放失败:', error?.name || error?.message)
+        })
       }
       isPlaying.value = !isPlaying.value
     }

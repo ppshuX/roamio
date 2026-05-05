@@ -189,7 +189,7 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import CommentForm from './comments/CommentForm.vue'
 import CommentItem from './comments/CommentItem.vue'
 import ReplyItem from './comments/ReplyItem.vue'
@@ -262,6 +262,29 @@ export default {
       }
       return props.comments
     })
+
+    // 默认展开包含媒体回复的评论，避免用户误以为“没有视频”
+    watch(
+      () => props.comments,
+      (nextComments) => {
+        if (!Array.isArray(nextComments)) return
+        for (const comment of nextComments) {
+          const hasMediaReply = Array.isArray(comment.replies) && comment.replies.some(
+            (reply) => Boolean(reply?.video || reply?.image)
+          )
+          if (hasMediaReply) {
+            expandedReplies.value[comment.id] = true
+            if (!replyForms.value[comment.id]) {
+              replyForms.value[comment.id] = { content: '' }
+            }
+            if (submittingReply.value[comment.id] === undefined) {
+              submittingReply.value[comment.id] = false
+            }
+          }
+        }
+      },
+      { immediate: true, deep: true }
+    )
     
     // 切换排序顺序
     const toggleOrder = () => {

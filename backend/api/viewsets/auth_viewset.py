@@ -60,6 +60,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             secure=settings.AUTH_REFRESH_COOKIE_SECURE,
             samesite=settings.AUTH_REFRESH_COOKIE_SAMESITE,
             path=settings.AUTH_REFRESH_COOKIE_PATH,
+            domain=settings.AUTH_REFRESH_COOKIE_DOMAIN,
         )
 
     def _clear_refresh_cookie(self, response):
@@ -67,6 +68,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             settings.AUTH_REFRESH_COOKIE_NAME,
             path=settings.AUTH_REFRESH_COOKIE_PATH,
             samesite=settings.AUTH_REFRESH_COOKIE_SAMESITE,
+            domain=settings.AUTH_REFRESH_COOKIE_DOMAIN,
         )
     
     def _assert_email_available(self, email, current_user=None, include_remote=True):

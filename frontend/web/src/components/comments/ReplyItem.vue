@@ -27,6 +27,28 @@
           
           <!-- 回复内容 -->
           <p class="mb-2 small">{{ reply.content }}</p>
+
+          <!-- 回复图片 -->
+          <div v-if="reply.image" class="reply-media mb-2">
+            <img
+              :src="reply.image"
+              class="reply-image rounded"
+              alt="回复图片"
+              loading="lazy"
+            />
+          </div>
+
+          <!-- 回复视频 -->
+          <div v-if="reply.video" class="reply-media mb-2">
+            <video
+              :src="reply.video"
+              controls
+              preload="metadata"
+              class="reply-video rounded"
+            >
+              您的浏览器不支持视频播放
+            </video>
+          </div>
           
           <!-- 操作按钮 -->
           <div class="reply-actions d-flex gap-2 align-items-center">
@@ -319,6 +341,17 @@ export default {
   font-size: 0.9rem;
   background: white;
   border: 1px solid #dee2e6;
+}
+
+.reply-media {
+  margin-top: 0.5rem;
+}
+
+.reply-image,
+.reply-video {
+  max-width: 100%;
+  max-height: 360px;
+  display: block;
 }
 
 /* 嵌套回复样式（AcWing 模式：最多 2 层视觉嵌套）*/

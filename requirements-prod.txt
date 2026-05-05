@@ -2,3 +2,4 @@
 
 # Linux deployment only. uWSGI does not install cleanly on Windows.
 uwsgi==2.0.23
+gunicorn==23.0.0

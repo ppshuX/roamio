@@ -6,6 +6,26 @@ from ..models import Comment
 from .user_serializer import UserSerializer
 
 
+def _build_comment_asset_url(asset_url, request=None):
+    """Normalize historical media path formats to a stable public URL."""
+    if not asset_url:
+        return None
+
+    normalized = str(asset_url).strip()
+    if normalized.startswith(("http://", "https://")):
+        return normalized
+
+    # Legacy rows may store "media/comments/...", "/media/comments/..." or "comments/...".
+    normalized = normalized.lstrip("/")
+    if normalized.startswith("media/"):
+        normalized = normalized[len("media/"):]
+    normalized = f"/media/{normalized}"
+
+    if request:
+        return f"{request.scheme}://{request.get_host()}{normalized}"
+    return normalized
+
+
 class CommentSerializer(serializers.ModelSerializer):
     """评论序列化器（列表/详情）- 支持递归嵌套回复"""
     user = UserSerializer(read_only=True)
@@ -29,45 +49,11 @@ class CommentSerializer(serializers.ModelSerializer):
     
     def get_image(self, obj):
         """返回图片URL（COS完整URL或本地路径）"""
-        if not obj.image:
-            return None
-        
-        # image 现在是 URLField，直接返回字符串
-        image_url = obj.image
-        
-        # 如果是 COS URL（以 http:// 或 https:// 开头），直接返回
-        if image_url.startswith('http://') or image_url.startswith('https://'):
-            return image_url
-        
-        # 本地路径，构建完整 URL（兼容旧数据）
-        request = self.context.get('request')
-        if request:
-            if not image_url.startswith('/'):
-                image_url = f"/media/{image_url}"
-            return f"{request.scheme}://{request.get_host()}{image_url}"
-        else:
-            return image_url
+        return _build_comment_asset_url(obj.image, self.context.get('request'))
     
     def get_video(self, obj):
         """返回视频URL（COS完整URL或本地路径）"""
-        if not obj.video:
-            return None
-        
-        # video 现在是 URLField，直接返回字符串
-        video_url = obj.video
-        
-        # 如果是 COS URL（以 http:// 或 https:// 开头），直接返回
-        if video_url.startswith('http://') or video_url.startswith('https://'):
-            return video_url
-        
-        # 本地路径，构建完整 URL（兼容旧数据）
-        request = self.context.get('request')
-        if request:
-            if not video_url.startswith('/'):
-                video_url = f"/media/{video_url}"
-            return f"{request.scheme}://{request.get_host()}{video_url}"
-        else:
-            return video_url
+        return _build_comment_asset_url(obj.video, self.context.get('request'))
     
     def get_can_delete(self, obj):
         """判断当前用户是否可以删除此评论"""
@@ -191,45 +177,11 @@ class CommentListSerializer(serializers.ModelSerializer):
     
     def get_image(self, obj):
         """返回图片URL（COS完整URL或本地路径）"""
-        if not obj.image:
-            return None
-        
-        # image 现在是 URLField，直接返回字符串
-        image_url = obj.image
-        
-        # 如果是 COS URL（以 http:// 或 https:// 开头），直接返回
-        if image_url.startswith('http://') or image_url.startswith('https://'):
-            return image_url
-        
-        # 本地路径，构建完整 URL（兼容旧数据）
-        request = self.context.get('request')
-        if request:
-            if not image_url.startswith('/'):
-                image_url = f"/media/{image_url}"
-            return f"{request.scheme}://{request.get_host()}{image_url}"
-        else:
-            return image_url
+        return _build_comment_asset_url(obj.image, self.context.get('request'))
     
     def get_video(self, obj):
         """返回视频URL（COS完整URL或本地路径）"""
-        if not obj.video:
-            return None
-        
-        # video 现在是 URLField，直接返回字符串
-        video_url = obj.video
-        
-        # 如果是 COS URL（以 http:// 或 https:// 开头），直接返回
-        if video_url.startswith('http://') or video_url.startswith('https://'):
-            return video_url
-        
-        # 本地路径，构建完整 URL（兼容旧数据）
-        request = self.context.get('request')
-        if request:
-            if not video_url.startswith('/'):
-                video_url = f"/media/{video_url}"
-            return f"{request.scheme}://{request.get_host()}{video_url}"
-        else:
-            return video_url
+        return _build_comment_asset_url(obj.video, self.context.get('request'))
     
     def get_user(self, obj):
         """只返回用户的基本信息"""

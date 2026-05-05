@@ -4,10 +4,13 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from rest_framework import status
 from rest_framework.test import APIClient
+from rest_framework.test import APIRequestFactory
 from backend.models.user_profile import create_user_profile, save_user_profile
 from backend.models.subscription import create_user_subscription
 from backend.models.site_stat import SiteStat
 from backend.models.trip import Trip
+from backend.models.comment import Comment
+from backend.serializers.comment_serializer import _build_comment_asset_url
 from backend.utils.ai.ai_service import TripPlannerAI, AIFormatError
 
 
@@ -152,6 +155,42 @@ class TripApiSmokeTests(UserSignalSafeTestCase):
         self.stat.refresh_from_db()
         self.assertEqual(self.stat.views, before + 1)
 
+    def test_trip_detail_supports_fallback_slug_lookup(self):
+        legacy_trip = Trip.objects.create(
+            author=self.author,
+            title="福州旧数据详情",
+            description="使用 trip-id 回退 slug",
+            status="published",
+            visibility="public",
+        )
+        Trip.objects.filter(pk=legacy_trip.pk).update(slug="")
+
+        response = self.client.get(f"/api/v1/trips/trip-{legacy_trip.id}/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["slug"], f"trip-{legacy_trip.id}")
+
+    def test_trip_comments_include_fallback_slug_page_key(self):
+        legacy_trip = Trip.objects.create(
+            author=self.author,
+            title="福州视频评论",
+            description="评论绑定到 fallback slug",
+            status="published",
+            visibility="public",
+        )
+        Trip.objects.filter(pk=legacy_trip.pk).update(slug="")
+
+        Comment.objects.create(
+            user=self.author,
+            page=f"trip-{legacy_trip.id}",
+            content="带视频评论",
+            video="media/comments/demo.mp4",
+        )
+
+        response = self.client.get(f"/api/v1/trips/trip-{legacy_trip.id}/comments/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        items = response.data.get("results", response.data)
+        self.assertTrue(any(item.get("video") for item in items))
+
 
 class TripPlanVisibilityTests(UserSignalSafeTestCase):
     """M3 smoke: public/private visibility boundaries on trip-plans."""
@@ -242,3 +281,22 @@ class AIServiceSanitizationTests(TestCase):
         cleaned = self.ai._validate_and_clean(plan, {"days": 1})
         self.assertIn("trip_title", cleaned)
         self.assertTrue(cleaned["trip_title"])
+
+
+class CommentAssetUrlNormalizationTests(TestCase):
+    """Comment media URL normalization for legacy/local rows."""
+
+    def setUp(self):
+        self.request = APIRequestFactory().get("/api/v1/comments/")
+
+    def test_normalize_media_prefixed_relative_path(self):
+        url = _build_comment_asset_url("media/comments/demo.mp4", self.request)
+        self.assertEqual(url, "http://testserver/media/comments/demo.mp4")
+
+    def test_normalize_absolute_media_path(self):
+        url = _build_comment_asset_url("/media/comments/demo.jpg", self.request)
+        self.assertEqual(url, "http://testserver/media/comments/demo.jpg")
+
+    def test_keep_full_http_url(self):
+        full = "https://example.com/comments/demo.mp4"
+        self.assertEqual(_build_comment_asset_url(full, self.request), full)
