@@ -21,6 +21,9 @@ class TripViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TripSerializer
     lookup_field = 'page'
     permission_classes = [AllowAny]
+    # 关闭全局 DjangoFilterBackend / SearchFilter / OrderingFilter：本 ViewSet 未配置 filterset，
+    # django-filter 部分版本/配置下会对列表请求抛异常导致 500。
+    filter_backends = []
 
     def get_queryset(self):
         """首页旅行树列表来自真实 Trip 表，仅展示公开已发布旅行。"""

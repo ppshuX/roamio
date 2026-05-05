@@ -4,6 +4,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ObjectDoesNotExist
 from ..models import UserProfile
 
 
@@ -22,15 +23,23 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     """用户序列化器"""
-    profile = UserProfileSerializer(read_only=True)
+    profile = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField()
     is_superuser = serializers.BooleanField(read_only=True)
-    
+
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'date_joined', 'is_superuser', 'is_staff', 'profile', 'stats']
         read_only_fields = ['id', 'date_joined', 'is_superuser', 'is_staff']
-    
+
+    def get_profile(self, obj):
+        """OneToOne 无记录时反查会抛 RelatedObjectDoesNotExist，生产上会导致登录/注册 500。"""
+        try:
+            prof = obj.profile
+        except ObjectDoesNotExist:
+            prof, _ = UserProfile.objects.get_or_create(user=obj)
+        return UserProfileSerializer(prof).data
+
     def get_stats(self, obj):
         """获取用户统计信息"""
         return {

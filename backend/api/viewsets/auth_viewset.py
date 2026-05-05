@@ -37,10 +37,11 @@ from ...utils.auth import (
     generate_state,
     get_qq_user_info_by_code,
 )
-from ...models import EmailVerificationCode, SocialAccount
+from ...models import EmailVerificationCode, SocialAccount, UserProfile
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.core.cache import cache
+from django.core.exceptions import ObjectDoesNotExist
 import re
 import secrets
 import traceback
@@ -162,10 +163,13 @@ class AuthViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
         """获取当前用户信息"""
-        # 自动计算并更新等级
-        if request.user.profile:
-            request.user.profile.calculate_level()
-            request.user.profile.save()
+        # 自动计算并更新等级（无 profile 时先补建，避免 RelatedObjectDoesNotExist）
+        try:
+            prof = request.user.profile
+        except ObjectDoesNotExist:
+            prof, _ = UserProfile.objects.get_or_create(user=request.user)
+        prof.calculate_level()
+        prof.save()
         
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
