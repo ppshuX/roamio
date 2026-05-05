@@ -28,7 +28,7 @@ class TripViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """首页旅行树列表来自真实 Trip 表，仅展示公开已发布旅行。"""
         if self.action == 'list':
-            return Trip.objects.filter(
+            trip_qs = Trip.objects.filter(
                 status='published',
                 visibility='public',
             ).exclude(
@@ -36,6 +36,10 @@ class TripViewSet(viewsets.ReadOnlyModelViewSet):
             ).exclude(
                 title__in=['<SLUG>', '<slug>', 'SLUG', 'slug'],
             ).order_by('-created_at')
+            # 线上若尚未录入公开 Trip，避免出现「只有敬请期待」的空首页
+            if trip_qs.exists():
+                return trip_qs
+            return SiteStat.objects.exclude(page__startswith='tp:').order_by('-id')
         return SiteStat.objects.exclude(page__startswith='tp:').order_by('-id')
 
     def _public_trip_queryset(self):
