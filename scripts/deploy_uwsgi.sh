@@ -113,6 +113,26 @@ fi
 log "Pulling latest code from ${REMOTE}/${BRANCH}"
 git pull --ff-only "${REMOTE}" "${BRANCH}"
 
+# prod 下 Django 需要 ALLOWED_HOSTS、SECRET_KEY、DB_* 等；与 manage.py / 本 shell 启动的 uwsgi 子进程共享
+_load_dotenv_prod() {
+  [[ "${ROAMIO_SETTINGS:-}" != "prod" ]] && return 0
+  local eff="${ENV_FILE:-${APP_ROOT}/.env.prod}"
+  if [[ ! -f "${eff}" ]]; then
+    cat <<EOF >&2
+[deploy] ROAMIO_SETTINGS=prod 但未找到环境文件: ${eff}
+[deploy] 在服务器执行: cp "${APP_ROOT}/env.prod.example" "${APP_ROOT}/.env.prod" 并填写密钥与数据库等信息。
+[deploy] 若文件放在其他路径: ENV_FILE=/path/to/secret.env bash scripts/deploy_uwsgi.sh
+EOF
+    exit 1
+  fi
+  log "Loading production environment from ${eff}"
+  set -a
+  # shellcheck disable=SC1090
+  . "${eff}"
+  set +a
+}
+_load_dotenv_prod
+
 if [[ "${RUN_DJANGO_CHECK}" == "1" ]]; then
   log "Running Django system check"
   cd "${BACKEND_DIR}"
