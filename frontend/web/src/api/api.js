@@ -55,7 +55,8 @@ export const refreshAccessToken = async () => {
   isRefreshing = true
 
   try {
-    const data = await refreshClient.post('/auth/refresh/')
+    // refreshClient 未挂 response.data 解包拦截器，必须用 response.data
+    const { data } = await refreshClient.post('/auth/refresh/')
     const nextAccessToken = data?.access || ''
     userStore.setAccessToken(nextAccessToken)
     resolveRefreshQueue(null, nextAccessToken)

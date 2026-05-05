@@ -24,6 +24,14 @@ test('route guard restores access token before redirecting protected routes', ()
   assert.match(routerSource, /const token = userStore\.accessToken/)
 })
 
+test('refresh client reads access from axios response.body (response.data)', () => {
+  const apiSource = readSource('src/api/api.js')
+
+  assert.match(apiSource, /refreshClient\.post\(\s*['"]\/auth\/refresh\/['"]/)
+  assert.match(apiSource, /\.data\b/)
+  assert.match(apiSource, /\bdata\?\.access\b/)
+})
+
 test('request client refreshes once on 401 and retries with the new access token', () => {
   const apiSource = readSource('src/api/api.js')
 
@@ -40,7 +48,7 @@ test('logout and refresh failure clear browser auth state without token storage 
   const qqCallbackSource = readSource('src/views/auth/QQCallbackView.vue')
 
   assert.match(storeSource, /function clearAuthState\(\)/)
-  assert.match(storeSource, /accessToken\.value = ''/)
+  assert.match(storeSource, /setAccessToken\(['"]['"]\)/)
   assert.match(storeSource, /refreshToken\.value = ''/)
   assert.match(storeSource, /localStorage\.removeItem\('access_token'\)/)
   assert.match(storeSource, /localStorage\.removeItem\('refresh_token'\)/)
