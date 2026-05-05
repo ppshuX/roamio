@@ -10,14 +10,25 @@ UWSGI_INI="${UWSGI_INI:-${APP_ROOT}/scripts/uwsgi.ini}"
 UWSGI_PROCESSES="${UWSGI_PROCESSES:-2}"
 UWSGI_LOG="${UWSGI_LOG:-/tmp/uwsgi.log}"
 ROAMIO_SETTINGS="${ROAMIO_SETTINGS:-dev}"
-# Ubuntu 等环境常无 `python` 命令，仅提供 python3。
-if [[ -z "${PYTHON_BIN:-}" ]]; then
+# Ubuntu 常无 `python`；若有环境变量 PYTHON_BIN=python 但路径上不存在，则回退到 python3/python。
+_resolve_python_bin() {
+  local pick="${PYTHON_BIN:-}"
+  if [[ -n "${pick}" ]] && command -v "${pick}" >/dev/null 2>&1; then
+    PYTHON_BIN="${pick}"
+    return 0
+  fi
   if command -v python3 >/dev/null 2>&1; then
     PYTHON_BIN="python3"
-  else
-    PYTHON_BIN="python"
+    return 0
   fi
-fi
+  if command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+    return 0
+  fi
+  echo "[deploy] No Python found. Install python3 or set PYTHON_BIN to the venv interpreter (e.g. ${APP_ROOT}/.venv/bin/python)." >&2
+  exit 1
+}
+_resolve_python_bin
 RUN_NPM_CI="${RUN_NPM_CI:-0}"
 RUN_DJANGO_CHECK="${RUN_DJANGO_CHECK:-1}"
 AUTO_STASH="${AUTO_STASH:-0}"
