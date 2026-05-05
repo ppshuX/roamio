@@ -84,26 +84,67 @@ class AuthCookieFlowTests(UserSignalSafeTestCase):
         self.assertIn("access", refresh_response.data)
 
 
-class TripApiSmokeTests(TestCase):
+class TripApiSmokeTests(UserSignalSafeTestCase):
     """M3 smoke: trip list/detail basic behavior."""
 
     def setUp(self):
         self.client = APIClient()
+        self.author = User.objects.create_user(
+            username="trip_tree_author",
+            email="trip-tree-author@example.com",
+            password="test-pass-123",
+        )
         self.stat = SiteStat.objects.create(
             page="trip_smoke",
             views=3,
             likes=1,
             checked_in=False,
         )
+        self.public_trip = Trip.objects.create(
+            author=self.author,
+            title="福州三天两夜·巡演纪念版",
+            description="福州旅行公开行程",
+            status="published",
+            visibility="public",
+        )
+        self.private_trip = Trip.objects.create(
+            author=self.author,
+            title="Hidden draft trip",
+            description="Should not appear in trip tree",
+            status="draft",
+            visibility="private",
+        )
 
-    def test_trip_list_returns_seeded_page(self):
+    def test_trip_list_returns_public_published_trips(self):
         response = self.client.get("/api/v1/trips/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("results", response.data)
-        pages = [item["slug"] for item in response.data["results"]]
-        self.assertIn(self.stat.page, pages)
+        slugs = [item["slug"] for item in response.data["results"]]
+        self.assertIn(self.public_trip.slug, slugs)
+        self.assertNotIn(self.private_trip.slug, slugs)
+        self.assertNotIn(self.stat.page, slugs)
 
-    def test_trip_detail_increments_views(self):
+        trip_item = next(item for item in response.data["results"] if item["slug"] == self.public_trip.slug)
+        self.assertEqual(trip_item["name"], self.public_trip.title)
+        self.assertIn("stats", trip_item)
+
+    def test_trip_list_uses_fallback_slug_for_legacy_empty_slug(self):
+        legacy_trip = Trip.objects.create(
+            author=self.author,
+            title="福州旅行",
+            description="历史空 slug 旅行",
+            status="published",
+            visibility="public",
+        )
+        Trip.objects.filter(pk=legacy_trip.pk).update(slug="")
+
+        response = self.client.get("/api/v1/trips/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        trip_item = next(item for item in response.data["results"] if item["name"] == "福州旅行")
+        self.assertEqual(trip_item["slug"], f"trip-{legacy_trip.id}")
+        self.assertTrue(trip_item["slug"])
+
+    def test_legacy_trip_detail_increments_views(self):
         before = self.stat.views
         response = self.client.get(f"/api/v1/trips/{self.stat.page}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)

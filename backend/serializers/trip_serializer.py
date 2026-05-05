@@ -30,9 +30,54 @@ class TripSerializer(serializers.Serializer):
     name = serializers.CharField(read_only=True)
     description = serializers.CharField(read_only=True)
     stats = serializers.DictField(read_only=True)
+
+    def _empty_stats(self, page):
+        page_keys = [page]
+        if page.startswith('tp:'):
+            page_keys.append(page[3:])
+        return {
+            'page': page,
+            'views': 0,
+            'likes': 0,
+            'checked_in': False,
+            'comments_count': Comment.objects.filter(page__in=page_keys).count(),
+        }
+
+    def _serialize_stats(self, page):
+        try:
+            return SiteStatSerializer(SiteStat.objects.get(page=page)).data
+        except SiteStat.DoesNotExist:
+            return self._empty_stats(page)
+
+    def _display_slug(self, trip):
+        return trip.slug or f'trip-{trip.id}'
+
+    def _serialize_trip_stats(self, trip):
+        slug = self._display_slug(trip)
+        pages = []
+        if trip.slug:
+            pages.extend([trip.slug, f'tp:{trip.slug}'])
+        if slug not in pages:
+            pages.extend([slug, f'tp:{slug}'])
+
+        for page in pages:
+            try:
+                return SiteStatSerializer(SiteStat.objects.get(page=page)).data
+            except SiteStat.DoesNotExist:
+                continue
+        return self._empty_stats(f'tp:{slug}')
     
     def to_representation(self, instance):
         """自定义返回格式"""
+        if isinstance(instance, Trip):
+            slug = self._display_slug(instance)
+            return {
+                'slug': slug,
+                'name': instance.title,
+                'description': instance.description or instance.title,
+                'stats': self._serialize_trip_stats(instance),
+            }
+
         # 页面信息映射
         page_info = {
             'trip': {
@@ -87,4 +132,3 @@ class TripListSerializer(serializers.Serializer):
     name = serializers.CharField()
     views = serializers.IntegerField()
     likes = serializers.IntegerField()
-
