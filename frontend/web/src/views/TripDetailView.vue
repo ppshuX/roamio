@@ -110,7 +110,15 @@
           />
           
           <!-- 评论区组件 -->
+          <div v-if="isFuzhouTrip" class="comments-lock-card">
+            <div class="lock-icon">🔒</div>
+            <h5 class="mb-2">评论区暂时不公开</h5>
+            <p class="text-muted mb-0">
+              该行程的评论内容正在整理中，暂时关闭对外展示。上方行程信息可正常查看。
+            </p>
+          </div>
           <CommentSection
+            v-else
             ref="commentSectionRef"
             :comments="comments"
             :is-admin="isAdmin"
@@ -210,6 +218,11 @@ export default {
       return trip.value?.author?.id === userStore.userInfo?.id
     })
     const isAuthenticated = computed(() => userStore.isLoggedIn)
+    const isFuzhouTrip = computed(() => {
+      const slug = String(trip.value?.slug || route.params.slug || '')
+      const title = String(trip.value?.name || trip.value?.title || '')
+      return slug === '2eb63ceb4358' || title.includes('福州')
+    })
     const isFallbackTripSlug = computed(() => /^trip-\d+$/.test(String(trip.value?.slug || '')))
     const shouldUseTripPlanStats = computed(() => Boolean(trip.value?.overview) && !isFallbackTripSlug.value)
     
@@ -525,6 +538,7 @@ export default {
       commentSectionRef,
       isAuthor,
       isAuthenticated,
+      isFuzhouTrip,
       hasItinerary,
       handleLike,
       handleSubmitComment,
@@ -593,6 +607,20 @@ export default {
   gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+.comments-lock-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #ececec;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.comments-lock-card .lock-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
 }
 </style>
 
