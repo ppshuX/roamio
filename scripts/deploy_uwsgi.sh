@@ -113,6 +113,48 @@ fi
 log "Pulling latest code from ${REMOTE}/${BRANCH}"
 git pull --ff-only "${REMOTE}" "${BRANCH}"
 
+# 用 Python 解析 .env 并 export：`source .env` 会把 SECRET_KEY 里的 # ( ) $ 等当成 bash 语法而报错。
+_dotenv_export() {
+  local envfile="$1"
+  local _line
+  while IFS= read -r _line; do
+    [[ -z "${_line}" ]] && continue
+    eval "${_line}"
+  done < <(DEPLOY_DOTENV_TARGET="${envfile}" "${PYTHON_BIN}" <<'PY'
+import os, re
+
+path = os.environ["DEPLOY_DOTENV_TARGET"]
+
+
+def bash_single_quote(value: str) -> str:
+    return "'" + value.replace("'", "'\"'\"'") + "'"
+
+
+key_ok = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+with open(path, encoding="utf-8", errors="replace") as fp:
+    for raw in fp:
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].lstrip()
+        if "=" not in line:
+            continue
+        key, _, rest = line.partition("=")
+        key = key.strip()
+        val = rest.rstrip("\r\n")
+        if not key_ok.match(key):
+            continue
+        if len(val) >= 2 and val[0] == '"' and val[-1] == '"':
+            val = val[1:-1]
+        elif len(val) >= 2 and val[0] == "'" and val[-1] == "'":
+            val = val[1:-1]
+        print(f"export {key}={bash_single_quote(val)}")
+PY
+)
+}
+
 # prod：自动加载环境变量（与 manage.py / 同 shell 里启动的 uwsgi 共享）
 _load_dotenv_prod() {
   [[ "${ROAMIO_SETTINGS:-}" != "prod" ]] && return 0
@@ -135,10 +177,7 @@ EOF
     exit 1
   fi
   log "Loading production environment from ${eff}"
-  set -a
-  # shellcheck disable=SC1090
-  . "${eff}"
-  set +a
+  _dotenv_export "${eff}"
 }
 _load_dotenv_prod
 
