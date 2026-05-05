@@ -21,14 +21,20 @@ function getJwtExp(token) {
   }
 }
 
-/** access 仍有效则 true；缺 exp 视为需 refresh */
-function isAccessTokenFresh(token) {
-  if (!token) return false
+/**
+ * absent: 无存 token
+ * unknown: 有串但解析不出 exp（不主动 refresh，交给首请求/拦截器）
+ * fresh: 仍在有效期内
+ * expired: 可判定已过期（走 cookie refresh）
+ */
+function classifyAccessToken(token) {
+  if (!token) return 'absent'
   const exp = getJwtExp(token)
-  if (exp == null) return false
+  if (exp == null) return 'unknown'
   const now = Math.floor(Date.now() / 1000)
   const skew = 120
-  return exp > now + skew
+  if (exp > now + skew) return 'fresh'
+  return 'expired'
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -37,23 +43,6 @@ export const useUserStore = defineStore('user', () => {
   // 仅为兼容旧代码保留；refresh token 已迁移到 HttpOnly Cookie
   const refreshToken = ref('')
   const userInfo = ref(JSON.parse(localStorage.getItem('user_info') || 'null'))
-
-  // 兼容旧字段名 userStore.token
-  const token = computed({
-    get: () => accessToken.value,
-    set: (value) => {
-      accessToken.value = value || ''
-    }
-  })
-
-  const isLoggedIn = computed(() => !!accessToken.value)
-  const username = computed(() => userInfo.value?.username || '')
-  const avatar = computed(() => getAvatarUrl(userInfo.value?.profile?.avatar_url))
-  const isAdmin = computed(() => {
-    const isSuperuser = userInfo.value?.is_superuser || false
-    const isStaff = userInfo.value?.is_staff || false
-    return isSuperuser || isStaff
-  })
 
   function setAccessToken(nextToken) {
     const normalized = nextToken || ''
@@ -75,18 +64,35 @@ export const useUserStore = defineStore('user', () => {
   function migrateLegacyTokens() {
     const legacyAccessToken = localStorage.getItem('access_token')
     if (legacyAccessToken && !accessToken.value) {
-      accessToken.value = legacyAccessToken
+      setAccessToken(legacyAccessToken)
     }
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
   }
 
+  // 兼容旧字段名 userStore.token——必须与 setAccessToken 同步，否则会丢 sessionStorage
+  const token = computed({
+    get: () => accessToken.value,
+    set: (value) => {
+      setAccessToken(value ?? '')
+    }
+  })
+
+  const isLoggedIn = computed(() => !!accessToken.value)
+  const username = computed(() => userInfo.value?.username || '')
+  const avatar = computed(() => getAvatarUrl(userInfo.value?.profile?.avatar_url))
+  const isAdmin = computed(() => {
+    const isSuperuser = userInfo.value?.is_superuser || false
+    const isStaff = userInfo.value?.is_staff || false
+    return isSuperuser || isStaff
+  })
+
   async function restoreAccessToken() {
     migrateLegacyTokens()
 
-    // sessionStorage 里可能是已过期 JWT；若仍直接返回，首屏请求会 401→refresh，
-    // 在 HttpOnly cookie 未带上时（例如误用 HTTP、跨子域）会整站清登录态。
-    if (isAccessTokenFresh(accessToken.value)) {
+    const tier = classifyAccessToken(accessToken.value)
+    // 解析不出 exp：不抢先 refresh，避免因 cookie/网络误判整页清空登录态
+    if (tier === 'fresh' || tier === 'unknown') {
       return accessToken.value
     }
 
@@ -97,7 +103,13 @@ export const useUserStore = defineStore('user', () => {
         return nextToken
       }
     } catch (error) {
-      clearAuthState()
+      const status = error?.response?.status
+      const shouldClear =
+        tier === 'absent' ||
+        tier === 'expired' && (status === 401 || status === 403)
+      if (shouldClear) {
+        clearAuthState()
+      }
       return ''
     }
 
@@ -187,4 +199,3 @@ export const useUserStore = defineStore('user', () => {
     fetchUserInfo
   }
 })
-

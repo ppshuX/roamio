@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { toValue } from 'vue'
 import pinia from '@/stores'
 import { useUserStore } from '@/stores/user'
 
@@ -57,12 +58,21 @@ export const refreshAccessToken = async () => {
   try {
     // refreshClient 未挂 response.data 解包拦截器，必须用 response.data
     const { data } = await refreshClient.post('/auth/refresh/')
-    const nextAccessToken = data?.access || ''
+    const nextAccessToken = typeof data?.access === 'string' ? data.access : ''
+    if (!nextAccessToken) {
+      const err = new Error('Refresh succeeded but missing access token in body')
+      err.response = { status: 502, data }
+      throw err
+    }
     userStore.setAccessToken(nextAccessToken)
     resolveRefreshQueue(null, nextAccessToken)
     return nextAccessToken
   } catch (error) {
-    userStore.logoutLocal()
+    const status = error?.response?.status
+    // 超时/断网等非 HTTP 应答：不误清登录态（access 仍可续期或由用户重试）
+    if (status === 401 || status === 403) {
+      userStore.logoutLocal()
+    }
     resolveRefreshQueue(error)
     throw error
   } finally {
@@ -73,7 +83,7 @@ export const refreshAccessToken = async () => {
 api.interceptors.request.use(
   (config) => {
     const userStore = useUserStore(pinia)
-    const token = userStore.accessToken
+    const token = toValue(userStore.accessToken) || ''
     if (token) {
       config.headers = config.headers || {}
       config.headers.Authorization = `Bearer ${token}`
@@ -106,8 +116,11 @@ api.interceptors.response.use(
         }
         return api(originalRequest)
       } catch (refreshError) {
-        userStore.logoutLocal()
-        redirectToLoginIfNeeded()
+        const rs = refreshError?.response?.status
+        if (rs === 401 || rs === 403) {
+          userStore.logoutLocal()
+          redirectToLoginIfNeeded()
+        }
         return Promise.reject(refreshError)
       }
     }

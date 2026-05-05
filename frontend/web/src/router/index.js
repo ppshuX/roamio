@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { toValue } from 'vue'
 import pinia from '@/stores'
 import { useUserStore } from '@/stores/user'
 
@@ -106,13 +107,15 @@ router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore(pinia)
   userStore.migrateLegacyTokens()
 
+  const bearerPreview = toValue(userStore.accessToken) || ''
+
   // 需要登录页面：优先尝试 refresh cookie 自动续期 access token
-  if (to.meta.requiresAuth && !userStore.accessToken) {
+  if (to.meta.requiresAuth && !bearerPreview) {
     await userStore.restoreAccessToken()
   }
 
   // 权限检查
-  const token = userStore.accessToken
+  const token = toValue(userStore.accessToken) || ''
 
   if (to.meta.requiresAuth && !token) {
     // 需要登录但未登录，跳转到登录页

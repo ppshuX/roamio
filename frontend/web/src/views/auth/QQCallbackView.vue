@@ -40,9 +40,8 @@ onMounted(async () => {
     const response = await qqCallback({ code, state })
     
     if (response.success && response.access) {
-      // 登录成功
-      userStore.token = response.access
-      userStore.refreshToken = ''
+      // 登录成功（须走 setAccessToken，否则会丢 sessionStorage，刷新页即登出）
+      userStore.setAccessToken(response.access)
       userStore.userInfo = response.user
 
       localStorage.setItem('user_info', JSON.stringify(response.user))

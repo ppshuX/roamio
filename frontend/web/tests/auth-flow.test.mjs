@@ -19,9 +19,9 @@ const test = (name, fn) => {
 test('route guard restores access token before redirecting protected routes', () => {
   const routerSource = readSource('src/router/index.js')
 
-  assert.match(routerSource, /to\.meta\.requiresAuth && !userStore\.accessToken/)
+  assert.match(routerSource, /to\.meta\.requiresAuth && !bearerPreview/)
   assert.match(routerSource, /await userStore\.restoreAccessToken\(\)/)
-  assert.match(routerSource, /const token = userStore\.accessToken/)
+  assert.match(routerSource, /const token = toValue\(userStore\.accessToken\) \|\| ''/)
 })
 
 test('refresh client reads access from axios response.body (response.data)', () => {
