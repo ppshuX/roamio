@@ -6,6 +6,31 @@ import { defineStore } from 'pinia'
 import { login as loginApi, register as registerApi, logout as logoutApi, getCurrentUser } from '@/api/auth'
 import { getAvatarUrl } from '@/config/api'
 
+/** @param {string} token */
+function getJwtExp(token) {
+  if (!token || typeof token !== 'string') return null
+  const parts = token.split('.')
+  if (parts.length !== 3) return null
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=')
+    const payload = JSON.parse(atob(padded))
+    return typeof payload.exp === 'number' ? payload.exp : null
+  } catch {
+    return null
+  }
+}
+
+/** access 仍有效则 true；缺 exp 视为需 refresh */
+function isAccessTokenFresh(token) {
+  if (!token) return false
+  const exp = getJwtExp(token)
+  if (exp == null) return false
+  const now = Math.floor(Date.now() / 1000)
+  const skew = 120
+  return exp > now + skew
+}
+
 export const useUserStore = defineStore('user', () => {
   const ACCESS_TOKEN_KEY = 'roamio_access_token'
   const accessToken = ref(sessionStorage.getItem(ACCESS_TOKEN_KEY) || '')
@@ -57,23 +82,27 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function restoreAccessToken() {
-    if (accessToken.value) {
-      return accessToken.value
-    }
-
     migrateLegacyTokens()
-    if (accessToken.value) {
+
+    // sessionStorage 里可能是已过期 JWT；若仍直接返回，首屏请求会 401→refresh，
+    // 在 HttpOnly cookie 未带上时（例如误用 HTTP、跨子域）会整站清登录态。
+    if (isAccessTokenFresh(accessToken.value)) {
       return accessToken.value
     }
 
     try {
       const { refreshAccessToken } = await import('@/api/api')
       const nextToken = await refreshAccessToken()
-      return nextToken || ''
+      if (nextToken) {
+        return nextToken
+      }
     } catch (error) {
       clearAuthState()
       return ''
     }
+
+    clearAuthState()
+    return ''
   }
 
   async function login(credentials) {
