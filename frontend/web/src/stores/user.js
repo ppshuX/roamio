@@ -7,7 +7,8 @@ import { login as loginApi, register as registerApi, logout as logoutApi, getCur
 import { getAvatarUrl } from '@/config/api'
 
 export const useUserStore = defineStore('user', () => {
-  const accessToken = ref('')
+  const ACCESS_TOKEN_KEY = 'roamio_access_token'
+  const accessToken = ref(sessionStorage.getItem(ACCESS_TOKEN_KEY) || '')
   // 仅为兼容旧代码保留；refresh token 已迁移到 HttpOnly Cookie
   const refreshToken = ref('')
   const userInfo = ref(JSON.parse(localStorage.getItem('user_info') || 'null'))
@@ -30,11 +31,17 @@ export const useUserStore = defineStore('user', () => {
   })
 
   function setAccessToken(nextToken) {
-    accessToken.value = nextToken || ''
+    const normalized = nextToken || ''
+    accessToken.value = normalized
+    if (normalized) {
+      sessionStorage.setItem(ACCESS_TOKEN_KEY, normalized)
+    } else {
+      sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+    }
   }
 
   function clearAuthState() {
-    accessToken.value = ''
+    setAccessToken('')
     refreshToken.value = ''
     userInfo.value = null
     localStorage.removeItem('user_info')
