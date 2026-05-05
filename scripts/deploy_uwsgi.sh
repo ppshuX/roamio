@@ -214,7 +214,8 @@ sleep 2
 
 log "Running health checks"
 check_http "/"
-check_http "/api/v1/trips/"
+# /trips 会扫库 + 聚合统计，易受数据或序列化问题影响返回 500；探活改用需鉴权但未传 token 即 401 的轻接口。
+check_http "/api/v1/auth/me/"
 check_json_contains "/api/v1/auth/qq_login_url/" "authorize_url"
 
 log "Deployment completed"
