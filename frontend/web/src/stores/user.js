@@ -122,7 +122,11 @@ export const useUserStore = defineStore('user', () => {
       return info
     } catch (error) {
       console.error('获取用户信息失败:', error)
-      logoutLocal()
+      const status = error?.response?.status
+      // 只有明确鉴权失败时才清理登录态，避免网络抖动/临时 5xx 导致“刷新即掉线”。
+      if (status === 401 || status === 403) {
+        logoutLocal()
+      }
       throw error
     }
   }
