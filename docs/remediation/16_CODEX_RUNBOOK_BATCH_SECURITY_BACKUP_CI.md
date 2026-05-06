@@ -6,6 +6,15 @@
 
 ---
 
+## 与当前仓库对齐的备注（阅后即执行）
+
+- API 挂载：根路由为 `path('api/v1/', include('backend.api.urls'))`（见 `roamio/urls.py`），Smoke 请以 **`/api/v1/...`** 为准。
+- 后端测试入口：CI 使用 **`python manage.py test backend.tests`**，在本仓库对应 **`backend/tests.py`**（单文件模块，**不是** `backend/tests/` 目录）。Codex **新增至多 2～3** 个测试方法即可，勿与现有 `AuthAccessTests`、`AuthCookieFlowTests`、`TripApiSmokeTests` 等重复断言同一路径的同一场景。
+- 环境示例：`05_SECURITY_CLEANUP.md` 曾写「只保留根 `.env.example`」为目标；实操上可同时维护 **`env.prod.example`**（生产占位 + `ROAMIO_USE_SQLITE`）— 两套模板均需仅占位符，不得含真密钥。
+- **`docs/production-sqlite-summary.md`** 尚未包含「备份与恢复」小节时，任务块 **B3** 为必做增补。
+
+---
+
 ## 总目标（本次 PR 收口标准）
 
 | 序号 | 目标 | 验收方式 |
@@ -39,11 +48,11 @@
    - 邮箱授权码明文（QQ/163 SMTP 常见）
 2. **优先处理 `docs/**/*.md`、`*.example`、`README*`**；若在业务代码注释中发现真密钥——改为「从环境变量读取」或删除该行。
 3. **禁止**：把任何人的**真实生产** `.env` 内容写入仓库。
-4. 产出：**`scripts/scan_repo_secrets.sh`**（bash，可执行）或 **`Makefile` target `scan-secrets`**，内部调用 `grep`/`rg`，并维护一份很小的 **`scripts/secret_scan_allowlist.txt`**（每行一段 `rg --glob` 排除规则或文件名），避免对锁定文件反复误报。（若无法用 rg，仅用 grep，需在脚本注释说明依赖。）
+4. 产出：**`scripts/scan_repo_secrets.sh`**（bash，推荐 `chmod +x`）、或 **`Makefile` target `scan-secrets`**，内部调用 **`rg` 优先**（Ubuntu CI 可先 `sudo apt-get install ripgrep` 或使用 `grep -R`）；并维护很小的 **`scripts/secret_scan_allowlist.txt`**：**每行可写 `-g '*.lock'`、`!path/to/file` 等备注**，或由脚本按需 `grep -vFf` 该文件跳过「已知占位行」——格式在脚本注释中写清即可，不必强行与 `rg --glob` 一一等同。
 
 ### A3 PR 附带「轮换提示」节选
 
-在本文件末尾或使用 **`docs/remediation/17_ROTATION_REMINDER_STUB.md`**（新建一小节即可）写入**纯清单**：提醒维护者在合并后须在控制台轮换的类目（不写具体密钥），列表与 **`05_SECURITY_CLEANUP.md`** 中「Credentials To Rotate」对齐。
+以下二选一即可，**不要求重复两份**：（1）本文件文末「轮换提示」已满足运维提醒时，仅在 PR 中引用本文档链接；（2）或新建简短 **`docs/remediation/17_ROTATION_REMINDER_STUB.md`**，内容与 **`05_SECURITY_CLEANUP.md`** 中「Credentials To Rotate」条目对齐（仅类目，不写值）。
 
 ---
 
@@ -54,7 +63,7 @@
 - 假定默认数据库路径为 **项目根** `db.sqlite3`（与 Django `BASE_DIR / 'db.sqlite3'` 一致）。
 - 行为建议：
   - 支持环境变量 **`ROAMIO_DB_PATH`** 覆盖数据库文件路径。
-  - 备份到 **`BACKUP_DIR`**（默认 `./backups/sqlite/` 相对于项目根，或 `./var/backups/sqlite/`）。
+  - 备份到 **`BACKUP_DIR`**：默认 `./backups/sqlite/`（项目根下）；若希望与数据分区分离可改为 `./var/backups/sqlite/`（二选一写入脚本注释默认值即可）。
   - 文件名带时间戳：`db-YYYYMMDD-HHMMSS.sqlite3`。
   - 使用 **`sqlite3 "$DB" ".backup '$OUT'"`** 若在 PATH 中存在 `sqlite3`；否则回退 **`cp`** 并在注释中说明 WAL 一致性风险。
   - 保留最近 **`KEEP`** 份（可选，默认例如 14），删旧备份。
@@ -76,11 +85,10 @@
 
 ### C1 后端测试
 
-1. 阅读 **`.github/workflows/ci.yml`**。确保 **`python manage.py check`** 在 **`ROAMIO_SETTINGS=dev`**（或不设，与默认一致）下通过。
-2. 在 **`backend/tests/`**（或现有测试包）中增加**至多 2～3 个**极薄 smoke：
-   - 例如：匿名请求 **`/api/v1/auth/me/`** 期望 **401**（路径以项目 `urls` 为准，勿猜前缀）。
-   - 若 Trip 列表为公开且无鉴权：**200 或允许的空列表**，与当前业务一致即可。
-3. 不得引入需外网或可下载大模型的集成测试。
+1. 阅读 **`.github/workflows/ci.yml`**。默认 **`manage.py check`** 不强制 `export ROAMIO_SETTINGS`（与本地 dev 对齐即可）；若在 CI 中要显式强调，可加 **`ROAMIO_SETTINGS=dev`**，但不得以 `prod` 跑 CI（缺密钥会挂）。
+2. 在 **`backend/tests.py`** 中按需增加 **≤3** 条极薄 smoke（新 `TestCase` 或挂在现有 Case 内均可），例如：**匿名 GET `/api/v1/auth/me/` → 401**（路径以路由为准）。
+3. **避免重复**：`/api/v1/trips/`、`/api/v1/auth/login/`、`trip-plans` 等已由现有用例覆盖，勿再抄一份。
+4. 不得引入需外网或可下载大模型的集成测试。
 
 ### C2 （可选加分）CI 中运行密钥扫描脚本
 
@@ -100,7 +108,7 @@
 ## 提交与 PR 要求
 
 1. 一个 PR、逻辑可拆为多 commit 但合并前建议 **`squash` 或由维护者自定**。
-2. PR 描述需包含：**变更摘要**、**如何本地运行 `backup_sqlite.sh`/`scan_repo_secrets.sh`**、**已知限制**。
+2. PR 描述需包含：**变更摘要**、**如何本地运行 `backup_sqlite.sh`/`scan_repo_secrets.sh`**、**已知限制**；新增的 `scripts/*.sh` 需在 PR 说明中写明是否需 `chmod +x`。
 3. 若 CI 不可用（ fork 无私密），仍需保证脚本在 Ubuntu / bash 下可跑。
 
 ---
@@ -112,7 +120,7 @@
 - [ ] `backup_sqlite.sh` / `restore_sqlite.sh` 存在，`production-sqlite-summary.md` 已更新备份章节
 - [ ] 新增或补强测试，`python manage.py test backend.tests` 本地通过
 - [ ] （可选）CI 已调用扫描脚本
-- [ ] 新建或更新 **`docs/remediation/17_ROTATION_REMINDER_STUB.md`**（或与 A3 合并为同文件一小节）
+- [ ] 新建 **`docs/remediation/17_ROTATION_REMINDER_STUB.md`**（或与 A3 一样仅用本文档末节 + PR 说明二选一）
 
 ---
 
