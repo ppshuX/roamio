@@ -196,7 +196,7 @@ ls backend/static/images/
 ls backend/static/audios/
 
 # 运行 collectstatic（会将 backend/static/ 复制到 staticfiles/）
-python manage.py collectstatic --noinput
+cd backend && python manage.py collectstatic --noinput
 ```
 
 ### 2. 服务器部署
@@ -208,7 +208,7 @@ cd ~/roamio
 git pull
 
 # 收集静态文件
-python3 manage.py collectstatic --noinput
+cd backend && python3 manage.py collectstatic --noinput
 
 # 重启服务
 uwsgi --reload /tmp/roamio-uwsgi.pid
@@ -306,7 +306,7 @@ npm run build
 cd ../..
 
 # 4. 重新收集 Django Admin 静态文件
-python3 manage.py collectstatic --noinput
+cd backend && python3 manage.py collectstatic --noinput
 
 # 5. 清除 CDN 缓存（如果使用了 CDN）
 # 或等待缓存自动过期

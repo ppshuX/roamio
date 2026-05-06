@@ -14,6 +14,8 @@ Active cleanup docs live in:
 - `docs/remediation/05_SECURITY_CLEANUP.md`
 - `docs/remediation/06_ROUTE_USAGE_AUDIT.md`
 - `docs/remediation/07_SETTINGS_SPLIT.md`
+- `docs/guides/FRONTEND_THEME_SPEC.md`（前端主题规范）
+- `docs/guides/NGINX_GUNICORN_PROXY.md`（Nginx + Gunicorn HTTP 代理）
 
 Do not treat old planning or integration documents as source of truth until audited.
 
@@ -97,7 +99,7 @@ The deploy script aborts when the working tree is dirty. To temporarily stash an
 ROAMIO_SETTINGS=prod AUTO_STASH=1 bash scripts/deploy_gunicorn.sh
 ```
 
-The script pulls the configured branch, runs `backend/manage.py check`, builds the Vite bundle, stops uWSGI, starts Gunicorn on local HTTP `127.0.0.1:8000`, and runs local health checks:
+The script pulls the configured branch, runs `cd backend && python manage.py check`, builds the Vite bundle, stops uWSGI, starts Gunicorn on local HTTP `127.0.0.1:8000`, and runs local health checks:
 
 ```text
 /
