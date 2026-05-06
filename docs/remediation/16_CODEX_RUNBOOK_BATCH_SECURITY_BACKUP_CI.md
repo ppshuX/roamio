@@ -10,7 +10,7 @@
 
 | 能做的 | 不能做的 |
 |--------|-----------|
-| **Codex / GitHub Actions**：在仓库里撰写、修改 **`scripts/*.sh`**、**文档**、**`.github/workflows`**、**测试代码**；在 CI sandbox 跑 `manage.py check` / tests。 | **永远不能**替你 SSH 登录 VPS、替你执行 `cron`、替你在生产机跑备份、替你轮换云控制台密钥。 |
+| **Codex / GitHub Actions**：在仓库里撰写、修改 **`scripts/*.sh`**、**文档**、**`.github/workflows`**、**测试代码**；在 CI sandbox 从 `backend/` 工作目录跑 `manage.py check` / tests。 | **永远不能**替你 SSH 登录 VPS、替你执行 `cron`、替你在生产机跑备份、替你轮换云控制台密钥。 |
 | **你（维护者）**：合并后 **`git pull` 到部署机**，在 **SSH** 里按文档执行 **`bash scripts/backup_sqlite.sh`** 或配置 **crontab**；密钥轮换在云上手工完成。 | 指望「Codex 一键搞定线上运维」——不成立。 |
 
 **SQLite 备份对象**：默认是 **部署机磁盘上的项目根 `db.sqlite3`**。脚本进仓后由人在**那台机上**运行；不是要 Codex「连你云端」，也不是强制你把生产库拉回开发机——除非你自己要做异地保管。
@@ -20,7 +20,7 @@
 ## 与当前仓库对齐的备注（阅后即执行）
 
 - API 挂载：根路由为 `path('api/v1/', include('backend.api.urls'))`（见 `roamio/urls.py`），Smoke 请以 **`/api/v1/...`** 为准。
-- 后端测试入口：CI 使用 **`python manage.py test backend.tests`**，在本仓库对应 **`backend/tests.py`**（单文件模块，**不是** `backend/tests/` 目录）。Codex **新增至多 2～3** 个测试方法即可，勿与现有 `AuthAccessTests`、`AuthCookieFlowTests`、`TripApiSmokeTests` 等重复断言同一路径的同一场景。
+- 后端测试入口：CI 使用 **`working-directory: backend` + `python manage.py test backend.tests`**，在本仓库对应 **`backend/tests.py`**（单文件模块，**不是** `backend/tests/` 目录）。Codex **新增至多 2～3** 个测试方法即可，勿与现有 `AuthAccessTests`、`AuthCookieFlowTests`、`TripApiSmokeTests` 等重复断言同一路径的同一场景。
 - 环境示例：`05_SECURITY_CLEANUP.md` 曾写「只保留根 `.env.example`」为目标；实操上可同时维护 **`env.prod.example`**（生产占位 + `ROAMIO_USE_SQLITE`）— 两套模板均需仅占位符，不得含真密钥。
 - **`docs/production-sqlite-summary.md`** 尚未包含「备份与恢复」小节时，任务块 **B3** 为必做增补。
 
@@ -28,7 +28,7 @@
 
 ## 第二轮自查（执行者 / Codex 易错点）
 
-- **`python manage.py`**：CI 与文档均假定在**仓库根目录**执行（与根目录 `manage.py` 同级）；若只 `cd backend` 再跑，需自行设 `PYTHONPATH` 指向仓库根，否则易出现 `ModuleNotFoundError: roamio`。
+- **`python manage.py`**：Phase 2 后 CI 与新文档主推 **`cd backend && python manage.py ...`**。`backend/manage.py` 已负责把仓库根加入 `sys.path`，通常不需要手写 `PYTHONPATH`；根目录 `manage.py` 仅作为过渡兼容 shim。
 - **`/api/v1/auth/me/`**：由 `AuthViewSet` 注册在 `auth` 下的 `me` 动作；若测试出现 404，先在本地用路由列表或代码确认路径，勿猜测。
 - **扫描脚本依赖**：`ubuntu-latest` **默认不一定预装 `rg`**；脚本应 **`command -v rg` 检测**，无则回退 `grep -r` / `git grep`，并在注释中说明；或在 CI 步骤里安装 `ripgrep`（注意耗时与是否需 `sudo`）。
 - **`backup_sqlite.sh`**：若 **`db.sqlite3` 尚不存在**，应按 B1 **清晰失败退出**，勿生成空文件冒充备份成功。**Codex 与 CI 均无法 SSH 你的 VPS**：禁止在 PR/文档中声称「已在生产验证备份」，除非明确写的是「在未提供生产库的条件下仅做了语法或 exit code 自检」之类事实。
@@ -41,7 +41,7 @@
 |------|------|-----------|
 | G1 | 降低仓库明文秘密与误提交风险 | 仓库内有可运行的轻量扫描脚本（如 **`scripts/scan_repo_secrets.sh`**）或根目录 **`Makefile`** 目标；模板文件仅占位符 |
 | G2 | 为生产 SQLite 准备 **仓库内可交付** 的备份/恢复脚本与文档；**在线上执行 backups 的是维护者**（SSH/cron），非 Codex | `scripts/` 下备份/还原脚本存在且带用法注释；`production-sqlite-summary.md` 已按 B3 写清人机分工 |
-| G3 | CI 与本地能对「根本没挂」有更稳信号 | 保留或增强现有 `manage.py check` + `backend.tests`；可选增加极少量 smoke |
+| G3 | CI 与本地能对「根本没挂」有更稳信号 | 保留或增强现有 `cd backend && python manage.py check` + `backend.tests`；可选增加极少量 smoke |
 
 ---
 
@@ -109,7 +109,7 @@
 
 ### C1 后端测试
 
-1. 阅读 **`.github/workflows/ci.yml`**。默认 **`manage.py check`** 不强制 `export ROAMIO_SETTINGS`（与本地 dev 对齐即可）；若在 CI 中要显式强调，可加 **`ROAMIO_SETTINGS=dev`**，但不得以 `prod` 跑 CI（缺密钥会挂）。
+1. 阅读 **`.github/workflows/ci.yml`**。后端步骤应保持依赖安装在仓库根执行，Django check/test 使用 **`working-directory: backend`**；若在 CI 中要显式强调，可加 **`ROAMIO_SETTINGS=dev`**，但不得以 `prod` 跑 CI（缺密钥会挂）。
 2. 在 **`backend/tests.py`** 中按需增加 **≤3** 条极薄 smoke（新 `TestCase` 或挂在现有 Case 内均可），例如：匿名 **GET** `/api/v1/auth/me/` 应返回 **未授权**（**401 或 403** 皆可，须与当前 DRF/JWT 配置一致；实现时以本仓库运行结果为准，勿与现网行为矛盾）。
 3. **避免重复**：`/api/v1/trips/`、`/api/v1/auth/login/`、`trip-plans` 等已由现有用例覆盖，勿再抄一份。
 4. 不得引入需外网或可下载大模型的集成测试。
@@ -142,7 +142,7 @@
 - [ ] `env.prod.example` 与 `.env.example`（及前端示例）占位符齐全且无明显真实秘密
 - [ ] `scripts/scan_repo_secrets.sh`（或等价）存在且根 `README.md` 或 `docs/remediation/README.md` 索引中可加一行指向（任选一处）
 - [ ] `backup_sqlite.sh` / `restore_sqlite.sh` 存在，`production-sqlite-summary.md` 已更新备份章节
-- [ ] 新增或补强测试，`python manage.py test backend.tests` 本地通过
+- [ ] 新增或补强测试，`cd backend && python manage.py test backend.tests` 本地通过
 - [ ] （可选）CI 已调用扫描脚本
 - [ ] **A3**：已新建 `docs/remediation/17_ROTATION_REMINDER_STUB.md`，**或** PR 中明确引用本文文末「轮换提示」并说明与 `05_SECURITY_CLEANUP.md` 对齐（二选一）
 
@@ -166,5 +166,5 @@ docs/remediation/16_CODEX_RUNBOOK_BATCH_SECURITY_BACKUP_CI.md
 
 禁令：不写入任何真实密钥；不 rewrite Git 历史；不做大规模业务重构。测试仅改 backend/tests.py，新增 ≤3 条薄 smoke；匿名 GET /api/v1/auth/me/ 的期望码以本项目实际（401 或 403）为准。bash 脚本一律 set -euo pipefail；备份脚本在源库缺失时必须失败退出。
 
-结束前：已 git pull；在项目根运行 python manage.py check 与 python manage.py test backend.tests 均需通过。若实现 scan_repo_secrets.sh，PR 中写明调用方式。勿声称「已在 VPS 上验证备份」除非你仅指 CI 内对空路径的语法检查（并明确说明）。
+结束前：已 git pull；`cd backend && python manage.py check` 与 `cd backend && python manage.py test backend.tests` 均需通过。根目录 `python manage.py ...` 作为过渡 shim 也应保持可用。若实现 scan_repo_secrets.sh，PR 中写明调用方式。勿声称「已在 VPS 上验证备份」除非你仅指 CI 内对空路径的语法检查（并明确说明）。
 ```

@@ -27,9 +27,15 @@ jobs:
           pip install -r requirements.txt
 
       - name: Django system check
+        working-directory: backend
+        env:
+          ROAMIO_SETTINGS: dev
         run: python manage.py check
 
       - name: Backend smoke tests
+        working-directory: backend
+        env:
+          ROAMIO_SETTINGS: dev
         run: python manage.py test backend.tests
 
   frontend:

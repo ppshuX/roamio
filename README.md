@@ -27,8 +27,8 @@ Do not treat old planning or integration documents as source of truth until audi
 
 - Backend settings: `roamio/settings/`
 - Backend routes: `roamio/urls.py`
-- Backend command entry: `backend/manage.py`
-- Root command shim: `manage.py` forwards to `backend/manage.py` during the transition.
+- Backend command entry: `cd backend && python manage.py ...`
+- Root command shim: `python manage.py ...` remains as transition compatibility only.
 - API routes: `backend/api/urls.py`
 - Frontend app: `frontend/web/src/main.js`
 - Frontend routes: `frontend/web/src/router/index.js`
@@ -46,6 +46,8 @@ cd backend
 python manage.py migrate
 python manage.py runserver
 ```
+
+The root `manage.py` is a thin compatibility shim. Prefer the `backend/` workspace for new local, CI, and deployment commands.
 
 Linux production deploys should install:
 
