@@ -15,11 +15,20 @@
 
 ---
 
+## 第二轮自查（执行者 / Codex 易错点）
+
+- **`python manage.py`**：CI 与文档均假定在**仓库根目录**执行（与根目录 `manage.py` 同级）；若只 `cd backend` 再跑，需自行设 `PYTHONPATH` 指向仓库根，否则易出现 `ModuleNotFoundError: roamio`。
+- **`/api/v1/auth/me/`**：由 `AuthViewSet` 注册在 `auth` 下的 `me` 动作；若测试出现 404，先在本地用路由列表或代码确认路径，勿猜测。
+- **扫描脚本依赖**：`ubuntu-latest` **默认不一定预装 `rg`**；脚本应 **`command -v rg` 检测**，无则回退 `grep -r` / `git grep`，并在注释中说明；或在 CI 步骤里安装 `ripgrep`（注意耗时与是否需 `sudo`）。
+- **`backup_sqlite.sh`**：若 **`db.sqlite3` 尚不存在**，应按 B1 **清晰失败退出**，勿生成空文件冒充备份成功。
+
+---
+
 ## 总目标（本次 PR 收口标准）
 
 | 序号 | 目标 | 验收方式 |
 |------|------|-----------|
-| G1 | 降低仓库明文秘密与误提交风险 | 根目录有可运行的轻量扫描脚本（或 Makefile 目标）；模板文件仅占位符 |
+| G1 | 降低仓库明文秘密与误提交风险 | 仓库内有可运行的轻量扫描脚本（如 **`scripts/scan_repo_secrets.sh`**）或根目录 **`Makefile`** 目标；模板文件仅占位符 |
 | G2 | 生产 SQLite 可备份与可恢复（运维可跟文档操作） | `scripts/` 下备份/还原脚本存在且带用法注释；汇总文档更新 |
 | G3 | CI 与本地能对「根本没挂」有更稳信号 | 保留或增强现有 `manage.py check` + `backend.tests`；可选增加极少量 smoke |
 
@@ -36,7 +45,7 @@
 2. 确保：
    - 所有取值均为明显占位符（如 `replace-with-*`、`your-*`、`xxxxxxxx`）。
    - 变量名与实际 `roamio/settings` 用到的键对齐（可对照 `prod.py`、`dev.py`、`base.py`）。
-3. **`env.prod.example`** 必须与当前生产说明一致：**`ROAMIO_SETTINGS`、`ROAMIO_USE_SQLITE`**、占位 `SECRET_KEY`、示例 `ALLOWED_HOSTS` / CSRF / CORS 等。（参考 `production-sqlite-summary.md`。）
+3. **`env.prod.example`** 必须与当前生产说明一致：**显式写明 `ROAMIO_SETTINGS`**（示例值 **`prod`** 或等价注释）；**写明 `ROAMIO_USE_SQLITE=1` 的典型用法**（勿仅埋在注释里让人猜是否在生效）；占位 `SECRET_KEY`、示例 `ALLOWED_HOSTS` / CSRF / CORS。（参考 `production-sqlite-summary.md`；若当前模板缺上述键或未展示 SQLite 模式，**A1 须补齐**。）
 
 ### A2 全库敏感信息扫描（只读盘点 + 可安全修复）
 
@@ -65,7 +74,7 @@
   - 支持环境变量 **`ROAMIO_DB_PATH`** 覆盖数据库文件路径。
   - 备份到 **`BACKUP_DIR`**：默认 `./backups/sqlite/`（项目根下）；若希望与数据分区分离可改为 `./var/backups/sqlite/`（二选一写入脚本注释默认值即可）。
   - 文件名带时间戳：`db-YYYYMMDD-HHMMSS.sqlite3`。
-  - 使用 **`sqlite3 "$DB" ".backup '$OUT'"`** 若在 PATH 中存在 `sqlite3`；否则回退 **`cp`** 并在注释中说明 WAL 一致性风险。
+  - 若存在 **`sqlite3` CLI**：用 **`.backup`** 导出备份（脚本内需**自行正确拼接/转义路径**，勿复制易错的嵌套引号示例）；否则回退 **`cp`**，并在注释中说明 **WAL 模式下仅 `cp` 的瞬时一致性风险**。
   - 保留最近 **`KEEP`** 份（可选，默认例如 14），删旧备份。
   - **`set -euo pipefail`**，缺文件时清晰报错退出。
 
@@ -86,7 +95,7 @@
 ### C1 后端测试
 
 1. 阅读 **`.github/workflows/ci.yml`**。默认 **`manage.py check`** 不强制 `export ROAMIO_SETTINGS`（与本地 dev 对齐即可）；若在 CI 中要显式强调，可加 **`ROAMIO_SETTINGS=dev`**，但不得以 `prod` 跑 CI（缺密钥会挂）。
-2. 在 **`backend/tests.py`** 中按需增加 **≤3** 条极薄 smoke（新 `TestCase` 或挂在现有 Case 内均可），例如：**匿名 GET `/api/v1/auth/me/` → 401**（路径以路由为准）。
+2. 在 **`backend/tests.py`** 中按需增加 **≤3** 条极薄 smoke（新 `TestCase` 或挂在现有 Case 内均可），例如：匿名 **GET** `/api/v1/auth/me/` 应返回 **未授权**（**401 或 403** 皆可，须与当前 DRF/JWT 配置一致；实现时以本仓库运行结果为准，勿与现网行为矛盾）。
 3. **避免重复**：`/api/v1/trips/`、`/api/v1/auth/login/`、`trip-plans` 等已由现有用例覆盖，勿再抄一份。
 4. 不得引入需外网或可下载大模型的集成测试。
 
@@ -120,7 +129,7 @@
 - [ ] `backup_sqlite.sh` / `restore_sqlite.sh` 存在，`production-sqlite-summary.md` 已更新备份章节
 - [ ] 新增或补强测试，`python manage.py test backend.tests` 本地通过
 - [ ] （可选）CI 已调用扫描脚本
-- [ ] 新建 **`docs/remediation/17_ROTATION_REMINDER_STUB.md`**（或与 A3 一样仅用本文档末节 + PR 说明二选一）
+- [ ] **A3**：已新建 `docs/remediation/17_ROTATION_REMINDER_STUB.md`，**或** PR 中明确引用本文文末「轮换提示」并说明与 `05_SECURITY_CLEANUP.md` 对齐（二选一）
 
 ---
 
