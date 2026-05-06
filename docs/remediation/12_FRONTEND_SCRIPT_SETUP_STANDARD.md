@@ -56,6 +56,7 @@
 
 ### Batch C（最后）
 - 大型复杂组件（如 `components/events/GlobalSidebar.vue`）
+- 已完成：`components/events/GlobalSidebar.vue` 已提取 composables 并迁移到 `<script setup>`
 - 原则：先拆子组件，再迁 `<script setup>`
 
 ## 6. 提交门槛（每个迁移 PR 必须满足）

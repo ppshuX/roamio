@@ -335,374 +335,222 @@
   </div>
 </template>
 
-<script>
-import { ref, computed, watch, defineComponent, onMounted } from 'vue'
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { getRalendarAuthorizeUrl, getRalendarAccounts } from '@/api/ralendarOAuth'
-import {
-  getRalendarEvents,
-  createRalendarEvent,
-  updateRalendarEvent,
-  deleteRalendarEvent
-} from '@/api/ralendar'
+import { useRalendarAccount } from '@/composables/useRalendarAccount'
+import { useRalendarEvents } from '@/composables/useRalendarEvents'
 import MapPicker from '@/components/map/MapPicker.vue'
 
-export default defineComponent({
-  name: 'GlobalSidebar',
-  
-  components: {
-    MapPicker
-  },
-  
-  props: {
-    show: {
-      type: Boolean,
-      default: false
+const props = defineProps({
+  show: {
+    type: Boolean,
+    default: false
+  }
+})
+
+defineEmits(['close'])
+
+const userStore = useUserStore()
+
+const isLoggedIn = computed(() => userStore.isLoggedIn)
+const showAddForm = ref(false)
+const showMapPicker = ref(false)
+const submitting = ref(false)
+const editingEventId = ref(null)
+const newEvent = ref({
+  title: '',
+  description: '',
+  start_time: '',
+  end_time: '',
+  location: '',
+  latitude: null,
+  longitude: null,
+  reminder_minutes: 15,
+  email_reminder: false
+})
+
+const {
+  hasRalendarAccount,
+  connecting,
+  checkRalendarAccount,
+  handleConnectRalendar
+} = useRalendarAccount({ isLoggedIn })
+
+const {
+  loading,
+  allEvents,
+  loadAllEvents,
+  formatTime,
+  createEvent,
+  updateEvent,
+  deleteEvent
+} = useRalendarEvents({ isLoggedIn, hasRalendarAccount })
+
+const checkSidebarRalendarAccount = () => {
+  return checkRalendarAccount({ onAccountReady: loadAllEvents })
+}
+
+// 添加/更新事件
+const handleAddEvent = async () => {
+  if (!newEvent.value.title) {
+    alert('请输入待办标题')
+    return
+  }
+
+  if (!newEvent.value.start_time) {
+    alert('请选择开始时间')
+    return
+  }
+
+  submitting.value = true
+
+  try {
+    // 准备事件数据
+    const eventData = {
+      title: newEvent.value.title,
+      description: newEvent.value.description || '',
+      start_time: new Date(newEvent.value.start_time).toISOString(),
+      location: newEvent.value.location || '',
+      reminder_minutes: parseInt(newEvent.value.reminder_minutes) || 15,
+      email_reminder: newEvent.value.email_reminder || false
     }
-  },
-  
-  emits: ['close'],
-  
-  setup(props) {
-    const userStore = useUserStore()
-    
-    const isLoggedIn = computed(() => userStore.isLoggedIn)
-    const loading = ref(false)
-    const hasRalendarAccount = ref(false)
-    const checkingAccount = ref(false)
-    const connecting = ref(false)
-    const allEvents = ref([])
-    const showAddForm = ref(false)
-    const showMapPicker = ref(false)
-    const submitting = ref(false)
-    const editingEventId = ref(null)
-    const newEvent = ref({
+
+    // 只有在有值时才添加这些字段
+    if (newEvent.value.end_time) {
+      eventData.end_time = new Date(newEvent.value.end_time).toISOString()
+    }
+
+    if (newEvent.value.latitude && newEvent.value.longitude) {
+      eventData.latitude = newEvent.value.latitude
+      eventData.longitude = newEvent.value.longitude
+    }
+
+    if (editingEventId.value) {
+      // 编辑模式：通过 Roamio 后端代理更新（使用独立的事件 API）
+      await updateEvent(editingEventId.value, eventData)
+      alert('更新成功！')
+    } else {
+      // 创建模式
+      await createEvent(eventData)
+      alert('创建成功！')
+    }
+
+    // 重置表单
+    newEvent.value = {
       title: '',
       description: '',
       start_time: '',
       end_time: '',
       location: '',
-      latitude: null,
-      longitude: null,
       reminder_minutes: 15,
       email_reminder: false
-    })
-    
-    // 检查是否已绑定 Ralendar 账号
-    const checkRalendarAccount = async () => {
-      if (!isLoggedIn.value) return
-      
-      checkingAccount.value = true
-      try {
-        const response = await getRalendarAccounts()
-        hasRalendarAccount.value = (response.accounts || []).length > 0
-        
-        // 如果已绑定，加载待办事项
-        if (hasRalendarAccount.value) {
-          await loadAllEvents()
-        }
-      } catch (err) {
-        console.error('检查 Ralendar 账号失败:', err)
-        hasRalendarAccount.value = false
-      } finally {
-        checkingAccount.value = false
-      }
     }
-    
-    // 连接 Ralendar
-    const handleConnectRalendar = async () => {
-      connecting.value = true
-      try {
-        const response = await getRalendarAuthorizeUrl()
-        const { authorize_url } = response
-        
-        if (authorize_url) {
-          // 保存来源页面
-          sessionStorage.setItem('ralendar_auth_origin', window.location.pathname)
-          sessionStorage.setItem('ralendar_auth_from', 'sidebar')
-          
-          // 跳转到授权页面
-          window.location.href = authorize_url
-        } else {
-          alert('获取授权链接失败')
-        }
-      } catch (err) {
-        console.error('连接 Ralendar 失败:', err)
-        alert(err.response?.data?.error || '连接失败，请重试')
-      } finally {
-        connecting.value = false
-      }
-    }
-    
-    // 加载所有待办事项
-    const loadAllEvents = async () => {
-      if (!isLoggedIn.value || !hasRalendarAccount.value) return
-      
-      loading.value = true
-      try {
-        const data = await getRalendarEvents()
-        allEvents.value = data.results || data || []
-        
-        // 同时保存到本地存储（备份）
-        localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
-      } catch (error) {
-        const errorData = error.response?.data
-        const errorMessage = errorData?.detail || errorData?.error || error.message || '加载失败'
+    editingEventId.value = null
+    showAddForm.value = false
+  } catch (error) {
+    const errorData = error.response?.data
+    const errorMessage = errorData?.detail || errorData?.error || error.message || '操作失败，请稍后重试'
 
-        // 输出详细错误信息到控制台
-        console.error('加载待办失败:', {
-          code: errorData?.code,
-          message: errorMessage,
-          status: error.response?.status,
-          fullError: errorData
-        })
+    if (errorData) {
+      console.error('事件操作失败:', {
+        code: errorData.code,
+        message: errorMessage,
+        status: error.response?.status,
+        eventId: editingEventId.value,
+        fullError: errorData
+      })
+    } else {
+      console.error('操作失败:', error)
+    }
 
-        // 根据错误代码显示不同的提示
-        if (errorData?.code === 'NO_RALENDAR_ACCOUNT') {
-          console.error('❌ 尚未绑定 Ralendar 账号，请先在个人中心绑定')
-        } else if (errorData?.code === 'NO_USER_IDENTIFIER') {
-          console.error('❌ 无法识别用户身份，请确保已通过 QQ 登录')
-        } else if (errorData?.code === 'TOKEN_EXPIRED') {
-          console.error('❌ Ralendar Token 已过期，请重新授权')
-        } else {
-          console.error('❌ 错误:', errorMessage)
-        }
-        
-        // 加载失败时，尝试从本地存储恢复
-        try {
-          const stored = localStorage.getItem('ralendar_events')
-          if (stored) {
-            allEvents.value = JSON.parse(stored)
-          } else {
-            allEvents.value = []
-          }
-        } catch (e) {
-          allEvents.value = []
-        }
-      } finally {
-        loading.value = false
-      }
+    // 根据错误代码显示不同的提示
+    if (errorData?.code === 'NO_RALENDAR_ACCOUNT') {
+      console.error('❌ 尚未绑定 Ralendar 账号，请先在个人中心绑定')
+    } else if (errorData?.code === 'NO_USER_IDENTIFIER') {
+      console.error('❌ 无法识别用户身份，请确保已通过 QQ 登录')
+    } else if (errorData?.code === 'TOKEN_EXPIRED') {
+      console.error('❌ Ralendar Token 已过期，请重新授权')
+    } else if (errorData?.code === 'RALENDAR_API_ERROR') {
+      console.error('❌ Ralendar API 错误:', errorMessage)
+    } else {
+      console.error('❌ 错误详情:', errorMessage)
     }
-    
-    // 格式化时间
-    const formatTime = (timeStr) => {
-      if (!timeStr) return ''
-      const date = new Date(timeStr)
-      return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`
-    }
-    
-    // 添加/更新事件
-    const handleAddEvent = async () => {
-      if (!newEvent.value.title) {
-        alert('请输入待办标题')
-        return
-      }
-      
-      if (!newEvent.value.start_time) {
-        alert('请选择开始时间')
-        return
-      }
-      
-      submitting.value = true
-      
-      try {
-        // 准备事件数据
-        const eventData = {
-          title: newEvent.value.title,
-          description: newEvent.value.description || '',
-          start_time: new Date(newEvent.value.start_time).toISOString(),
-          location: newEvent.value.location || '',
-          reminder_minutes: parseInt(newEvent.value.reminder_minutes) || 15,
-          email_reminder: newEvent.value.email_reminder || false
-        }
-        
-        // 只有在有值时才添加这些字段
-        if (newEvent.value.end_time) {
-          eventData.end_time = new Date(newEvent.value.end_time).toISOString()
-        }
-        
-        if (newEvent.value.latitude && newEvent.value.longitude) {
-          eventData.latitude = newEvent.value.latitude
-          eventData.longitude = newEvent.value.longitude
-        }
-        
-        if (editingEventId.value) {
-          // 编辑模式：通过 Roamio 后端代理更新（使用独立的事件 API）
-          const result = await updateRalendarEvent(editingEventId.value, eventData)
-          
-          // 更新列表中的事件
-          const index = allEvents.value.findIndex(e => e.id === editingEventId.value)
-          if (index > -1) {
-            allEvents.value[index] = result
-          }
-          
-          // 保存到本地存储
-          localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
-          
-          alert('更新成功！')
-        } else {
-          // 创建模式
-          const result = await createRalendarEvent(eventData)
-          
-          // 添加到列表
-          allEvents.value.unshift(result)
-          
-          // 保存到本地存储
-          localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
-          
-          alert('创建成功！')
-        }
-        
-        // 重置表单
-        newEvent.value = {
-          title: '',
-          description: '',
-          start_time: '',
-          end_time: '',
-          location: '',
-          reminder_minutes: 15,
-          email_reminder: false
-        }
-        editingEventId.value = null
-        showAddForm.value = false
-        
-      } catch (error) {
-        const errorData = error.response?.data
-        const errorMessage = errorData?.detail || errorData?.error || error.message || '操作失败，请稍后重试'
-        
-        if (errorData) {
-          console.error('事件操作失败:', {
-            code: errorData.code,
-            message: errorMessage,
-            status: error.response?.status,
-            eventId: editingEventId.value,
-            fullError: errorData
-          })
-        } else {
-          console.error('操作失败:', error)
-        }
-        
-        // 根据错误代码显示不同的提示
-        if (errorData?.code === 'NO_RALENDAR_ACCOUNT') {
-          console.error('❌ 尚未绑定 Ralendar 账号，请先在个人中心绑定')
-        } else if (errorData?.code === 'NO_USER_IDENTIFIER') {
-          console.error('❌ 无法识别用户身份，请确保已通过 QQ 登录')
-        } else if (errorData?.code === 'TOKEN_EXPIRED') {
-          console.error('❌ Ralendar Token 已过期，请重新授权')
-        } else if (errorData?.code === 'RALENDAR_API_ERROR') {
-          console.error('❌ Ralendar API 错误:', errorMessage)
-        } else {
-          console.error('❌ 错误详情:', errorMessage)
-        }
-      } finally {
-        submitting.value = false
-      }
-    }
-    
-    // 取消添加/编辑
-    const cancelAdd = () => {
-      showAddForm.value = false
-      editingEventId.value = null
-      newEvent.value = {
-        title: '',
-        description: '',
-        start_time: '',
-        end_time: '',
-        location: '',
-        latitude: null,
-        longitude: null,
-        reminder_minutes: 15,
-        email_reminder: false
-      }
-    }
-    
-    // 地图选择处理
-    const handleMapSelect = (location) => {
-      newEvent.value.location = location.name
-      newEvent.value.latitude = location.lat
-      newEvent.value.longitude = location.lng
-    }
-    
-    // 编辑事件
-    const handleEditEvent = (event) => {
-      // 填充表单
-      newEvent.value = {
-        title: event.title,
-        description: event.description || '',
-        start_time: event.start_time ? event.start_time.substring(0, 16) : '',
-        end_time: event.end_time ? event.end_time.substring(0, 16) : '',
-        location: event.location || '',
-        latitude: event.latitude || null,
-        longitude: event.longitude || null,
-        reminder_minutes: event.reminder_minutes || 15,
-        email_reminder: event.email_reminder || false
-      }
-      
-      // 保存正在编辑的事件 ID
-      editingEventId.value = event.id
-      showAddForm.value = true
-    }
-    
-    // 删除事件
-    const handleDeleteEvent = async (event) => {
-      if (!confirm(`确定要删除「${event.title}」吗？`)) {
-        return
-      }
-      
-      try {
-        // 通过 Roamio 后端代理删除事件（使用独立的事件 API）
-        await deleteRalendarEvent(event.id)
-        
-        // 从列表中移除
-        const index = allEvents.value.findIndex(e => e.id === event.id)
-        if (index > -1) {
-          allEvents.value.splice(index, 1)
-        }
-        
-        // 保存到本地存储
-        localStorage.setItem('ralendar_events', JSON.stringify(allEvents.value))
-        
-        alert('删除成功！')
-      } catch (error) {
-        console.error('删除事件失败:', error)
-        alert('删除失败，请稍后重试')
-      }
-    }
-    
-    // 监听显示状态，打开时检查账号并加载数据
-    watch(() => props.show, (newVal) => {
-      if (newVal && isLoggedIn.value) {
-        checkRalendarAccount()
-      }
-    })
-    
-    // 组件挂载时检查（如果已显示）
-    onMounted(() => {
-      if (props.show && isLoggedIn.value) {
-        checkRalendarAccount()
-      }
-    })
-    
-    return {
-      isLoggedIn,
-      loading,
-      hasRalendarAccount,
-      checkingAccount,
-      connecting,
-      allEvents,
-      showAddForm,
-      showMapPicker,
-      submitting,
-      editingEventId,
-      newEvent,
-      formatTime,
-      handleConnectRalendar,
-      handleAddEvent,
-      cancelAdd,
-      handleMapSelect,
-      handleEditEvent,
-      handleDeleteEvent
-    }
+  } finally {
+    submitting.value = false
+  }
+}
+// 取消添加/编辑
+const cancelAdd = () => {
+  showAddForm.value = false
+  editingEventId.value = null
+  newEvent.value = {
+    title: '',
+    description: '',
+    start_time: '',
+    end_time: '',
+    location: '',
+    latitude: null,
+    longitude: null,
+    reminder_minutes: 15,
+    email_reminder: false
+  }
+}
+
+// 地图选择处理
+const handleMapSelect = (location) => {
+  newEvent.value.location = location.name
+  newEvent.value.latitude = location.lat
+  newEvent.value.longitude = location.lng
+}
+
+// 编辑事件
+const handleEditEvent = (event) => {
+  // 填充表单
+  newEvent.value = {
+    title: event.title,
+    description: event.description || '',
+    start_time: event.start_time ? event.start_time.substring(0, 16) : '',
+    end_time: event.end_time ? event.end_time.substring(0, 16) : '',
+    location: event.location || '',
+    latitude: event.latitude || null,
+    longitude: event.longitude || null,
+    reminder_minutes: event.reminder_minutes || 15,
+    email_reminder: event.email_reminder || false
+  }
+
+  // 保存正在编辑的事件 ID
+  editingEventId.value = event.id
+  showAddForm.value = true
+}
+
+// 删除事件
+const handleDeleteEvent = async (event) => {
+  if (!confirm(`确定要删除「${event.title}」吗？`)) {
+    return
+  }
+
+  try {
+    // 通过 Roamio 后端代理删除事件（使用独立的事件 API）
+    await deleteEvent(event)
+    alert('删除成功！')
+  } catch (error) {
+    console.error('删除事件失败:', error)
+    alert('删除失败，请稍后重试')
+  }
+}
+
+// 监听显示状态，打开时检查账号并加载数据
+watch(() => props.show, (newVal) => {
+  if (newVal && isLoggedIn.value) {
+    checkSidebarRalendarAccount()
+  }
+})
+
+// 组件挂载时检查（如果已显示）
+onMounted(() => {
+  if (props.show && isLoggedIn.value) {
+    checkSidebarRalendarAccount()
   }
 })
 </script>
@@ -966,4 +814,3 @@ export default defineComponent({
   }
 }
 </style>
-
