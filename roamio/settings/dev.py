@@ -1,3 +1,5 @@
+import os
+
 from .base import *  # noqa: F401,F403
 
 DEBUG = True
@@ -36,6 +38,17 @@ CACHES = {
         },
     }
 }
+
+# GitHub Actions runners do not provide Redis unless you add a service container.
+# JWT / auth flows and several viewsets touch the default cache; without this,
+# django_redis raises connection errors and backend CI fails while the frontend job passes.
+if os.environ.get('GITHUB_ACTIONS') == 'true':
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'roamio-github-actions',
+        }
+    }
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
