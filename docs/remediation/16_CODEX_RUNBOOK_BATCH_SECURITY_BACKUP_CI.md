@@ -1,6 +1,6 @@
 # Codex 执行任务说明：整改小包（模板 / 密钥扫描脚本 / SQLite 运维脚本占位 / CI Smoke）
 
-这是一次 **低风险、多读写的仓库内整改 PR**，不是架构级「大重写」。Codex **只改动 Git 能看到的文件**。
+这是一次 **低风险、多读写的仓库内整改 PR**。**若排期只够一条「像样的部署向工作」，请先做 Gunicorn 迁移：** [`18_CODEX_RUNBOOK_GUNICORN_MIGRATION.md`](18_CODEX_RUNBOOK_GUNICORN_MIGRATION.md)、[`15_GUNICORN_MIGRATION_REMEDIATION.md`](15_GUNICORN_MIGRATION_REMEDIATION.md)。本文档适合安全模板 / 备份脚本进仓 / CI 薄片等**细水长流**，与 SQLite 止血类改动同类。
 
 **前置阅读：** [05_SECURITY_CLEANUP.md](05_SECURITY_CLEANUP.md)、[production-sqlite-summary.md](../production-sqlite-summary.md)
 

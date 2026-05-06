@@ -16,7 +16,19 @@ This folder is the working record for the Roamio cleanup. It keeps problem disco
 - [10_RESTRUCTURE_VITE_CODEX_SPEC.md](10_RESTRUCTURE_VITE_CODEX_SPEC.md) - **Single spec**: repo layout (`backend/` + `frontend/`), Vite migration, PR order, optional Django app rename, Codex handoff (中文).
 - [11_M4_ROUTE_BOUNDARY_FREEZE.md](11_M4_ROUTE_BOUNDARY_FREEZE.md) - M4 route governance matrix: mainline `/api/v1`, compatibility freeze scope, and legacy removal gates.
 - [12_FRONTEND_SCRIPT_SETUP_STANDARD.md](12_FRONTEND_SCRIPT_SETUP_STANDARD.md) - Frontend Vue 3 `<script setup>` coding standard, migration batches, and PR quality gates.
-- [16_CODEX_RUNBOOK_BATCH_SECURITY_BACKUP_CI.md](16_CODEX_RUNBOOK_BATCH_SECURITY_BACKUP_CI.md) - **Codex 整改小包**（人机分工必读）：模板/扫描脚本/SQLite 运维脚本与文档（仓库内）；CI/smoke。**不**等同「Codex 操作生产服务器」，文末附修订版 Prompt。
+- [15_GUNICORN_MIGRATION_REMEDIATION.md](15_GUNICORN_MIGRATION_REMEDIATION.md) - **部署栈主线规格**：`Nginx+uWSGI` → `Nginx+Gunicorn`（批次 / 验收 / 回滚）。
+- [18_CODEX_RUNBOOK_GUNICORN_MIGRATION.md](18_CODEX_RUNBOOK_GUNICORN_MIGRATION.md) - **推荐给 Codex 的部署主线入口**（Batch A PR、人肉 B/C、`15` 与 `16` 排期说明、Prompt）。
+- [16_CODEX_RUNBOOK_BATCH_SECURITY_BACKUP_CI.md](16_CODEX_RUNBOOK_BATCH_SECURITY_BACKUP_CI.md) - **整改小包**（模板 / 密钥扫描 / SQLite 备份脚本占位 / CI smoke）；**不改变**「Gunicorn 优先」。
+
+## 当前整改排期共识（部署 vs 细水长流）
+
+| 优先级 | 主题 | 入口 |
+|--------|------|------|
+| **高（部署栈大迁移）** | uWSGI → Gunicorn，切 Nginx upstream、可回滚 | **[15](15_GUNICORN_MIGRATION_REMEDIATION.md)**，Codex 用 **[18](18_CODEX_RUNBOOK_GUNICORN_MIGRATION.md)** |
+| **中（仓库卫生）** | 模板、扫描脚本、`backend.tests` 薄片 | [16](16_CODEX_RUNBOOK_BATCH_SECURITY_BACKUP_CI.md) |
+| **视产品** | Vite / M4 路由冻结 | [10](10_RESTRUCTURE_VITE_CODEX_SPEC.md)、[11](11_M4_ROUTE_BOUNDARY_FREEZE.md) |
+
+说明：**SQLite / `.env` 顺序**等是云库不可用时的**止血**，**不顶替** Gunicorn 这条部署主线。
 
 ## Working Rules
 
