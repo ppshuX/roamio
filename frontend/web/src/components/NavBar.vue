@@ -133,7 +133,7 @@ const handleRalendarClick = () => {
 
 <style scoped>
 .navbar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  background: var(--roamio-primary);
   border-bottom: none;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   padding: 1rem 0;
@@ -224,7 +224,7 @@ const handleRalendarClick = () => {
 }
 
 .dropdown-item:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   color: white;
   transform: translateX(3px);
 }
@@ -268,14 +268,14 @@ const handleRalendarClick = () => {
 
 .btn-light {
   background: white;
-  color: #667eea;
+  color: var(--roamio-primary);
   font-weight: 600;
   transition: all 0.3s ease;
 }
 
 .btn-light:hover {
   background: rgba(255, 255, 255, 0.95);
-  color: #764ba2;
+  color: var(--roamio-primary-active);
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
 }

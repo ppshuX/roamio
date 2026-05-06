@@ -171,7 +171,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .ralendar-callback-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   display: flex;
   align-items: center;
   padding: 2rem 0;

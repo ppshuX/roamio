@@ -259,12 +259,12 @@ export default {
   background: #ffffff;
   border-radius: 8px;
   margin-bottom: 0.5rem;
-  border-left: 2px solid #667eea;
+  border-left: 2px solid var(--roamio-primary);
   transition: all 0.2s ease;
 }
 
 .reply-item:hover {
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.1);
   transform: translateX(2px);
 }
 
@@ -293,7 +293,7 @@ export default {
 
 .action-btn:hover {
   background: #f8f9fa;
-  color: #667eea;
+  color: var(--roamio-primary);
 }
 
 .action-btn.text-danger:hover {

@@ -1,0 +1,74 @@
+:root {
+  --roamio-primary: #0f766e;
+  --roamio-primary-hover: #0d9488;
+  --roamio-primary-active: #115e59;
+  --roamio-primary-muted: #ecfdf5;
+  --roamio-accent: #b45309;
+
+  --bs-primary: var(--roamio-primary);
+  --bs-primary-rgb: 15, 118, 110;
+  --bs-primary-text-emphasis: var(--roamio-primary-active);
+  --bs-primary-bg-subtle: var(--roamio-primary-muted);
+  --bs-primary-border-subtle: #99f6e4;
+  --bs-link-color: var(--roamio-primary);
+  --bs-link-color-rgb: 15, 118, 110;
+  --bs-link-hover-color: var(--roamio-primary-active);
+  --bs-link-hover-color-rgb: 17, 94, 89;
+  --bs-focus-ring-color: rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.btn-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--roamio-primary);
+  --bs-btn-border-color: var(--roamio-primary);
+  --bs-btn-hover-bg: var(--roamio-primary-hover);
+  --bs-btn-hover-border-color: var(--roamio-primary-hover);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-active-bg: var(--roamio-primary-active);
+  --bs-btn-active-border-color: var(--roamio-primary-active);
+  --bs-btn-active-color: #fff;
+  --bs-btn-disabled-bg: var(--roamio-primary);
+  --bs-btn-disabled-border-color: var(--roamio-primary);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--roamio-primary);
+  --bs-btn-border-color: var(--roamio-primary);
+  --bs-btn-hover-bg: var(--roamio-primary);
+  --bs-btn-hover-border-color: var(--roamio-primary);
+  --bs-btn-active-bg: var(--roamio-primary-active);
+  --bs-btn-active-border-color: var(--roamio-primary-active);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--roamio-primary-hover);
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.form-check-input:checked {
+  background-color: var(--roamio-primary);
+  border-color: var(--roamio-primary);
+}
+
+/* Bootstrap utilities use !important, so theme utility overrides mirror that specificity. */
+.text-primary {
+  color: var(--roamio-primary) !important;
+}
+
+.bg-primary {
+  background-color: var(--roamio-primary) !important;
+}
+
+.border-primary {
+  border-color: var(--roamio-primary) !important;
+}
+
+.link-primary {
+  color: var(--roamio-primary) !important;
+}
+
+.link-primary:hover,
+.link-primary:focus {
+  color: var(--roamio-primary-active) !important;
+}

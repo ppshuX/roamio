@@ -279,7 +279,7 @@ export default {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   color: white;
   display: flex;
   align-items: center;

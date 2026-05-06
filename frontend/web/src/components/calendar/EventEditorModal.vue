@@ -471,7 +471,7 @@ export default {
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--roamio-primary);
 }
 
 .form-group textarea {
@@ -535,7 +535,7 @@ export default {
 }
 
 .btn-get-coords {
-  background: #667eea;
+  background: var(--roamio-primary);
   color: white;
   border: none;
   padding: 8px 16px;
@@ -547,7 +547,7 @@ export default {
 }
 
 .btn-get-coords:hover {
-  background: #5568d3;
+  background: var(--roamio-primary-hover);
 }
 
 .modal-footer {
@@ -579,13 +579,13 @@ export default {
 }
 
 .btn-save {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   color: white;
 }
 
 .btn-save:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
 }
 </style>
 

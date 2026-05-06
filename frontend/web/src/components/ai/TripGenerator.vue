@@ -374,7 +374,7 @@ onMounted(() => {
       font-size: 16px;
       font-weight: 600;
       color: #fff;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--roamio-primary);
       border: none;
       border-radius: 25px;
       cursor: pointer;
@@ -382,7 +382,7 @@ onMounted(() => {
 
       &:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.4);
       }
 
       &:disabled {
@@ -408,7 +408,7 @@ onMounted(() => {
     height: 50px;
     margin: 0 auto 20px;
     border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
+    border-top: 4px solid var(--roamio-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -478,7 +478,7 @@ onMounted(() => {
   }
 
   .trip-summary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--roamio-primary);
     color: white;
     padding: 25px;
     border-radius: 10px;
@@ -543,7 +543,7 @@ onMounted(() => {
           .activity-time {
             flex-shrink: 0;
             font-weight: 600;
-            color: #667eea;
+            color: var(--roamio-primary);
             font-size: 14px;
           }
 

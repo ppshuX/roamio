@@ -78,7 +78,7 @@ h4 {
   padding: 0.6rem 0.8rem;
   background: #f5f7fa;
   border-radius: 6px;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid var(--roamio-primary);
   border: 1px solid #e8eaf0;
 }
 

@@ -201,8 +201,8 @@ export default {
 
 .user-avatar:hover {
   transform: scale(1.1);
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  border-color: var(--roamio-primary);
+  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
 }
 
 .username-link {
@@ -211,7 +211,7 @@ export default {
 }
 
 .username-link:hover {
-  color: #667eea;
+  color: var(--roamio-primary);
   text-decoration: underline;
 }
 

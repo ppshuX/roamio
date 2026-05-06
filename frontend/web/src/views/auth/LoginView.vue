@@ -169,7 +169,7 @@ const handleQQLogin = async () => {
 <style scoped>
 .auth-wrapper {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
 }
 
 .login-container {
@@ -185,7 +185,7 @@ const handleQQLogin = async () => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   border: none;
 }
 

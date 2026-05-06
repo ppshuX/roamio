@@ -498,7 +498,7 @@ const handleQQLogin = async () => {
 <style scoped>
 .auth-wrapper {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
 }
 
 .register-container {
@@ -542,12 +542,12 @@ h2 {
 }
 
 .form-control:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  border-color: var(--roamio-primary);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   border: none;
   border-radius: 8px;
   padding: 12px;
@@ -557,7 +557,7 @@ h2 {
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 5px 15px rgba(var(--bs-primary-rgb), 0.4);
 }
 
 .btn-primary:disabled {

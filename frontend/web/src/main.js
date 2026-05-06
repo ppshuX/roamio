@@ -6,6 +6,7 @@ import { useUserStore } from './stores'
 
 // 导入Bootstrap样式
 import 'bootstrap/dist/css/bootstrap.min.css'
+import './styles/roamio-theme.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
 const app = createApp(App)

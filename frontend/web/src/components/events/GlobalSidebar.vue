@@ -575,7 +575,7 @@ onMounted(() => {
   align-items: center;
   padding: 20px;
   border-bottom: 2px solid #e0e0e0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   color: white;
 }
 
@@ -597,7 +597,7 @@ onMounted(() => {
 .btn-close {
   background: white;
   border: none;
-  color: #667eea;
+  color: var(--roamio-primary);
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -708,12 +708,12 @@ onMounted(() => {
 
 /* 表单样式 */
 .add-event-form .card {
-  border: 2px solid #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  border: 2px solid var(--roamio-primary);
+  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.15);
 }
 
 .add-event-form .card-title {
-  color: #667eea;
+  color: var(--roamio-primary);
   font-weight: 600;
 }
 
@@ -733,13 +733,13 @@ onMounted(() => {
 
 .add-event-form .form-control:focus,
 .add-event-form .form-select:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  border-color: var(--roamio-primary);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
 }
 
 .add-event-form .form-check-input:checked {
-  background-color: #667eea;
-  border-color: #667eea;
+  background-color: var(--roamio-primary);
+  border-color: var(--roamio-primary);
 }
 
 .add-event-form .btn {

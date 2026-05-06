@@ -17,7 +17,7 @@
       <li>
         <!-- 加载中状态 -->
         <div v-if="loading" class="weather-detail text-center">
-          <i class="bi bi-hourglass-split" style="font-size: 2rem; color: #667eea;"></i>
+          <i class="bi bi-hourglass-split" style="font-size: 2rem; color: var(--roamio-primary);"></i>
           <p class="mt-2 mb-0 text-muted">加载中...</p>
         </div>
         
@@ -334,7 +334,7 @@ onMounted(() => {
 .city-name {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #667eea;
+  color: var(--roamio-primary);
   margin-bottom: 0.25rem;
   display: flex;
   align-items: center;
@@ -347,7 +347,7 @@ onMounted(() => {
 }
 
 .settings-btn {
-  background: #667eea;
+  background: var(--roamio-primary);
   border: none;
   color: white;
   width: 36px;
@@ -360,7 +360,7 @@ onMounted(() => {
   transition: all 0.3s ease;
   font-size: 1.2rem;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.3);
 }
 
 .settings-btn i {
@@ -369,9 +369,9 @@ onMounted(() => {
 }
 
 .settings-btn:hover {
-  background: #764ba2;
+  background: var(--roamio-primary-active);
   transform: rotate(90deg);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.4);
 }
 
 /* 主要天气显示 */
@@ -381,14 +381,14 @@ onMounted(() => {
   justify-content: center;
   gap: 1.5rem;
   padding: 1.5rem 0;
-  background: linear-gradient(135deg, #667eea15, #764ba215);
+  background: var(--roamio-primary-muted);
   border-radius: 12px;
   margin-bottom: 1rem;
 }
 
 .weather-icon {
   font-size: 4rem;
-  color: #667eea;
+  color: var(--roamio-primary);
 }
 
 .temp-display {
@@ -429,7 +429,7 @@ onMounted(() => {
 
 .stat-item i {
   font-size: 1.5rem;
-  color: #667eea;
+  color: var(--roamio-primary);
 }
 
 .stat-label {
@@ -462,7 +462,7 @@ onMounted(() => {
 .panel-header h6 {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #667eea;
+  color: var(--roamio-primary);
   margin: 0;
   display: flex;
   align-items: center;
@@ -498,11 +498,11 @@ onMounted(() => {
 }
 
 .search-input:focus {
-  border-color: #667eea;
+  border-color: var(--roamio-primary);
 }
 
 .search-button {
-  background: #667eea;
+  background: var(--roamio-primary);
   border: none;
   color: white;
   width: 40px;
@@ -516,7 +516,7 @@ onMounted(() => {
 }
 
 .search-button:hover:not(:disabled) {
-  background: #764ba2;
+  background: var(--roamio-primary-active);
 }
 
 .search-button:disabled {
@@ -555,13 +555,13 @@ onMounted(() => {
 }
 
 .city-tag:hover {
-  border-color: #667eea;
-  color: #667eea;
+  border-color: var(--roamio-primary);
+  color: var(--roamio-primary);
 }
 
 .city-tag.active {
-  background: #667eea;
-  border-color: #667eea;
+  background: var(--roamio-primary);
+  border-color: var(--roamio-primary);
   color: white;
   font-weight: 600;
 }
@@ -583,7 +583,7 @@ onMounted(() => {
 }
 
 .refresh-btn {
-  background: #667eea;
+  background: var(--roamio-primary);
   border: none;
   color: white;
   width: 32px;
@@ -595,7 +595,7 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 1rem;
-  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 2px 6px rgba(var(--bs-primary-rgb), 0.2);
 }
 
 .refresh-btn i {
@@ -604,9 +604,9 @@ onMounted(() => {
 }
 
 .refresh-btn:hover {
-  background: #764ba2;
+  background: var(--roamio-primary-active);
   transform: rotate(180deg);
-  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 10px rgba(var(--bs-primary-rgb), 0.3);
 }
 
 /* 动画 */

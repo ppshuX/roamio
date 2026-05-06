@@ -220,7 +220,7 @@ export default {
 
 .form-group input[type="date"]:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--roamio-primary);
 }
 
 .help-text {
@@ -262,7 +262,7 @@ export default {
 }
 
 .day-label {
-  color: #667eea;
+  color: var(--roamio-primary);
   font-weight: 600;
 }
 
@@ -299,13 +299,13 @@ export default {
 }
 
 .btn-confirm {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   color: white;
 }
 
 .btn-confirm:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
 }
 
 .btn-confirm:disabled {

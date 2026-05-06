@@ -106,8 +106,8 @@ const emit = defineEmits(['update:email', 'update:code', 'send-code'])
 }
 
 .form-control:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  border-color: var(--roamio-primary);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
 }
 
 .input-group {

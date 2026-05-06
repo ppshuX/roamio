@@ -169,7 +169,7 @@ export default {
   background: white;
   border-radius: 8px;
   margin-bottom: 0.5rem;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid var(--roamio-primary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
 }

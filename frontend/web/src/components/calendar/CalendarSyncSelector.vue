@@ -368,12 +368,12 @@ export default {
 }
 
 .event-item:hover {
-  border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  border-color: var(--roamio-primary);
+  box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.1);
 }
 
 .event-item.selected {
-  border-color: #667eea;
+  border-color: var(--roamio-primary);
   background: #f8f9ff;
 }
 
@@ -409,7 +409,7 @@ export default {
 }
 
 .btn-edit {
-  background: #667eea;
+  background: var(--roamio-primary);
   color: white;
   border: none;
   padding: 6px 12px;
@@ -420,7 +420,7 @@ export default {
 }
 
 .btn-edit:hover:not(:disabled) {
-  background: #5568d3;
+  background: var(--roamio-primary-hover);
   transform: translateY(-1px);
 }
 
@@ -464,7 +464,7 @@ export default {
 
 .location-type-badge {
   display: inline-block;
-  background: #667eea;
+  background: var(--roamio-primary);
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
@@ -484,7 +484,7 @@ export default {
 }
 
 .btn-map:hover {
-  background: #667eea;
+  background: var(--roamio-primary);
   color: white;
 }
 
@@ -523,13 +523,13 @@ export default {
 }
 
 .btn-confirm {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   color: white;
 }
 
 .btn-confirm:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
 }
 
 .btn-confirm:disabled {

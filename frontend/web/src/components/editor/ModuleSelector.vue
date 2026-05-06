@@ -73,14 +73,14 @@ export default {
 }
 
 .module-card:hover {
-  border-color: #667eea;
+  border-color: var(--roamio-primary);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.2);
 }
 
 .module-card.active {
-  border-color: #667eea;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-color: var(--roamio-primary);
+  background: var(--roamio-primary-muted);
 }
 
 .module-icon {
@@ -107,7 +107,7 @@ export default {
 }
 
 .card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   color: white;
   border: none;
   padding: 1rem 1.5rem;

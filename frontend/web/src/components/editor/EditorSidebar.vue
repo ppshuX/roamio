@@ -188,7 +188,7 @@ export default {
 
 <style scoped>
 .card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   color: white;
   border: none;
   padding: 1rem 1.5rem;

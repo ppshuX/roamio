@@ -53,7 +53,7 @@ export const getFullUrl = (path) => {
 }
 
 // 默认头像（SVG 作为备用方案）
-export const DEFAULT_AVATAR_SVG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%23667eea"/%3E%3Ccircle cx="24" cy="18" r="8" fill="%23fff"/%3E%3Cpath d="M 8 40 Q 8 28 24 28 Q 40 28 40 40" fill="%23fff"/%3E%3C/svg%3E'
+export const DEFAULT_AVATAR_SVG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Ccircle cx="24" cy="24" r="24" fill="%230f766e"/%3E%3Ccircle cx="24" cy="18" r="8" fill="%23fff"/%3E%3Cpath d="M 8 40 Q 8 28 24 28 Q 40 28 40 40" fill="%23fff"/%3E%3C/svg%3E'
 
 // 获取头像URL
 export const getAvatarUrl = (avatarUrl) => {

@@ -55,7 +55,7 @@ export default {
 }
 
 .site-footer .beian-info a:hover {
-  color: #667eea;
+  color: var(--roamio-primary);
   text-decoration: underline;
 }
 
