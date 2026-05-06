@@ -1,8 +1,19 @@
-# Codex 批量执行说明：安全脱敏 + SQLite 备份恢复 + CI/最小验证补强
+# Codex 执行任务说明：整改小包（模板 / 密钥扫描脚本 / SQLite 运维脚本占位 / CI Smoke）
 
-面向 **Codex（或同级自动化助手）**：按本文档顺序完成下列工作，一次性合并为一个 PR。**不要**重写 Git 历史、**不要**在仓库中写入任何真实生产密钥。
+这是一次 **低风险、多读写的仓库内整改 PR**，不是架构级「大重写」。Codex **只改动 Git 能看到的文件**。
 
 **前置阅读：** [05_SECURITY_CLEANUP.md](05_SECURITY_CLEANUP.md)、[production-sqlite-summary.md](../production-sqlite-summary.md)
+
+---
+
+## 人机分工（必读，避免误解）
+
+| 能做的 | 不能做的 |
+|--------|-----------|
+| **Codex / GitHub Actions**：在仓库里撰写、修改 **`scripts/*.sh`**、**文档**、**`.github/workflows`**、**测试代码**；在 CI sandbox 跑 `manage.py check` / tests。 | **永远不能**替你 SSH 登录 VPS、替你执行 `cron`、替你在生产机跑备份、替你轮换云控制台密钥。 |
+| **你（维护者）**：合并后 **`git pull` 到部署机**，在 **SSH** 里按文档执行 **`bash scripts/backup_sqlite.sh`** 或配置 **crontab**；密钥轮换在云上手工完成。 | 指望「Codex 一键搞定线上运维」——不成立。 |
+
+**SQLite 备份对象**：默认是 **部署机磁盘上的项目根 `db.sqlite3`**。脚本进仓后由人在**那台机上**运行；不是要 Codex「连你云端」，也不是强制你把生产库拉回开发机——除非你自己要做异地保管。
 
 ---
 
@@ -20,7 +31,7 @@
 - **`python manage.py`**：CI 与文档均假定在**仓库根目录**执行（与根目录 `manage.py` 同级）；若只 `cd backend` 再跑，需自行设 `PYTHONPATH` 指向仓库根，否则易出现 `ModuleNotFoundError: roamio`。
 - **`/api/v1/auth/me/`**：由 `AuthViewSet` 注册在 `auth` 下的 `me` 动作；若测试出现 404，先在本地用路由列表或代码确认路径，勿猜测。
 - **扫描脚本依赖**：`ubuntu-latest` **默认不一定预装 `rg`**；脚本应 **`command -v rg` 检测**，无则回退 `grep -r` / `git grep`，并在注释中说明；或在 CI 步骤里安装 `ripgrep`（注意耗时与是否需 `sudo`）。
-- **`backup_sqlite.sh`**：若 **`db.sqlite3` 尚不存在**，应按 B1 **清晰失败退出**，勿生成空文件冒充备份成功。
+- **`backup_sqlite.sh`**：若 **`db.sqlite3` 尚不存在**，应按 B1 **清晰失败退出**，勿生成空文件冒充备份成功。**Codex 与 CI 均无法 SSH 你的 VPS**：禁止在 PR/文档中声称「已在生产验证备份」，除非明确写的是「在未提供生产库的条件下仅做了语法或 exit code 自检」之类事实。
 
 ---
 
@@ -29,7 +40,7 @@
 | 序号 | 目标 | 验收方式 |
 |------|------|-----------|
 | G1 | 降低仓库明文秘密与误提交风险 | 仓库内有可运行的轻量扫描脚本（如 **`scripts/scan_repo_secrets.sh`**）或根目录 **`Makefile`** 目标；模板文件仅占位符 |
-| G2 | 生产 SQLite 可备份与可恢复（运维可跟文档操作） | `scripts/` 下备份/还原脚本存在且带用法注释；汇总文档更新 |
+| G2 | 为生产 SQLite 准备 **仓库内可交付** 的备份/恢复脚本与文档；**在线上执行 backups 的是维护者**（SSH/cron），非 Codex | `scripts/` 下备份/还原脚本存在且带用法注释；`production-sqlite-summary.md` 已按 B3 写清人机分工 |
 | G3 | CI 与本地能对「根本没挂」有更稳信号 | 保留或增强现有 `manage.py check` + `backend.tests`；可选增加极少量 smoke |
 
 ---
@@ -65,7 +76,7 @@
 
 ---
 
-## 任务块 B — SQLite 备份与恢复（对齐 M6 子集）
+## 任务块 B — SQLite 备份与恢复（仅交付仓库内脚本 + 文档；线上由维护者在 SSH/cron 执行）
 
 ### B1 脚本：`scripts/backup_sqlite.sh`
 
@@ -86,7 +97,11 @@
 
 ### B3 文档
 
-在 **`docs/production-sqlite-summary.md`** 增加一节 **「备份与恢复」**，链接上述两脚本、cron 示例一行（注释形式即可）、以及与 **`deploy_uwsgi.sh`** 的配合顺序简述。
+在 **`docs/production-sqlite-summary.md`** 增加一节 **「备份与恢复」**，必须写明：
+
+1. 脚本在**仓库**中；合并后由维护者 **`git pull` 到部署机**，再在 **SSH** 或 **cron** 里执行 —— Codex **无权、也不会**连接你的服务器。  
+2. 链接 **`backup_sqlite.sh`、`restore_sqlite.sh`**；**cron 仅以注释示例**形式给出；简述与 **`deploy_uwsgi.sh`**、停服恢复的配合顺序。  
+3. 不出现「已自动备份生产」等**与事实不符**的表述。
 
 ---
 
@@ -136,3 +151,20 @@
 ## 轮换提示（仅占位，不写真实值）
 
 合并本 PR 后，若历史中曾出现过真实凭据，维护者须在对应云控制台逐项轮换：**Django SECRET_KEY、数据库、Redis、SMTP、QQ OAuth、COS、Qwen、地图 Key、Ralendar OAuth** 等。详见 [05_SECURITY_CLEANUP.md](05_SECURITY_CLEANUP.md)。
+
+---
+
+## 附录：给 Codex 的 Prompt（修订版，可直接复制）
+
+```text
+你在 Roamio 仓库提交一个「仓库内整改」PR。你只能修改 Git 追踪的内容（模板、Markdown、scripts、.github/workflows、backend/tests.py 等），不得在 PR 或回复中声称你已登录我的服务器或已替我在生产环境执行备份/cron。
+
+必读并逐项执行：
+docs/remediation/16_CODEX_RUNBOOK_BATCH_SECURITY_BACKUP_CI.md
+
+其中「人机分工」与「硬约束」与任务块 A/B/C、自检清单一并生效。任务块 B 的产出 = 仓库里的 shell + 文档说明；生产机上的运行、crontab、credential 轮换全部由维护者在合并后自己做。
+
+禁令：不写入任何真实密钥；不 rewrite Git 历史；不做大规模业务重构。测试仅改 backend/tests.py，新增 ≤3 条薄 smoke；匿名 GET /api/v1/auth/me/ 的期望码以本项目实际（401 或 403）为准。bash 脚本一律 set -euo pipefail；备份脚本在源库缺失时必须失败退出。
+
+结束前：已 git pull；在项目根运行 python manage.py check 与 python manage.py test backend.tests 均需通过。若实现 scan_repo_secrets.sh，PR 中写明调用方式。勿声称「已在 VPS 上验证备份」除非你仅指 CI 内对空路径的语法检查（并明确说明）。
+```

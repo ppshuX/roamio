@@ -16,7 +16,7 @@ This folder is the working record for the Roamio cleanup. It keeps problem disco
 - [10_RESTRUCTURE_VITE_CODEX_SPEC.md](10_RESTRUCTURE_VITE_CODEX_SPEC.md) - **Single spec**: repo layout (`backend/` + `frontend/`), Vite migration, PR order, optional Django app rename, Codex handoff (中文).
 - [11_M4_ROUTE_BOUNDARY_FREEZE.md](11_M4_ROUTE_BOUNDARY_FREEZE.md) - M4 route governance matrix: mainline `/api/v1`, compatibility freeze scope, and legacy removal gates.
 - [12_FRONTEND_SCRIPT_SETUP_STANDARD.md](12_FRONTEND_SCRIPT_SETUP_STANDARD.md) - Frontend Vue 3 `<script setup>` coding standard, migration batches, and PR quality gates.
-- [16_CODEX_RUNBOOK_BATCH_SECURITY_BACKUP_CI.md](16_CODEX_RUNBOOK_BATCH_SECURITY_BACKUP_CI.md) - **Codex 批量任务操作说明**：安全脱敏 + SQLite 备份/恢复脚本 + CI/smoke 补强（一次 PR）。
+- [16_CODEX_RUNBOOK_BATCH_SECURITY_BACKUP_CI.md](16_CODEX_RUNBOOK_BATCH_SECURITY_BACKUP_CI.md) - **Codex 整改小包**（人机分工必读）：模板/扫描脚本/SQLite 运维脚本与文档（仓库内）；CI/smoke。**不**等同「Codex 操作生产服务器」，文末附修订版 Prompt。
 
 ## Working Rules
 
