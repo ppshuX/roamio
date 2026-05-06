@@ -31,8 +31,8 @@
 
 采用“三步迁移”：
 
-1. **并行准备**：新增 Gunicorn 启动脚本与健康检查，不切流量  
-2. **灰度切换**：Nginx 上游从 uWSGI 切到 Gunicorn（保留 uWSGI 脚本）  
+1. **脚本准备**：新增 Gunicorn 启动/部署脚本与本机 HTTP 健康检查
+2. **同窗口切换**：停 uWSGI，在同端口启动 Gunicorn，并把 Nginx 从 `uwsgi_pass` 切到 `proxy_pass`（保留 uWSGI 脚本）
 3. **稳定观察**：验证通过后再下线 uWSGI 常规入口
 
 任何一步失败，立即按回滚步骤恢复 `uWSGI`。
@@ -46,21 +46,22 @@
 
 ## 5. 目标运行形态
 
-- Nginx: 对 `/api` 与 SPA 请求反向代理到 Gunicorn
-- Gunicorn: 监听 `127.0.0.1:8000`（或新端口如 8001）
+- Nginx: 对 `/api` 与 SPA 请求通过 HTTP 反向代理到 Gunicorn
+- Gunicorn: 监听 `127.0.0.1:8000`
 - Django: 保持 `roamio.wsgi:application`
 - 前端构建输出仍为 `backend/web_dist/`
 
 ## 6. 执行批次（给 Codex）
 
-## Batch A：脚本与依赖准备（不切流量）
+## Batch A：脚本与依赖准备
 
 允许改动：
 
 - `requirements-prod.txt`（若未包含 `gunicorn`）
-- `scripts/start_gunicorn.sh`（新增）
-- `scripts/stop_gunicorn.sh`（新增）
-- `scripts/healthcheck.sh`（新增或更新）
+- `scripts/deploy_gunicorn.sh`
+- `scripts/start_gunicorn.sh`
+- `scripts/stop_gunicorn.sh`
+- `scripts/healthcheck.sh`
 - 文档文件
 
 禁止改动：
@@ -71,7 +72,7 @@
 验收：
 
 - `gunicorn --version` 可执行
-- 启动脚本可在本机拉起进程并监听端口
+- 启动脚本可在本机拉起进程并监听 `127.0.0.1:8000`
 
 ## Batch B：Nginx 上游切换（可回滚）
 
@@ -107,26 +108,16 @@
 
 ## 7. 推荐脚本模板（最小）
 
-`scripts/start_gunicorn.sh` 示例：
+`scripts/start_gunicorn.sh` 当前以仓库脚本为准，关键约束：
 
 ```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-cd /home/acs/roamio
-export ROAMIO_SETTINGS="${ROAMIO_SETTINGS:-dev}"
-
-pkill -f "gunicorn.*roamio.wsgi:application" || true
-
-gunicorn roamio.wsgi:application \
-  --bind 127.0.0.1:8000 \
-  --workers 2 \
-  --threads 2 \
-  --timeout 60 \
-  --access-logfile /tmp/gunicorn.access.log \
-  --error-logfile /tmp/gunicorn.error.log \
-  --daemon
+ROAMIO_SETTINGS=prod bash scripts/deploy_gunicorn.sh
+sudo nginx -t
+sudo nginx -s reload
+BASE_URL=https://roamio.cn bash scripts/healthcheck.sh
 ```
+
+`deploy_gunicorn.sh` 只把本机 HTTP `http://127.0.0.1:8000` 作为硬性探活条件。公网 HTTPS 探活必须在 Nginx reload 后由运维执行。
 
 ## 8. 质量门（每批必跑）
 
@@ -135,8 +126,8 @@ gunicorn roamio.wsgi:application \
 1. `python manage.py check`（或 `cd backend && python manage.py check`）
 2. `python manage.py test backend.tests`
 3. `cd frontend/web && npm run build`
-4. `curl -I https://roamio.cn/`
-5. `curl -I https://roamio.cn/api/v1/trips/`
+4. `BASE_URL=http://127.0.0.1:8000 bash scripts/healthcheck.sh`
+5. Nginx reload 后：`BASE_URL=https://roamio.cn bash scripts/healthcheck.sh`
 6. `curl -sS https://roamio.cn/api/v1/auth/qq_login_url/`
 
 ## 9. 回滚方案（必须可一键执行）

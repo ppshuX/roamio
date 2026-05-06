@@ -2,7 +2,7 @@
 set -euo pipefail
 
 HOST="${HOST:-127.0.0.1}"
-PORT="${PORT:-8001}"
+PORT="${PORT:-8000}"
 PIDFILE="${PIDFILE:-/tmp/roamio-gunicorn-${PORT}.pid}"
 STOP_TIMEOUT="${STOP_TIMEOUT:-10}"
 

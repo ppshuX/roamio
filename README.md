@@ -55,12 +55,12 @@ Linux production deploys should install:
 pip install -r requirements-prod.txt
 ```
 
-Gunicorn migration Batch A is preparation only. It starts Gunicorn on a temporary local port and does not switch Nginx traffic away from the current uWSGI upstream.
+Production app serving defaults to Gunicorn over local HTTP on `127.0.0.1:8000`. Nginx must proxy to that endpoint with `proxy_pass http://127.0.0.1:8000;`. Keep the uWSGI config only as the rollback path.
 
 ```bash
-PORT=8001 ROAMIO_SETTINGS=dev bash scripts/start_gunicorn.sh
-PORT=8001 bash scripts/healthcheck.sh
-PORT=8001 bash scripts/stop_gunicorn.sh
+ROAMIO_SETTINGS=dev bash scripts/start_gunicorn.sh
+bash scripts/healthcheck.sh
+bash scripts/stop_gunicorn.sh
 ```
 
 Gunicorn writes access logs to `/tmp/gunicorn.access.log` and error logs to `/tmp/gunicorn.error.log` by default.
@@ -84,26 +84,28 @@ The Vite build writes the SPA bundle to `backend/web_dist/`, which is the direct
 
 ## Production Deploy
 
-For the current uWSGI deployment path, prefer the checked script over manual command sequences:
+For production deployment, prefer the checked Gunicorn script over manual command sequences:
 
 ```bash
 cd /home/acs/roamio
-ROAMIO_SETTINGS=prod bash scripts/deploy_uwsgi.sh
+ROAMIO_SETTINGS=prod bash scripts/deploy_gunicorn.sh
 ```
 
 The deploy script aborts when the working tree is dirty. To temporarily stash and restore local server changes:
 
 ```bash
-ROAMIO_SETTINGS=prod AUTO_STASH=1 bash scripts/deploy_uwsgi.sh
+ROAMIO_SETTINGS=prod AUTO_STASH=1 bash scripts/deploy_gunicorn.sh
 ```
 
-The script pulls the configured branch, runs `backend/manage.py check`, builds the Vite bundle, restarts uWSGI, and checks:
+The script pulls the configured branch, runs `backend/manage.py check`, builds the Vite bundle, stops uWSGI, starts Gunicorn on local HTTP `127.0.0.1:8000`, and runs local health checks:
 
 ```text
 /
 /api/v1/auth/me/
 /api/v1/auth/qq_login_url/
 ```
+
+During the maintenance window, Nginx must be changed from `uwsgi_pass 127.0.0.1:8000` to `proxy_pass http://127.0.0.1:8000` and reloaded. Public HTTPS may return 502 between stopping uWSGI and reloading Nginx; this is expected until the proxy protocol switch is complete. See `docs/guides/NGINX_GUNICORN_PROXY.md`.
 
 ### Common Production Issues
 
@@ -113,7 +115,7 @@ The script pulls the configured branch, runs `backend/manage.py check`, builds t
 
 ### Rollback
 
-Minimal uWSGI rollback is to return to the previous Git revision and rerun the same deploy script:
+Rollback keeps the old uWSGI path available. Restore the Nginx `uwsgi_pass` block, reload Nginx, then return to a known-good revision and run the uWSGI deploy script:
 
 ```bash
 cd /home/acs/roamio
@@ -122,7 +124,15 @@ git checkout <known-good-commit>
 ROAMIO_SETTINGS=prod bash scripts/deploy_uwsgi.sh
 ```
 
-If only the process is unhealthy and code is unchanged, restart uWSGI directly:
+If only the Gunicorn process is unhealthy and code is unchanged, restart it directly:
+
+```bash
+bash scripts/stop_gunicorn.sh
+ROAMIO_SETTINGS=prod bash scripts/start_gunicorn.sh
+BASE_URL=http://127.0.0.1:8000 bash scripts/healthcheck.sh
+```
+
+If rolling back to uWSGI, restart uWSGI directly after restoring Nginx:
 
 ```bash
 bash scripts/start_uwsgi.sh
