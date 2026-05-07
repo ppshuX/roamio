@@ -196,11 +196,14 @@ STATIC_URL = '/admin-static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # ⭐ 公共静态资源目录（跨项目共享）
-# 这些资源会被提交到 Git，供 Roamio、Ralendar 等所有生态产品使用
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'backend/static'),  # 公共资源：images, audios, videos
-    os.path.join(BASE_DIR, 'backend', 'web_dist'),  # Vite 前端构建输出
-]
+# 这些资源会被提交到 Git，供 Roamio、Ralendar 等所有生态产品共享
+# web_dist 由 Vite 构建生成，CI 或纯后端 checkout 可能尚未存在——避免 STATICFILES_DIRS
+# 指向不存在的路径触发 staticfiles.W004。
+_BACKEND_PUBLIC_STATIC = os.path.join(BASE_DIR, 'backend', 'static')
+_WEB_DIST_STATIC = os.path.join(BASE_DIR, 'backend', 'web_dist')
+STATICFILES_DIRS = [_BACKEND_PUBLIC_STATIC]
+if os.path.isdir(_WEB_DIST_STATIC):
+    STATICFILES_DIRS.append(_WEB_DIST_STATIC)
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
