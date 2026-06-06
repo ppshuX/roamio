@@ -2,6 +2,9 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.conf import settings
 from django.db.models.signals import post_save
+import os
+from pathlib import Path
+from unittest.mock import patch
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework.test import APIRequestFactory
@@ -254,6 +257,7 @@ class TripPlanVisibilityTests(UserSignalSafeTestCase):
         self.assertEqual(owner_response.status_code, status.HTTP_200_OK)
 
 
+
 class AIServiceSanitizationTests(TestCase):
     """M3 smoke: AI parsing and fallback sanitization."""
 
@@ -299,3 +303,32 @@ class CommentAssetUrlNormalizationTests(TestCase):
     def test_keep_full_http_url(self):
         full = "https://example.com/comments/demo.mp4"
         self.assertEqual(_build_comment_asset_url(full, self.request), full)
+
+
+class ConfigurationHygieneTests(TestCase):
+    """Security smoke tests for external provider configuration."""
+
+    def test_geocode_does_not_fall_back_to_committed_amap_key(self):
+        client = APIClient()
+        with patch.dict(os.environ, {'AMAP_API_KEY': ''}, clear=False):
+            response = client.get('/api/v1/geocode/', {'address': 'Hangzhou'})
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(response.data['message'], 'AMAP_API_KEY is not configured')
+
+    def test_known_exposed_map_keys_are_removed_from_source_entrypoints(self):
+        exposed_values = [
+            '53b6a185' + '427e97b53e16c8786a272f62',
+            '91443bbb' + '1947cadce8fee87d0d84fe01',
+            'i8UmOotW' + 'SekjTJlPbydOk1xQZuUeGeE1',
+        ]
+        files_to_check = [
+            Path(settings.BASE_DIR) / 'backend' / 'api' / 'views' / 'external' / 'weather.py',
+            Path(settings.BASE_DIR) / 'frontend' / 'web' / 'index.html',
+            Path(settings.BASE_DIR) / 'frontend' / 'web' / 'src' / 'utils' / 'mapService.js',
+        ]
+
+        for path in files_to_check:
+            content = path.read_text(encoding='utf-8', errors='replace')
+            for exposed in exposed_values:
+                self.assertNotIn(exposed, content, f'{exposed} still present in {path}')

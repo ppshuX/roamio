@@ -18,3 +18,9 @@ export const getWeatherByCity = (city) => {
     params: { location: city }
   })
 }
+
+export const geocodeAddress = (address) => {
+  return request.get('/geocode/', {
+    params: { address }
+  })
+}

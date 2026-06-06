@@ -31,22 +31,19 @@ DATABASES = {
 
 CACHES = {
     'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/0',
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        },
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'roamio-dev',
     }
 }
 
-# GitHub Actions runners do not provide Redis unless you add a service container.
-# JWT / auth flows and several viewsets touch the default cache; without this,
-# django_redis raises connection errors and backend CI fails while the frontend job passes.
-if os.environ.get('GITHUB_ACTIONS') == 'true':
+if os.environ.get('ROAMIO_DEV_USE_REDIS') == '1':
     CACHES = {
         'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'roamio-github-actions',
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': 'redis://127.0.0.1:6379/0',
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
         }
     }
 
