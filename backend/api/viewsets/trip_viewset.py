@@ -7,7 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 
-from django.db.models import Q
+from django.db.models import Count, Q
 
 from ...models import SiteStat, Comment, Trip
 from ...serializers import (
@@ -128,16 +128,76 @@ class TripViewSet(viewsets.ReadOnlyModelViewSet):
     
     def list(self, request, *args, **kwargs):
         """获取旅行列表"""
-        queryset = self.get_queryset()
-        
-        # 分页
-        page = self.paginate_queryset(queryset)
+        rows = self._build_trip_tree_rows()
+
+        page = self.paginate_queryset(rows)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+            return self.get_paginated_response(page)
+
+        return Response(rows)
+
+    def _build_trip_tree_rows(self):
+        """Build the public trip tree list with bounded, batched queries."""
+        trips = list(
+            Trip.objects.filter(
+                status='published',
+                visibility='public',
+            ).exclude(
+                Q(slug__isnull=True) | Q(slug__exact=''),
+            ).exclude(
+                title__in=['<SLUG>', '<slug>', 'SLUG', 'slug'],
+            ).only(
+                'id', 'slug', 'title', 'description', 'created_at'
+            ).order_by('-created_at')[:100]
+        )
+        trips = [trip for trip in trips if (trip.slug or '').strip()]
+
+        if trips:
+            return self._serialize_trip_tree_rows(trips)
+
+        stats = list(
+            SiteStat.objects.exclude(page__startswith='tp:')
+            .only('page', 'views', 'likes', 'checked_in')
+            .order_by('-id')[:100]
+        )
+        return [self.get_serializer(stat).data for stat in stats]
+
+    def _serialize_trip_tree_rows(self, trips):
+        stat_pages = []
+        for trip in trips:
+            slug = trip.slug
+            stat_pages.extend([slug, f'tp:{slug}'])
+
+        stats_by_page = {
+            stat.page: stat
+            for stat in SiteStat.objects.filter(page__in=stat_pages)
+        }
+        comments_by_page = {
+            item['page']: item['total']
+            for item in Comment.objects.filter(page__in=stat_pages)
+            .values('page')
+            .annotate(total=Count('id'))
+        }
+
+        rows = []
+        for trip in trips:
+            slug = trip.slug
+            stat = stats_by_page.get(slug) or stats_by_page.get(f'tp:{slug}')
+            page = stat.page if stat else f'tp:{slug}'
+            page_keys = [slug, f'tp:{slug}']
+            rows.append({
+                'slug': slug,
+                'name': trip.title,
+                'description': trip.description or trip.title,
+                'stats': {
+                    'page': page,
+                    'views': stat.views if stat else 0,
+                    'likes': stat.likes if stat else 0,
+                    'checked_in': stat.checked_in if stat else False,
+                    'comments_count': sum(comments_by_page.get(key, 0) for key in page_keys),
+                },
+            })
+        return rows
     
     def retrieve(self, request, *args, **kwargs):
         """获取旅行详情，并增加浏览量"""
