@@ -17,14 +17,15 @@ app.use(router)
 const bootstrap = async () => {
   const userStore = useUserStore(pinia)
   userStore.migrateLegacyTokens()
-
-  // 页面刷新后优先通过 HttpOnly refresh cookie 自动恢复 access token
-  await userStore.restoreAccessToken()
-
   app.mount('#app')
+
+  // 页面先渲染，再通过 HttpOnly refresh cookie 尝试恢复 access token。
+  // 生产代理或网络异常不应阻塞整个 Vue 应用挂载。
+  userStore.restoreAccessToken().catch((error) => {
+    console.error('恢复登录态失败:', error)
+  })
 }
 
 bootstrap().catch((error) => {
-  console.error('应用启动失败，降级为直接挂载:', error)
-  app.mount('#app')
+  console.error('应用启动失败:', error)
 })
