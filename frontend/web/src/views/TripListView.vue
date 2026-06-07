@@ -20,6 +20,10 @@
         <span class="visually-hidden">加载中...</span>
       </div>
     </div>
+
+    <div v-else-if="loadError" class="load-error">
+      {{ loadError }}
+    </div>
     
     <!-- 藤蔓式布局 -->
     <div v-else class="vine-container">
@@ -99,15 +103,31 @@ export default {
     const router = useRouter()
     const trips = ref([])
     const loading = ref(true)
+    const loadError = ref('')
     let statsTimer = null
-    
+
+    const withTimeout = (promise, timeoutMs, message) => {
+      let timer
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(message)), timeoutMs)
+      })
+      return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+    }
+
     const fetchTrips = async () => {
       loading.value = true
+      loadError.value = ''
       try {
-        const data = await getTripList()
+        const data = await withTimeout(
+          getTripList(),
+          10000,
+          '旅行大厅加载超时，请稍后刷新重试'
+        )
         trips.value = data.results || data || []
       } catch (error) {
         console.error('获取旅行大厅失败:', error)
+        loadError.value = error.message || '旅行大厅暂时无法加载，请稍后刷新重试'
+        trips.value = []
       } finally {
         loading.value = false
       }
@@ -179,6 +199,7 @@ export default {
       originalTrips,
       newTrips,
       loading,
+      loadError,
       goToDetail,
       getIcon
     }
@@ -216,6 +237,17 @@ export default {
   font-size: 1.08rem;
   margin-bottom: 40px;
   line-height: 1.6;
+}
+
+.load-error {
+  max-width: 520px;
+  margin: 0 auto 24px;
+  padding: 14px 18px;
+  color: #8a5a00;
+  background: #fff8e1;
+  border: 1px solid #ffe0a3;
+  border-radius: 8px;
+  text-align: center;
 }
 
 /* 藤蔓容器 */
