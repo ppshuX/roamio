@@ -258,6 +258,39 @@ class TripPlanVisibilityTests(UserSignalSafeTestCase):
         owner_response = self.client.get(f"/api/v1/trip-plans/{self.private_trip.slug}/")
         self.assertEqual(owner_response.status_code, status.HTTP_200_OK)
 
+    def test_non_author_cannot_update_public_trip_plan(self):
+        self.client.force_authenticate(user=self.other_user)
+
+        response = self.client.patch(
+            f"/api/v1/trip-plans/{self.public_trip.slug}/",
+            {"title": "Hijacked trip"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.public_trip.refresh_from_db()
+        self.assertEqual(self.public_trip.title, "Public smoke trip")
+
+    def test_non_author_cannot_delete_public_trip_plan(self):
+        self.client.force_authenticate(user=self.other_user)
+
+        response = self.client.delete(f"/api/v1/trip-plans/{self.public_trip.slug}/")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Trip.objects.filter(pk=self.public_trip.pk).exists())
+
+    def test_author_can_publish_trip_plan_with_status_only_patch(self):
+        self.client.force_authenticate(user=self.author)
+
+        response = self.client.patch(
+            f"/api/v1/trip-plans/{self.private_trip.slug}/",
+            {"status": "published"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.private_trip.refresh_from_db()
+        self.assertEqual(self.private_trip.status, "published")
 
 
 class TripEventRalendarSyncTests(UserSignalSafeTestCase):
