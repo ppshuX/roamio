@@ -17,7 +17,7 @@
 
 任务：
 - 确认仓库中所有疑似敏感信息。
-- 轮换 Qwen、QQ、COS、数据库、邮箱、Django `SECRET_KEY` 等凭据。
+- 轮换 Qwen/DashScope（历史）、DeepSeek（当前）、QQ、COS、数据库、邮箱、Django `SECRET_KEY` 等凭据。
 - 脱敏文档。
 - 移除代码里的默认真实密钥。
 - 明确 `roamio-master/` 处理方式。

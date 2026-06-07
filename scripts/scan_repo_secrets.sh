@@ -14,7 +14,7 @@ set -eu
 ROOT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 ALLOWLIST_FILE="${ALLOWLIST_FILE:-${ROOT_DIR}/scripts/secret_scan_allowlist.txt}"
 
-PATTERN='(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{35}|(SECRET_KEY|DB_PASSWORD|EMAIL_HOST_PASSWORD|QQ_APP_KEY|TENCENT_COS_SECRET_ID|TENCENT_COS_SECRET_KEY|QWEN_API_KEY|AMAP[_A-Z]*KEY|PINGPP_(API_KEY|TEST_API_KEY|APP_ID)|RALENDAR_OAUTH_CLIENT_SECRET|client_secret|api_key|APP_KEY|SecretId|SecretKey)[[:space:]]*[:=][[:space:]]*[^[:space:]#]+)'
+PATTERN='(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{35}|(SECRET_KEY|DB_PASSWORD|EMAIL_HOST_PASSWORD|QQ_APP_KEY|TENCENT_COS_SECRET_ID|TENCENT_COS_SECRET_KEY|DEEPSEEK_API_KEY|QWEN_API_KEY|AMAP[_A-Z]*KEY|PINGPP_(API_KEY|TEST_API_KEY|APP_ID)|RALENDAR_OAUTH_CLIENT_SECRET|client_secret|api_key|APP_KEY|SecretId|SecretKey)[[:space:]]*[:=][[:space:]]*[^[:space:]#]+)'
 PLACEHOLDER_FILTER='replace-with-|placeholder|example\.com|localhost|127\.0\.0\.1|YOUR_|your-|same-as-|dummy|fake|changeme|change-me|leave-empty|noreply@example\.com'
 PATH_FILTER='(^|/)(\.git|node_modules|backend/web_dist|frontend/web/dist|dist|build|staticfiles)(/|$)|(^|/)db\.sqlite3$|(^|/)[^/]*(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|.*\.lock)$'
 

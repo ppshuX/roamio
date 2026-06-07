@@ -151,7 +151,7 @@
 
 ## 轮换提示（仅占位，不写真实值）
 
-合并本 PR 后，若历史中曾出现过真实凭据，维护者须在对应云控制台逐项轮换：**Django SECRET_KEY、数据库、Redis、SMTP、QQ OAuth、COS、Qwen、地图 Key、Ralendar OAuth** 等。详见 [05_SECURITY_CLEANUP.md](05_SECURITY_CLEANUP.md)。
+合并本 PR 后，若历史中曾出现过真实凭据，维护者须在对应云控制台逐项轮换：**Django SECRET_KEY、数据库、Redis、SMTP、QQ OAuth、COS、Qwen/DashScope、DeepSeek、地图 Key、Ralendar OAuth** 等。详见 [05_SECURITY_CLEANUP.md](05_SECURITY_CLEANUP.md)。
 
 ---
 

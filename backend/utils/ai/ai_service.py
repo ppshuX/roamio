@@ -1,7 +1,7 @@
 """
 AI 旅行规划服务
 
-使用通义千问 API 生成旅行行程计划
+使用 DeepSeek API 生成旅行行程计划
 """
 
 import os
@@ -33,12 +33,12 @@ class TripPlannerAI:
             return
         
         # 初始化客户端（使用 requests 而不是 openai SDK，兼容 Python 3.8）
-        self.api_key = os.getenv('QWEN_API_KEY')
-        self.model = os.getenv('QWEN_MODEL', 'qwen-plus')
-        self.api_base = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        self.api_key = os.getenv('DEEPSEEK_API_KEY')
+        self.model = os.getenv('DEEPSEEK_MODEL', 'deepseek-v4-pro')
+        self.api_base = os.getenv('DEEPSEEK_API_BASE', 'https://api.deepseek.com').rstrip('/')
         
         if not self.api_key:
-            logger.error("QWEN_API_KEY not configured")
+            logger.error("DEEPSEEK_API_KEY not configured")
             self.enabled = False
         
         # 配置参数
@@ -74,7 +74,7 @@ class TripPlannerAI:
             )
             
             # 2. 调用 AI API
-            logger.info(f"Calling Qwen API with model: {self.model}")
+            logger.info(f"Calling DeepSeek API with model: {self.model}")
             
             import requests
             
@@ -485,6 +485,7 @@ class TripPlannerAI:
                     {"role": "user", "content": user_prompt}
                 ],
                 "temperature": self.temperature,
+                "max_tokens": self.max_tokens,
                 "response_format": {"type": "json_object"}
             }
             

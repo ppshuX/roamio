@@ -30,7 +30,8 @@ Rotate these if any were ever real:
 - SMTP/email authorization codes
 - QQ OAuth app key
 - Tencent COS SecretId and SecretKey
-- Qwen/DashScope API key
+- Qwen/DashScope API key, if it was ever real in historical deployments
+- DeepSeek API key
 - Baidu Map and AMap keys
 - Ralendar OAuth client secret
 

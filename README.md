@@ -23,7 +23,7 @@ Do not treat old planning or integration documents as source of truth until audi
 
 - Backend: Django, Django REST Framework, Simple JWT
 - Frontend: Vue 3, Vue Router, Pinia, Bootstrap
-- Optional integrations: Qwen/DashScope AI, Tencent COS, QQ OAuth, Ralendar
+- Optional integrations: DeepSeek AI, Tencent COS, QQ OAuth, Ralendar
 
 ## Main Entry Points
 
@@ -50,6 +50,17 @@ python manage.py runserver
 ```
 
 The root `manage.py` is a thin compatibility shim. Prefer the `backend/` workspace for new local, CI, and deployment commands.
+
+AI trip generation uses DeepSeek's OpenAI-compatible Chat Completions API. To enable it, put these values in the runtime `.env` file on the machine that runs Django:
+
+```bash
+AI_GENERATION_ENABLED=True
+DEEPSEEK_API_KEY=replace-with-your-real-key
+DEEPSEEK_MODEL=deepseek-v4-pro
+DEEPSEEK_API_BASE=https://api.deepseek.com
+```
+
+Do not commit the real key. The old `QWEN_API_KEY` and `QWEN_MODEL` variables are no longer used.
 
 Linux production deploys should install:
 

@@ -211,15 +211,16 @@ class AIAssistantViewSet(viewsets.ViewSet):
     
     def _calculate_cost(self, tokens, model):
         """计算 API 调用成本（人民币）"""
-        # 通义千问价格（元/百万tokens）
+        # DeepSeek official pricing is USD per 1M tokens; convert to RMB
+        # approximately for UI metadata only.
+        usd_to_cny = 7.2
         pricing = {
-            'qwen-turbo': {'input': 0.3, 'output': 0.6},
-            'qwen-plus': {'input': 0.8, 'output': 2.0},
-            'qwen-max': {'input': 20, 'output': 60}
+            'deepseek-v4-flash': {'input': 0.14 * usd_to_cny, 'output': 0.28 * usd_to_cny},
+            'deepseek-v4-pro': {'input': 0.435 * usd_to_cny, 'output': 0.87 * usd_to_cny},
         }
-        
+
         # 简化计算：假设输入输出各占一半
-        rate = pricing.get(model, pricing['qwen-plus'])
+        rate = pricing.get(model, pricing['deepseek-v4-pro'])
         avg_rate = (rate['input'] + rate['output']) / 2
         
         return (tokens / 1000000) * avg_rate
