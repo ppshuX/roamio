@@ -1,7 +1,11 @@
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.conf import settings
 from django.db.models.signals import post_save
+from django.utils import timezone
+import os
+from pathlib import Path
+from unittest.mock import patch
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework.test import APIRequestFactory
@@ -9,6 +13,7 @@ from backend.models.user_profile import create_user_profile, save_user_profile
 from backend.models.subscription import create_user_subscription
 from backend.models.site_stat import SiteStat
 from backend.models.trip import Trip
+from backend.models.event import TripEvent
 from backend.models.comment import Comment
 from backend.serializers.comment_serializer import _build_comment_asset_url
 from backend.utils.ai.ai_service import TripPlannerAI, AIFormatError
@@ -253,6 +258,122 @@ class TripPlanVisibilityTests(UserSignalSafeTestCase):
         owner_response = self.client.get(f"/api/v1/trip-plans/{self.private_trip.slug}/")
         self.assertEqual(owner_response.status_code, status.HTTP_200_OK)
 
+    def test_non_author_cannot_update_public_trip_plan(self):
+        self.client.force_authenticate(user=self.other_user)
+
+        response = self.client.patch(
+            f"/api/v1/trip-plans/{self.public_trip.slug}/",
+            {"title": "Hijacked trip"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.public_trip.refresh_from_db()
+        self.assertEqual(self.public_trip.title, "Public smoke trip")
+
+    def test_non_author_cannot_delete_public_trip_plan(self):
+        self.client.force_authenticate(user=self.other_user)
+
+        response = self.client.delete(f"/api/v1/trip-plans/{self.public_trip.slug}/")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Trip.objects.filter(pk=self.public_trip.pk).exists())
+
+    def test_author_can_publish_trip_plan_with_status_only_patch(self):
+        self.client.force_authenticate(user=self.author)
+
+        response = self.client.patch(
+            f"/api/v1/trip-plans/{self.private_trip.slug}/",
+            {"status": "published"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.private_trip.refresh_from_db()
+        self.assertEqual(self.private_trip.status, "published")
+
+
+class TripEventRalendarSyncTests(UserSignalSafeTestCase):
+    """TripEvent sync should not report success without a real integration or explicit mock."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="event_sync_user",
+            email="event-sync@example.com",
+            password="test-pass-123",
+        )
+        self.other_user = User.objects.create_user(
+            username="event_sync_other",
+            email="event-sync-other@example.com",
+            password="test-pass-123",
+        )
+        self.trip = Trip.objects.create(
+            author=self.user,
+            title="Event sync trip",
+            visibility="private",
+            status="draft",
+        )
+        self.event = TripEvent.objects.create(
+            trip=self.trip,
+            user=self.user,
+            title="Book train tickets",
+            reminder_enabled=True,
+            reminder_time=timezone.now(),
+        )
+        self.url = f"/api/v1/trip-plans/{self.trip.id}/events/{self.event.id}/sync_to_ralendar/"
+
+    def test_non_author_cannot_create_event_on_someone_elses_trip(self):
+        self.client.force_authenticate(user=self.other_user)
+
+        response = self.client.post(
+            f"/api/v1/trip-plans/{self.trip.id}/events/",
+            {"title": "Unauthorized event"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(TripEvent.objects.filter(title="Unauthorized event").exists())
+
+    def test_authenticated_user_cannot_update_someone_elses_public_trip_event(self):
+        Trip.objects.filter(pk=self.trip.pk).update(visibility="public", status="published")
+        self.client.force_authenticate(user=self.other_user)
+
+        response = self.client.patch(
+            f"/api/v1/trip-plans/{self.trip.id}/events/{self.event.id}/",
+            {"title": "Hijacked event"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.title, "Book train tickets")
+
+    def test_manual_event_sync_fails_closed_without_mock(self):
+        self.client.force_authenticate(user=self.user)
+
+        with patch.dict(os.environ, {"ROAMIO_MOCK_RALENDAR_EVENT_SYNC": ""}, clear=False):
+            response = self.client.post(self.url, {}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(response.data["status"], "error")
+        self.event.refresh_from_db()
+        self.assertFalse(self.event.synced_to_ralendar)
+        self.assertIsNone(self.event.ralendar_event_id)
+
+    @override_settings(DEBUG=True)
+    def test_manual_event_sync_allows_explicit_dev_mock(self):
+        self.client.force_authenticate(user=self.user)
+
+        with patch.dict(os.environ, {"ROAMIO_MOCK_RALENDAR_EVENT_SYNC": "1"}, clear=False):
+            response = self.client.post(self.url, {}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.event.refresh_from_db()
+        self.assertTrue(self.event.synced_to_ralendar)
+        self.assertEqual(self.event.ralendar_event_id, 900000 + self.event.id)
+        self.assertEqual(response.data["ralendar_event_id"], self.event.ralendar_event_id)
+
 
 class AIServiceSanitizationTests(TestCase):
     """M3 smoke: AI parsing and fallback sanitization."""
@@ -299,3 +420,32 @@ class CommentAssetUrlNormalizationTests(TestCase):
     def test_keep_full_http_url(self):
         full = "https://example.com/comments/demo.mp4"
         self.assertEqual(_build_comment_asset_url(full, self.request), full)
+
+
+class ConfigurationHygieneTests(TestCase):
+    """Security smoke tests for external provider configuration."""
+
+    def test_geocode_does_not_fall_back_to_committed_amap_key(self):
+        client = APIClient()
+        with patch.dict(os.environ, {'AMAP_API_KEY': ''}, clear=False):
+            response = client.get('/api/v1/geocode/', {'address': 'Hangzhou'})
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(response.data['message'], 'AMAP_API_KEY is not configured')
+
+    def test_known_exposed_map_keys_are_removed_from_source_entrypoints(self):
+        exposed_values = [
+            '53b6a185' + '427e97b53e16c8786a272f62',
+            '91443bbb' + '1947cadce8fee87d0d84fe01',
+            'i8UmOotW' + 'SekjTJlPbydOk1xQZuUeGeE1',
+        ]
+        files_to_check = [
+            Path(settings.BASE_DIR) / 'backend' / 'api' / 'views' / 'external' / 'weather.py',
+            Path(settings.BASE_DIR) / 'frontend' / 'web' / 'index.html',
+            Path(settings.BASE_DIR) / 'frontend' / 'web' / 'src' / 'utils' / 'mapService.js',
+        ]
+
+        for path in files_to_check:
+            content = path.read_text(encoding='utf-8', errors='replace')
+            for exposed in exposed_values:
+                self.assertNotIn(exposed, content, f'{exposed} still present in {path}')

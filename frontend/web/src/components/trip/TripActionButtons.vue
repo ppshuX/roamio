@@ -44,7 +44,7 @@ export default defineComponent({
   position: fixed;
   top: 100px;
   left: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   width: 50px;
@@ -61,9 +61,9 @@ export default defineComponent({
 }
 
 .back-btn:hover {
-  background: linear-gradient(135deg, #5568d3 0%, #6a3f91 100%);
+  background: var(--roamio-primary-active);
   transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(var(--bs-primary-rgb), 0.4);
   opacity: 1;
 }
 

@@ -22,11 +22,11 @@ Codex **不能** SSH、不能替你 `nginx -s reload`、不能假设已切流量
 
 ## Batch A 建议 PR 内容（与 15 §6 对齐并略扩展）
 
-1. **`scripts/deploy_gunicorn.sh`**（新建）：行为尽量与 **`deploy_uwsgi.sh`** 平行——`git pull`、可选 `AUTO_STASH`、Python 解析 `.env`（prod 时）、`npm run build`、`manage.py check`、**停旧 Gunicorn**（用 `stop_gunicorn.sh` 或 pidfile）、**起新 Gunicorn**（`start_gunicorn.sh`，**默认端口需与 Nginx 即将指向的一致**：若生产 uWSGI 为 `8000`，Gunicorn 灰度可先用 `8001` 并在文档写清「Nginx upstream 改指向」）。  
+1. **`scripts/deploy_gunicorn.sh`**（新建）：行为尽量与 **`deploy_uwsgi.sh`** 平行——`git pull`、可选 `AUTO_STASH`、Python 解析 `.env`（prod 时）、`npm run build`、`manage.py check`、停 uWSGI、停旧 Gunicorn、在同端口 **HTTP `127.0.0.1:8000`** 起 Gunicorn，并且只把本机 HTTP healthcheck 作为脚本硬性成功条件。
 2. **`scripts/start_gunicorn.sh` / `stop_gunicorn.sh`**：与 `15` 中质量门一致；避免无差别 `pkill -f` 误杀 **`deploy_gunicorn.sh`**（可参考 uWSGI 使用 **`pgrep -x`/pidfile** 的思路）。  
 3. **`scripts/healthcheck.sh`**（若尚无）：对 `HEALTHCHECK_BASE_URL` 做与 `deploy_uwsgi.sh` 同级的检查。  
 4. **`docs/guides/`** 下增加 **Nginx `proxy_pass` Gunicorn 示例**（`http://127.0.0.1:PORT`，保留原 `uwsgi_pass` **注释块**便于回滚）。  
-5. **README**：标明「默认生产仍为 uWSGI；Gunicorn 为迁移路径」，链到本文与 `15`。
+5. **README**：标明生产默认入口为 `scripts/deploy_gunicorn.sh`；`deploy_uwsgi.sh` 仅保留为回滚路径。
 
 **禁止**：改业务视图/模型/迁移；与本迁移同批次改数据库引擎或大改 settings 语义。
 
@@ -53,7 +53,7 @@ docs/remediation/18_CODEX_RUNBOOK_GUNICORN_MIGRATION.md
 - 校准 start_gunicorn.sh、stop_gunicorn.sh（pidfile、端口、PYTHONPATH、`--chdir` 与 `roamio.wsgi` 一致）。
 - requirements-prod.txt 已有 gunicorn 则对齐版本说明；增补 healthcheck.sh 若无。
 - docs/guides 下给出 Nginx proxy 到 Gunicorn 的示例片段，保留 uwsgi_pass 注释回滚路径。
-- 更新 README：默认仍为 uWSGI，Gunicorn 为迁移步骤；链接 15 与 18。
+- 更新 README：默认生产入口为 Gunicorn；uWSGI 作为回滚路径；链接 Nginx proxy 文档。
 禁止：业务代码/模型迁移、改写 Git 历史、提交真实密钥、在同一 PR 混入 SQLite/大安全配置（除非我可单独批准）。
 
 结束前：manage.py check、manage.py test backend.tests、frontend build；bash -n 新脚本。

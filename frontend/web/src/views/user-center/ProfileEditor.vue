@@ -265,32 +265,37 @@ watch(() => props.updating, (newVal) => {
   padding: 0.5rem 1.5rem;
   border-radius: 25px;
   font-weight: 700;
+  border: 1px solid transparent;
 }
 
 .level-novice {
-  background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%);
-  color: #666;
+  background: var(--bs-secondary-bg-subtle, #f8fafc);
+  color: var(--bs-secondary-text-emphasis, #475569);
+  border-color: var(--bs-secondary-border-subtle, #e2e8f0);
 }
 
 .level-explorer {
-  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%) !important;
-  color: #ffffff !important;
-  border: 1px solid #0d47a1 !important;
+  background: var(--bs-primary-bg-subtle, var(--roamio-primary-muted));
+  color: var(--roamio-primary-active);
+  border-color: var(--bs-primary-border-subtle, #99f6e4);
 }
 
 .level-wanderer {
-  background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%) !important;
-  color: #388e3c !important;
+  background: var(--bs-success-bg-subtle, #f0fdf4);
+  color: var(--bs-success-text-emphasis, #166534);
+  border-color: var(--bs-success-border-subtle, #bbf7d0);
 }
 
 .level-adventurer {
-  background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%) !important;
-  color: #f57f17 !important;
+  background: var(--bs-warning-bg-subtle, #fffbeb);
+  color: var(--bs-warning-text-emphasis, #92400e);
+  border-color: var(--bs-warning-border-subtle, #fde68a);
 }
 
 .level-master {
-  background: linear-gradient(135deg, #ffeb3b 0%, #ffc107 100%) !important;
-  color: #f57f17 !important;
+  background: #fff7ed;
+  color: #9a3412;
+  border-color: #fed7aa;
 }
 </style>
 

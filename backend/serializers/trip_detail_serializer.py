@@ -104,9 +104,12 @@ class TripUpdateSerializer(serializers.ModelSerializer):
     
     def validate(self, attrs):
         """确保发布时必须有标题"""
-        if attrs.get('status') == 'published' and not attrs.get('title'):
+        title = attrs.get('title')
+        if title is None and self.instance is not None:
+            title = self.instance.title
+
+        if attrs.get('status') == 'published' and not title:
             raise serializers.ValidationError({
                 'title': '发布前必须设置标题'
             })
         return attrs
-

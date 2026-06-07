@@ -460,7 +460,7 @@ export default defineComponent({
   align-items: center;
   padding: 16px 20px;
   border-bottom: 1px solid #e0e0e0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   color: white;
   border-radius: 12px 12px 0 0;
 }
@@ -497,14 +497,14 @@ export default defineComponent({
 
 .map-type-btn.active {
   background: white;
-  color: #667eea;
+  color: var(--roamio-primary);
   font-weight: 600;
 }
 
 .btn-close {
   background: white;
   border: none;
-  color: #667eea;
+  color: var(--roamio-primary);
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -551,7 +551,7 @@ export default defineComponent({
 }
 
 .location-name svg {
-  color: #667eea;
+  color: var(--roamio-primary);
 }
 
 .map-footer {

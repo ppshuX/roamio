@@ -7,6 +7,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 
+from django.db.models import Q
+
 from ...models import SiteStat, Comment, Trip
 from ...serializers import (
     TripSerializer,
@@ -28,11 +30,12 @@ class TripViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """首页旅行树列表来自真实 Trip 表，仅展示公开已发布旅行。"""
         if self.action == 'list':
+            # 排除空 slug / 占位标题；同时排除仅空白字符的 slug（与 exclude(slug='') 在部分库上不等价）
             trip_qs = Trip.objects.filter(
                 status='published',
                 visibility='public',
             ).exclude(
-                slug='',
+                Q(slug__isnull=True) | Q(slug__exact='') | Q(slug__regex=r'^\s*$'),
             ).exclude(
                 title__in=['<SLUG>', '<slug>', 'SLUG', 'slug'],
             ).order_by('-created_at')

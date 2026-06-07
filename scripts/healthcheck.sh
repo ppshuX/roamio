@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PORT="${PORT:-8001}"
+PORT="${PORT:-8000}"
 BASE_URL="${BASE_URL:-http://127.0.0.1:${PORT}}"
 
 check_head() {
@@ -42,5 +42,5 @@ check_qq_login_url() {
 }
 
 check_head "/"
-check_status "/api/v1/trips/"
+check_status "/api/v1/auth/me/"
 check_qq_login_url

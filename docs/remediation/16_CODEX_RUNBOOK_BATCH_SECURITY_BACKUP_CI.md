@@ -69,6 +69,7 @@
 2. **优先处理 `docs/**/*.md`、`*.example`、`README*`**；若在业务代码注释中发现真密钥——改为「从环境变量读取」或删除该行。
 3. **禁止**：把任何人的**真实生产** `.env` 内容写入仓库。
 4. 产出：**`scripts/scan_repo_secrets.sh`**（bash，推荐 `chmod +x`）、或 **`Makefile` target `scan-secrets`**，内部调用 **`rg` 优先**（Ubuntu CI 可先 `sudo apt-get install ripgrep` 或使用 `grep -R`）；并维护很小的 **`scripts/secret_scan_allowlist.txt`**：**每行可写 `-g '*.lock'`、`!path/to/file` 等备注**，或由脚本按需 `grep -vFf` 该文件跳过「已知占位行」——格式在脚本注释中写清即可，不必强行与 `rg --glob` 一一等同。
+5. 本地运行方式：`bash scripts/scan_repo_secrets.sh`；脚本只读扫描，命中候选秘密时返回非零并要求人工复核。
 
 ### A3 PR 附带「轮换提示」节选
 

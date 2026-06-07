@@ -229,7 +229,7 @@ Content-Type: application/json
   "grant_type": "authorization_code",
   "code": "AUTHORIZATION_CODE_123456",
   "client_id": "roamio_app_20251114",
-  "client_secret": "SECRET_KEY_xyz789",
+  "client_secret": "your-ralendar-oauth-client-secret",
   "redirect_uri": "https://roamio.cn/auth/ralendar/callback"
 }
 ```
@@ -344,7 +344,7 @@ HTTP 401 Unauthorized
   "grant_type": "refresh_token",
   "refresh_token": "REFRESH_TOKEN_abc123",
   "client_id": "roamio_app_20251114",
-  "client_secret": "SECRET_KEY_xyz789"
+  "client_secret": "your-ralendar-oauth-client-secret"
 }
 ```
 
@@ -406,7 +406,7 @@ class OAuthClient(models.Model):
 ```python
 OAuthClient.objects.create(
     client_id='roamio_app_20251114',
-    client_secret='SECRET_KEY_xyz789',
+    client_secret='your-ralendar-oauth-client-secret',
     client_name='Roamio',
     redirect_uris=[
         'https://roamio.cn/auth/ralendar/callback',

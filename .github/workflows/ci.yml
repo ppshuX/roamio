@@ -26,6 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Ensure Vite output dir exists for Django checks
+        run: mkdir -p backend/web_dist
+
       - name: Django system check
         working-directory: backend
         env:

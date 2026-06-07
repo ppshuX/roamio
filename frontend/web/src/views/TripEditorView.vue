@@ -1169,7 +1169,7 @@ export default {
 }
 
 .btn-ai {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   color: white;
   border: none;
   padding: 20px;
@@ -1183,7 +1183,7 @@ export default {
 
 .btn-ai:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 20px rgba(var(--bs-primary-rgb), 0.4);
   color: white;
 }
 

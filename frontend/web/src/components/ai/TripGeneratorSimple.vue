@@ -287,7 +287,7 @@ onMounted(() => {
 
 .input-section textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--roamio-primary);
 }
 
 .preferences {
@@ -380,13 +380,13 @@ onMounted(() => {
 .pref-row input:focus,
 .pref-row select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--roamio-primary);
 }
 
 .btn-generate {
   width: 100%;
   padding: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   color: white;
   border: none;
   border-radius: 8px;
@@ -422,7 +422,7 @@ onMounted(() => {
   height: 50px;
   margin: 0 auto 20px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #667eea;
+  border-top: 4px solid var(--roamio-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -466,7 +466,7 @@ onMounted(() => {
 
 .summary {
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   color: white;
   border-radius: 10px;
   margin-bottom: 20px;
@@ -494,7 +494,7 @@ onMounted(() => {
 .activity strong {
   display: block;
   margin-bottom: 5px;
-  color: #667eea;
+  color: var(--roamio-primary);
 }
 
 .activity p {

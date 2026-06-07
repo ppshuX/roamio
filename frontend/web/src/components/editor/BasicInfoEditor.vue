@@ -107,7 +107,7 @@ export default {
 
 <style scoped>
 .card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   color: white;
   border: none;
   padding: 1rem 1.5rem;
@@ -136,13 +136,13 @@ export default {
 }
 
 .icon-btn:hover {
-  border-color: #667eea;
+  border-color: var(--roamio-primary);
   transform: scale(1.1);
 }
 
 .icon-btn.active {
-  border-color: #667eea;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: var(--roamio-primary);
+  background: var(--roamio-primary);
   transform: scale(1.1);
 }
 
@@ -173,8 +173,8 @@ export default {
 }
 
 .title-input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+  border-color: var(--roamio-primary);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.15);
   background: white;
   transform: scale(1.02);
 }

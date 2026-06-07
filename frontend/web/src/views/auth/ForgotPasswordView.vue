@@ -445,7 +445,7 @@ onUnmounted(() => {
 <style scoped>
 .forgot-password-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   padding: 2rem 0;
 }
 
@@ -464,7 +464,7 @@ onUnmounted(() => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   border: none;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -472,7 +472,7 @@ onUnmounted(() => {
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.4);
 }
 
 .btn-primary:disabled {
@@ -481,8 +481,8 @@ onUnmounted(() => {
 }
 
 .form-control:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  border-color: var(--roamio-primary);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
 }
 
 .text-danger {

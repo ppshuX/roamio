@@ -5,8 +5,12 @@
         <i v-if="event.is_completed" class="bi bi-check-circle-fill text-success"></i>
         {{ event.title }}
       </h6>
-      <span v-if="event.synced_to_ralendar" class="badge bg-success">
-        <i class="bi bi-cloud-check"></i> 已同步
+      <span
+        v-if="event.synced_to_ralendar"
+        class="badge bg-secondary"
+        title="Ralendar 事件同步尚未接入真实服务"
+      >
+        <i class="bi bi-cloud-slash"></i> 待接入
       </span>
       <span v-else-if="isLocal" class="badge bg-secondary">
         <i class="bi bi-laptop"></i> 本地
@@ -38,26 +42,6 @@
     </div>
     
     <div class="event-actions">
-      <!-- 查看日历（仅已同步到 Ralendar 的事件） -->
-      <button 
-        v-if="event.synced_to_ralendar"
-        @click="viewInRalendar"
-        class="btn btn-sm btn-outline-primary"
-        title="在 Ralendar 中查看"
-      >
-        <i class="bi bi-calendar"></i> 日历
-      </button>
-      
-      <!-- 导航（仅已同步且有地点的事件） -->
-      <button 
-        v-if="event.synced_to_ralendar && getLocationName()"
-        @click="navigateInRalendar"
-        class="btn btn-sm btn-outline-success"
-        title="在 Ralendar 中导航"
-      >
-        <i class="bi bi-map"></i> 导航
-      </button>
-      
       <!-- 拉到云端（仅本地事项） -->
       <button 
         v-if="isLocal && isLoggedIn"
@@ -149,28 +133,6 @@ const getReminderInfo = () => {
   
   const method = reminder.method === 'email' ? '邮件' : '系统'
   return `${method}提醒`
-}
-
-/**
- * 在 Ralendar 中查看
- */
-const viewInRalendar = () => {
-  if (!props.event.ralendar_event_id) return
-  
-  // TODO: 替换为实际的 Ralendar 域名
-  const url = `https://ralendar.com/calendar?event_id=${props.event.ralendar_event_id}`
-  window.open(url, '_blank')
-}
-
-/**
- * 在 Ralendar 中导航
- */
-const navigateInRalendar = () => {
-  if (!props.event.ralendar_event_id) return
-  
-  // TODO: 替换为实际的 Ralendar 域名
-  const url = `https://ralendar.com/map?event_id=${props.event.ralendar_event_id}`
-  window.open(url, '_blank')
 }
 
 /**

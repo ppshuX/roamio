@@ -96,5 +96,8 @@ dump.rdb
 *.tmp
 *.temp
 
+# 本机 COS 清单导出，勿提交
+cos_objects.csv
+
 # Cloud settings (local development only)
 cloud_settings/

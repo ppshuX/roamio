@@ -6,7 +6,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import models
@@ -120,13 +120,16 @@ class TripPlanViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+    def _assert_can_modify_trip(self, trip, message):
+        if trip.author != self.request.user and not self.request.user.is_superuser:
+            raise PermissionDenied(message)
     
     def perform_update(self, serializer):
         """更新时检查权限"""
         trip = self.get_object()
-        if trip.author != self.request.user and not self.request.user.is_superuser:
-            raise PermissionError("无权修改他人的旅行计划")
-        instance = serializer.save()
+        self._assert_can_modify_trip(trip, "无权修改他人的旅行计划")
+        serializer.save()
     
     def update(self, request, *args, **kwargs):
         """重写update方法，返回完整数据（包括slug）"""
@@ -154,8 +157,7 @@ class TripPlanViewSet(viewsets.ModelViewSet):
     
     def perform_destroy(self, instance):
         """删除旅行计划：若在旅行树中，连同对应SiteStat一起删除"""
-        if instance.author != self.request.user and not self.request.user.is_superuser:
-            raise PermissionError("无权删除他人的旅行计划")
+        self._assert_can_modify_trip(instance, "无权删除他人的旅行计划")
         # 先尝试从旅行树移除（非 tp: 前缀，树用的是裸 slug）
         try:
             site_stat = SiteStat.objects.get(page=instance.slug)
@@ -254,8 +256,7 @@ class TripPlanViewSet(viewsets.ModelViewSet):
         trip = self.get_object()
         
         # 检查权限
-        if trip.author != request.user and not request.user.is_superuser:
-            raise PermissionError("无权将此旅行添加到旅行树")
+        self._assert_can_modify_trip(trip, "无权将此旅行添加到旅行树")
         
         # 检查是否已存在
         try:
@@ -292,8 +293,7 @@ class TripPlanViewSet(viewsets.ModelViewSet):
         trip = self.get_object()
         
         # 检查权限
-        if trip.author != request.user and not request.user.is_superuser:
-            raise PermissionError("无权从旅行树移除此旅行")
+        self._assert_can_modify_trip(trip, "无权从旅行树移除此旅行")
         
         # 删除SiteStat
         try:

@@ -329,36 +329,43 @@ export default {
   border-radius: 20px;
   font-weight: 600;
   font-size: 0.85rem;
+  border: 1px solid transparent;
 }
 
 .badge-admin {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
+  background: var(--bs-danger-bg-subtle, #fef2f2);
+  color: var(--bs-danger-text-emphasis, #991b1b);
+  border-color: var(--bs-danger-border-subtle, #fecaca);
 }
 
 .badge-novice {
-  background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%);
-  color: #666;
+  background: var(--bs-secondary-bg-subtle, #f8fafc);
+  color: var(--bs-secondary-text-emphasis, #475569);
+  border-color: var(--bs-secondary-border-subtle, #e2e8f0);
 }
 
 .badge-explorer {
-  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
-  color: white;
+  background: var(--bs-primary-bg-subtle, var(--roamio-primary-muted));
+  color: var(--roamio-primary-active);
+  border-color: var(--bs-primary-border-subtle, #99f6e4);
 }
 
 .badge-wanderer {
-  background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
-  color: #388e3c;
+  background: var(--bs-success-bg-subtle, #f0fdf4);
+  color: var(--bs-success-text-emphasis, #166534);
+  border-color: var(--bs-success-border-subtle, #bbf7d0);
 }
 
 .badge-adventurer {
-  background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);
-  color: #f57f17;
+  background: var(--bs-warning-bg-subtle, #fffbeb);
+  color: var(--bs-warning-text-emphasis, #92400e);
+  border-color: var(--bs-warning-border-subtle, #fde68a);
 }
 
 .badge-master {
-  background: linear-gradient(135deg, #ffeb3b 0%, #ffc107 100%);
-  color: #f57f17;
+  background: #fff7ed;
+  color: #9a3412;
+  border-color: #fed7aa;
 }
 
 .register-time {
@@ -394,7 +401,7 @@ export default {
 .main-stat h3 {
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -442,18 +449,18 @@ export default {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--roamio-primary);
   border: none;
   font-weight: 600;
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 15px rgba(var(--bs-primary-rgb), 0.4);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  box-shadow: 0 6px 20px rgba(var(--bs-primary-rgb), 0.6);
 }
 
 @media (max-width: 576px) {

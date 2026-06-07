@@ -12,6 +12,17 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _get_amap_api_key():
+    return os.environ.get('AMAP_API_KEY', '').strip()
+
+
+def _missing_amap_key_response():
+    return Response({
+        'success': False,
+        'message': 'AMAP_API_KEY is not configured'
+    }, status=503)
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])  # 公开API，无需登录
 def get_weather(request):
@@ -70,7 +81,9 @@ def get_weather(request):
         })
     
     # 2. 从环境变量读取API Key
-    api_key = os.environ.get('AMAP_API_KEY', '53b6a185427e97b53e16c8786a272f62')
+    api_key = _get_amap_api_key()
+    if not api_key:
+        return _missing_amap_key_response()
     
     try:
         # 3. 调用高德地图天气API
@@ -184,7 +197,9 @@ def get_location_by_ip(request):
             'cached': True
         })
     
-    api_key = os.environ.get('AMAP_API_KEY', '53b6a185427e97b53e16c8786a272f62')
+    api_key = _get_amap_api_key()
+    if not api_key:
+        return _missing_amap_key_response()
     
     try:
         # 高德IP定位API
