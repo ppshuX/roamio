@@ -1,7 +1,8 @@
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.conf import settings
 from django.db.models.signals import post_save
+from django.utils import timezone
 import os
 from pathlib import Path
 from unittest.mock import patch
@@ -12,6 +13,7 @@ from backend.models.user_profile import create_user_profile, save_user_profile
 from backend.models.subscription import create_user_subscription
 from backend.models.site_stat import SiteStat
 from backend.models.trip import Trip
+from backend.models.event import TripEvent
 from backend.models.comment import Comment
 from backend.serializers.comment_serializer import _build_comment_asset_url
 from backend.utils.ai.ai_service import TripPlannerAI, AIFormatError
@@ -256,6 +258,88 @@ class TripPlanVisibilityTests(UserSignalSafeTestCase):
         owner_response = self.client.get(f"/api/v1/trip-plans/{self.private_trip.slug}/")
         self.assertEqual(owner_response.status_code, status.HTTP_200_OK)
 
+
+
+class TripEventRalendarSyncTests(UserSignalSafeTestCase):
+    """TripEvent sync should not report success without a real integration or explicit mock."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="event_sync_user",
+            email="event-sync@example.com",
+            password="test-pass-123",
+        )
+        self.other_user = User.objects.create_user(
+            username="event_sync_other",
+            email="event-sync-other@example.com",
+            password="test-pass-123",
+        )
+        self.trip = Trip.objects.create(
+            author=self.user,
+            title="Event sync trip",
+            visibility="private",
+            status="draft",
+        )
+        self.event = TripEvent.objects.create(
+            trip=self.trip,
+            user=self.user,
+            title="Book train tickets",
+            reminder_enabled=True,
+            reminder_time=timezone.now(),
+        )
+        self.url = f"/api/v1/trip-plans/{self.trip.id}/events/{self.event.id}/sync_to_ralendar/"
+
+    def test_non_author_cannot_create_event_on_someone_elses_trip(self):
+        self.client.force_authenticate(user=self.other_user)
+
+        response = self.client.post(
+            f"/api/v1/trip-plans/{self.trip.id}/events/",
+            {"title": "Unauthorized event"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(TripEvent.objects.filter(title="Unauthorized event").exists())
+
+    def test_authenticated_user_cannot_update_someone_elses_public_trip_event(self):
+        Trip.objects.filter(pk=self.trip.pk).update(visibility="public", status="published")
+        self.client.force_authenticate(user=self.other_user)
+
+        response = self.client.patch(
+            f"/api/v1/trip-plans/{self.trip.id}/events/{self.event.id}/",
+            {"title": "Hijacked event"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.title, "Book train tickets")
+
+    def test_manual_event_sync_fails_closed_without_mock(self):
+        self.client.force_authenticate(user=self.user)
+
+        with patch.dict(os.environ, {"ROAMIO_MOCK_RALENDAR_EVENT_SYNC": ""}, clear=False):
+            response = self.client.post(self.url, {}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(response.data["status"], "error")
+        self.event.refresh_from_db()
+        self.assertFalse(self.event.synced_to_ralendar)
+        self.assertIsNone(self.event.ralendar_event_id)
+
+    @override_settings(DEBUG=True)
+    def test_manual_event_sync_allows_explicit_dev_mock(self):
+        self.client.force_authenticate(user=self.user)
+
+        with patch.dict(os.environ, {"ROAMIO_MOCK_RALENDAR_EVENT_SYNC": "1"}, clear=False):
+            response = self.client.post(self.url, {}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.event.refresh_from_db()
+        self.assertTrue(self.event.synced_to_ralendar)
+        self.assertEqual(self.event.ralendar_event_id, 900000 + self.event.id)
+        self.assertEqual(response.data["ralendar_event_id"], self.event.ralendar_event_id)
 
 
 class AIServiceSanitizationTests(TestCase):
