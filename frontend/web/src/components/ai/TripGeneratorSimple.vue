@@ -91,7 +91,11 @@
 
     <div v-if="isGenerating" class="generating">
       <div class="spinner"></div>
-      <p>AI 正在生成中...（约 30 秒）</p>
+      <p>AI 正在生成中... 已等待 {{ elapsedSeconds }} 秒</p>
+      <p class="loading-hint">最长等待 60 秒；如果超时，请缩短天数或简化需求后重试。</p>
+      <button class="btn-cancel-generation" type="button" @click="cancelGeneration">
+        取消生成
+      </button>
     </div>
 
     <div v-if="generatedTrip" class="preview">
@@ -119,7 +123,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { generateTripPlan, getUsageStats } from '@/api/ai'
 
 // eslint-disable-next-line no-undef
@@ -136,6 +140,9 @@ const isGenerating = ref(false)
 const generatedTrip = ref(null)
 const usageStats = ref(null)
 const errorMessage = ref('')
+const elapsedSeconds = ref(0)
+let generationController = null
+let generationTimer = null
 
 // 最小日期（今天）
 const today = new Date()
@@ -177,6 +184,27 @@ const loadUsageStats = async () => {
   }
 }
 
+const clearGenerationTimer = () => {
+  if (generationTimer) {
+    clearInterval(generationTimer)
+    generationTimer = null
+  }
+}
+
+const startGenerationTimer = () => {
+  clearGenerationTimer()
+  elapsedSeconds.value = 0
+  generationTimer = setInterval(() => {
+    elapsedSeconds.value += 1
+  }, 1000)
+}
+
+const cancelGeneration = () => {
+  if (generationController) {
+    generationController.abort()
+  }
+}
+
 const generateTrip = async () => {
   if (!canGenerate.value) {
     if (userPrompt.value.trim().length < 10) {
@@ -191,6 +219,8 @@ const generateTrip = async () => {
 
   isGenerating.value = true
   errorMessage.value = ''
+  generationController = new AbortController()
+  startGenerationTimer()
   try {
     // 构建偏好设置，包含日期信息
     const prefs = {
@@ -209,6 +239,8 @@ const generateTrip = async () => {
     const response = await generateTripPlan({
       prompt: userPrompt.value,
       preferences: prefs
+    }, {
+      signal: generationController.signal
     })
 
     if (response.code === 200) {
@@ -245,18 +277,22 @@ const generateTrip = async () => {
       throw new Error(response.message || '生成失败')
     }
   } catch (error) {
-    console.error('生成失败:', error)
-    if (error.response?.status === 429) {
+    if (error.code === 'ERR_CANCELED') {
+      errorMessage.value = '已取消生成'
+    } else if (error.response?.status === 429) {
       errorMessage.value = '今日生成次数已用完'
     } else if (error.response?.status === 401) {
       errorMessage.value = '请先登录后再生成行程'
     } else if (error.response?.status === 504 || error.code === 'ECONNABORTED') {
       errorMessage.value = 'AI 生成超时，请稍后重试，或把需求写得更简短一些'
     } else {
+      console.error('生成失败:', error)
       errorMessage.value = error.response?.data?.message || '生成失败，请重试'
     }
   } finally {
     isGenerating.value = false
+    generationController = null
+    clearGenerationTimer()
   }
 }
 
@@ -272,6 +308,13 @@ const regenerate = () => {
 
 onMounted(() => {
   loadUsageStats()
+})
+
+onUnmounted(() => {
+  if (generationController) {
+    generationController.abort()
+  }
+  clearGenerationTimer()
 })
 </script>
 
@@ -436,6 +479,26 @@ onMounted(() => {
 .generating {
   text-align: center;
   padding: 60px 20px;
+}
+
+.loading-hint {
+  margin: 8px 0 18px;
+  color: #777;
+  font-size: 13px;
+}
+
+.btn-cancel-generation {
+  padding: 8px 18px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  background: #fff;
+  color: #495057;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-cancel-generation:hover {
+  background: #f8f9fa;
 }
 
 .spinner {

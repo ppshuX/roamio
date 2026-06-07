@@ -4,6 +4,8 @@
 
 import request from './request'
 
+export const AI_GENERATION_TIMEOUT_MS = 60000
+
 /**
  * 生成旅行计划
  * @param {Object} data - 请求数据
@@ -11,8 +13,11 @@ import request from './request'
  * @param {Object} data.preferences - 偏好设置
  * @returns {Promise}
  */
-export function generateTripPlan(data) {
-  return request.post('/ai/generate-trip/', data, { timeout: 120000 })
+export function generateTripPlan(data, config = {}) {
+  return request.post('/ai/generate-trip/', data, {
+    timeout: AI_GENERATION_TIMEOUT_MS,
+    ...config
+  })
 }
 
 /**

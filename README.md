@@ -58,7 +58,8 @@ AI_GENERATION_ENABLED=True
 DEEPSEEK_API_KEY=replace-with-your-real-key
 DEEPSEEK_MODEL=deepseek-v4-pro
 DEEPSEEK_API_BASE=https://api.deepseek.com
-DEEPSEEK_API_TIMEOUT=90
+DEEPSEEK_API_TIMEOUT=45
+AI_MAX_TOKENS=5000
 ```
 
 Do not commit the real key. The old `QWEN_API_KEY` and `QWEN_MODEL` variables are no longer used.

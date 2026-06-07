@@ -85,7 +85,10 @@
     <div v-if="isGenerating" class="generating">
       <div class="loading-spinner"></div>
       <p>AI 正在为你规划行程...</p>
-      <p class="loading-tips">预计需要 3-5 秒</p>
+      <p class="loading-tips">已等待 {{ elapsedSeconds }} 秒，最长等待 60 秒</p>
+      <button class="btn-cancel-generation" type="button" @click="cancelGeneration">
+        取消生成
+      </button>
     </div>
 
     <!-- 预览区 -->
@@ -162,7 +165,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { generateTripPlan, getUsageStats } from '@/api/ai'
 
 // Emits
@@ -181,6 +184,9 @@ const preferences = ref({
 const isGenerating = ref(false)
 const generatedTrip = ref(null)
 const usageStats = ref(null)
+const elapsedSeconds = ref(0)
+let generationController = null
+let generationTimer = null
 
 // 计算属性
 const today = computed(() => {
@@ -203,6 +209,27 @@ const loadUsageStats = async () => {
   }
 }
 
+const clearGenerationTimer = () => {
+  if (generationTimer) {
+    clearInterval(generationTimer)
+    generationTimer = null
+  }
+}
+
+const startGenerationTimer = () => {
+  clearGenerationTimer()
+  elapsedSeconds.value = 0
+  generationTimer = setInterval(() => {
+    elapsedSeconds.value += 1
+  }, 1000)
+}
+
+const cancelGeneration = () => {
+  if (generationController) {
+    generationController.abort()
+  }
+}
+
 const generateTrip = async () => {
   if (!canGenerate.value) {
     alert('请详细描述你的旅行想法（至少10个字）')
@@ -210,11 +237,15 @@ const generateTrip = async () => {
   }
 
   isGenerating.value = true
+  generationController = new AbortController()
+  startGenerationTimer()
 
   try {
     const response = await generateTripPlan({
       prompt: userPrompt.value,
       preferences: preferences.value
+    }, {
+      signal: generationController.signal
     })
 
     if (response.code === 200) {
@@ -227,17 +258,22 @@ const generateTrip = async () => {
       throw new Error(response.message || '生成失败')
     }
   } catch (error) {
-    console.error('生成失败:', error)
-    
-    if (error.response?.status === 429) {
+    if (error.code === 'ERR_CANCELED') {
+      alert('已取消生成')
+    } else if (error.response?.status === 429) {
       alert('❌ 今日生成次数已用完，请明天再试')
     } else if (error.response?.status === 401) {
       alert('❌ 请先登录')
+    } else if (error.response?.status === 504 || error.code === 'ECONNABORTED') {
+      alert('❌ AI 生成超时，请稍后重试，或把需求写得更简短一些')
     } else {
+      console.error('生成失败:', error)
       alert('❌ ' + (error.response?.data?.message || '生成失败，请重试'))
     }
   } finally {
     isGenerating.value = false
+    generationController = null
+    clearGenerationTimer()
   }
 }
 
@@ -255,6 +291,13 @@ const regenerate = () => {
 // 生命周期
 onMounted(() => {
   loadUsageStats()
+})
+
+onUnmounted(() => {
+  if (generationController) {
+    generationController.abort()
+  }
+  clearGenerationTimer()
 })
 </script>
 
@@ -422,6 +465,20 @@ onMounted(() => {
   .loading-tips {
     font-size: 14px;
     color: #999;
+  }
+
+  .btn-cancel-generation {
+    padding: 8px 18px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: #fff;
+    color: #495057;
+    font-size: 14px;
+    cursor: pointer;
+
+    &:hover {
+      background: #f8f9fa;
+    }
   }
 }
 

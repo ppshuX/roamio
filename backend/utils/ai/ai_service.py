@@ -42,9 +42,9 @@ class TripPlannerAI:
             self.enabled = False
         
         # 配置参数
-        self.max_tokens = int(os.getenv('AI_MAX_TOKENS', '8000'))  # 增加到 8000，支持更详细的行程
+        self.max_tokens = int(os.getenv('AI_MAX_TOKENS', '5000'))
         self.temperature = float(os.getenv('AI_TEMPERATURE', '0.7'))
-        self.timeout = int(os.getenv('DEEPSEEK_API_TIMEOUT', '90'))
+        self.timeout = int(os.getenv('DEEPSEEK_API_TIMEOUT', '45'))
         
         # 统计信息
         self.tokens_used = 0
