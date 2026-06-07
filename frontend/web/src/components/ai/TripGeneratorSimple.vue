@@ -84,6 +84,9 @@
       <p v-if="usageStats" class="usage-info">
         今日剩余: {{ usageStats.remaining }}/{{ usageStats.limit }} 次
       </p>
+      <div v-if="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
     </div>
 
     <div v-if="isGenerating" class="generating">
@@ -132,6 +135,7 @@ const preferences = ref({ days: 5, budget_level: 'medium', travel_style: 'leisur
 const isGenerating = ref(false)
 const generatedTrip = ref(null)
 const usageStats = ref(null)
+const errorMessage = ref('')
 
 // 最小日期（今天）
 const today = new Date()
@@ -186,6 +190,7 @@ const generateTrip = async () => {
   }
 
   isGenerating.value = true
+  errorMessage.value = ''
   try {
     // 构建偏好设置，包含日期信息
     const prefs = {
@@ -242,9 +247,13 @@ const generateTrip = async () => {
   } catch (error) {
     console.error('生成失败:', error)
     if (error.response?.status === 429) {
-      alert('❌ 今日生成次数已用完')
+      errorMessage.value = '今日生成次数已用完'
+    } else if (error.response?.status === 401) {
+      errorMessage.value = '请先登录后再生成行程'
+    } else if (error.response?.status === 504 || error.code === 'ECONNABORTED') {
+      errorMessage.value = 'AI 生成超时，请稍后重试，或把需求写得更简短一些'
     } else {
-      alert('❌ ' + (error.response?.data?.message || '生成失败'))
+      errorMessage.value = error.response?.data?.message || '生成失败，请重试'
     }
   } finally {
     isGenerating.value = false
@@ -258,6 +267,7 @@ const applyTrip = () => {
 
 const regenerate = () => {
   generatedTrip.value = null
+  errorMessage.value = ''
 }
 
 onMounted(() => {
@@ -412,6 +422,17 @@ onMounted(() => {
   font-size: 13px;
 }
 
+.error-message {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #ffe08a;
+  border-radius: 8px;
+  background: #fff3cd;
+  color: #7a4f01;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .generating {
   text-align: center;
   padding: 60px 20px;
@@ -503,4 +524,3 @@ onMounted(() => {
   line-height: 1.6;
 }
 </style>
-

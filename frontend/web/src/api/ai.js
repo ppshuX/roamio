@@ -12,7 +12,7 @@ import request from './request'
  * @returns {Promise}
  */
 export function generateTripPlan(data) {
-  return request.post('/ai/generate-trip/', data)
+  return request.post('/ai/generate-trip/', data, { timeout: 120000 })
 }
 
 /**

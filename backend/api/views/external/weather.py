@@ -19,8 +19,9 @@ def _get_amap_api_key():
 def _missing_amap_key_response():
     return Response({
         'success': False,
-        'message': 'AMAP_API_KEY is not configured'
-    }, status=503)
+        'code': 'WEATHER_DISABLED',
+        'message': 'Weather service is not configured'
+    })
 
 
 @api_view(['GET'])

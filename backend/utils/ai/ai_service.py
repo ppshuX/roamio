@@ -44,6 +44,7 @@ class TripPlannerAI:
         # 配置参数
         self.max_tokens = int(os.getenv('AI_MAX_TOKENS', '8000'))  # 增加到 8000，支持更详细的行程
         self.temperature = float(os.getenv('AI_TEMPERATURE', '0.7'))
+        self.timeout = int(os.getenv('DEEPSEEK_API_TIMEOUT', '90'))
         
         # 统计信息
         self.tokens_used = 0
@@ -98,7 +99,7 @@ class TripPlannerAI:
                 f"{self.api_base}/chat/completions",
                 headers=headers,
                 json=data,
-                timeout=90  # 增加到 90 秒，生成详细行程需要更多时间
+                timeout=self.timeout
             )
             
             if response.status_code != 200:
@@ -125,6 +126,9 @@ class TripPlannerAI:
             
             return validated_plan
             
+        except requests.Timeout as e:
+            logger.error(f"AI API timeout after {self.timeout}s: {e}")
+            raise TimeoutError("AI 生成超时，请稍后重试")
         except json.JSONDecodeError as e:
             logger.error(f"JSON parsing error: {e}")
             raise ValueError("AI 返回格式错误，请重试")
@@ -493,7 +497,7 @@ class TripPlannerAI:
                 f"{self.api_base}/chat/completions",
                 headers=headers,
                 json=data,
-                timeout=90  # 增加到 90 秒
+                timeout=self.timeout
             )
             
             if response.status_code != 200:

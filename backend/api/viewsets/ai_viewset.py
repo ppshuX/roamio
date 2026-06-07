@@ -137,7 +137,13 @@ class AIAssistantViewSet(viewsets.ViewSet):
                 'code': 400,
                 'message': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+        except TimeoutError as e:
+            logger.error(f"AI generation timeout: {e}")
+            return Response({
+                'code': 504,
+                'message': str(e)
+            }, status=status.HTTP_504_GATEWAY_TIMEOUT)
+
         except Exception as e:
             logger.error(f"AI generation error: {e}", exc_info=True)
             return Response({

@@ -24,8 +24,8 @@
         <!-- 加载失败状态 -->
         <div v-else-if="error" class="weather-detail text-center">
           <i class="bi bi-exclamation-circle" style="font-size: 2rem; color: #dc3545;"></i>
-          <p class="mt-2 mb-2 text-muted">加载失败</p>
-          <button @click="fetchWeather" class="btn btn-sm btn-primary">
+          <p class="mt-2 mb-2 text-muted">{{ errorMessage || '加载失败' }}</p>
+          <button v-if="!weatherDisabled" @click="fetchWeather" class="btn btn-sm btn-primary">
             <i class="bi bi-arrow-clockwise me-1"></i>重试
           </button>
         </div>
@@ -140,6 +140,8 @@ import { getLocationByIP, getWeatherByCity } from '@/api/weather'
 
 const loading = ref(true)
 const error = ref(false)
+const errorMessage = ref('')
+const weatherDisabled = ref(false)
 const weather = ref({
   city: '',
   weather: '',
@@ -180,6 +182,8 @@ const getWeatherIcon = (weatherText) => {
 const fetchWeather = async () => {
   loading.value = true
   error.value = false
+  errorMessage.value = ''
+  weatherDisabled.value = false
   
   try {
     // 1. 先尝试从localStorage获取缓存的城市
@@ -200,6 +204,13 @@ const fetchWeather = async () => {
     if (!city) {
       try {
         const locationData = await getLocationByIP()
+
+        if (locationData.code === 'WEATHER_DISABLED') {
+          weatherDisabled.value = true
+          errorMessage.value = '天气功能暂未开放'
+          error.value = true
+          return
+        }
         
         if (locationData.success && locationData.data && locationData.data.city) {
           city = String(locationData.data.city).trim()
@@ -210,7 +221,10 @@ const fetchWeather = async () => {
           }
         }
       } catch (err) {
-        console.warn('IP定位失败:', err)
+        const status = err.response?.status
+        if (status !== 503 && status !== 429) {
+          console.warn('IP定位失败:', err)
+        }
       }
     }
     
@@ -223,6 +237,13 @@ const fetchWeather = async () => {
     
     // 4. 调用后端天气接口获取天气信息
     const weatherData = await getWeatherByCity(city)
+
+    if (weatherData.code === 'WEATHER_DISABLED') {
+      weatherDisabled.value = true
+      errorMessage.value = '天气功能暂未开放'
+      error.value = true
+      return
+    }
     
     if (weatherData.success) {
       const data = weatherData.data
@@ -239,7 +260,16 @@ const fetchWeather = async () => {
       throw new Error(weatherData.message || '无法获取天气信息')
     }
   } catch (err) {
-    console.error('获取天气失败:', err)
+    const status = err.response?.status
+    if (status === 503) {
+      weatherDisabled.value = true
+      errorMessage.value = '天气功能暂未开放'
+    } else if (status === 429) {
+      errorMessage.value = '请求过于频繁，请稍后再试'
+    } else {
+      errorMessage.value = '加载失败'
+      console.error('获取天气失败:', err)
+    }
     error.value = true
     // 清除可能已损坏的缓存
     localStorage.removeItem('weatherCity')
@@ -754,4 +784,3 @@ onMounted(() => {
   }
 }
 </style>
-
