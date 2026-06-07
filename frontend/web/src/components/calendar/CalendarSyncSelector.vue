@@ -73,7 +73,7 @@
                 <span class="detail-label">🗺️ 坐标:</span>
                 <span class="detail-value">
                   {{ event.latitude.toFixed(6) }}, {{ event.longitude.toFixed(6) }}
-                  <button class="btn-map" @click="viewOnMap(event)" title="查看地图">🗺️</button>
+                  <button class="btn-map" @click="viewOnMap(event)" title="按地点搜索地图">🗺️</button>
                 </span>
               </div>
               <div class="detail-row">
@@ -237,11 +237,14 @@ export default {
     }
     
     const viewOnMap = (event) => {
-      if (event.latitude && event.longitude) {
-        // 打开百度地图或高德地图（根据坐标）
-        const mapUrl = `https://api.map.baidu.com/marker?location=${event.latitude},${event.longitude}&title=${encodeURIComponent(event.location_name || event.location)}&content=${encodeURIComponent(event.location_address || '')}&output=html&src=roamio`
-        window.open(mapUrl, '_blank')
+      const query = event.location_name || event.location || event.location_address
+      if (!query) {
+        alert('地图功能暂未开放，请先复制地点名称后手动搜索')
+        return
       }
+
+      const mapUrl = `https://map.baidu.com/search/${encodeURIComponent(query)}`
+      window.open(mapUrl, '_blank', 'noopener,noreferrer')
     }
     
     // 监听 props.events 变化，更新内部状态

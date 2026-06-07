@@ -5,6 +5,7 @@
 
 from django.db import models
 from django.contrib.auth import get_user_model
+from urllib.parse import quote
 from .trip import Trip
 
 User = get_user_model()
@@ -188,13 +189,12 @@ class TripEvent(models.Model):
         return self.location_lat is not None and self.location_lng is not None
     
     def get_baidu_map_url(self):
-        """获取百度地图导航链接"""
-        if not self.has_coordinates():
+        """获取免 SDK 的地图搜索链接。"""
+        query = self.location_name or self.location_address
+        if not query:
             return None
-        
-        # 百度地图 URL Scheme
-        # https://lbsyun.baidu.com/index.php?title=uri/api/web
-        return f"https://api.map.baidu.com/marker?location={self.location_lat},{self.location_lng}&title={self.location_name}&content={self.location_address}&output=html"
+
+        return f"https://map.baidu.com/search/{quote(str(query))}"
     
     def should_sync_to_ralendar(self):
         """是否应该同步到 Ralendar"""

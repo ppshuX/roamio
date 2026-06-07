@@ -425,13 +425,12 @@ class CommentAssetUrlNormalizationTests(TestCase):
 class ConfigurationHygieneTests(TestCase):
     """Security smoke tests for external provider configuration."""
 
-    def test_geocode_does_not_fall_back_to_committed_amap_key(self):
+    def test_geocode_is_temporarily_disabled(self):
         client = APIClient()
-        with patch.dict(os.environ, {'AMAP_API_KEY': ''}, clear=False):
-            response = client.get('/api/v1/geocode/', {'address': 'Hangzhou'})
+        response = client.get('/api/v1/geocode/', {'address': 'Hangzhou'})
 
         self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
-        self.assertEqual(response.data['message'], 'AMAP_API_KEY is not configured')
+        self.assertEqual(response.data['message'], 'Map geocoding is temporarily unavailable')
 
     def test_known_exposed_map_keys_are_removed_from_source_entrypoints(self):
         exposed_values = [

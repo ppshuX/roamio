@@ -4,8 +4,6 @@
  * 将 AI 生成的旅行计划数据转换为 Ralendar 日历事件格式
  */
 
-import { geocode } from './mapService'
-
 /**
  * 解析持续时间字符串（如 "2小时"、"3.5小时"、"120分钟"）
  * @param {string} duration - 持续时间字符串
@@ -405,25 +403,7 @@ export async function convertAITripToEvents(aiPlan, tripTitle = '', startDate = 
             longitude = activity.coordinates.lng || activity.coordinates.longitude
           }
           
-          // 🌟 如果没有坐标但有地点，尝试自动获取坐标
-          if (!latitude && !longitude && activity.location) {
-            try {
-              // 构建地址字符串（优先使用详细地址）
-              const addressToGeocode = activity.address || activity.location
-              
-              // 调用地理编码 API（使用高德地图）
-              const geoResult = await geocode(addressToGeocode)
-              
-              if (geoResult && geoResult.lat && geoResult.lng) {
-                latitude = geoResult.lat
-                longitude = geoResult.lng
-                console.info(`✅ 自动获取坐标: ${activity.location} -> (${latitude}, ${longitude})`)
-              }
-            } catch (error) {
-              // 地理编码失败，不影响事件创建，只记录日志
-              console.warn(`⚠️ 无法获取坐标: ${activity.location}，错误: ${error.message}`)
-            }
-          }
+          // 地图与地理编码功能暂未开放：保留 AI 返回的坐标，但不主动调用地图服务补坐标。
           
           // 构建地点信息（优先使用详细地址，其次使用地点名称）
           let location = activity.location || '未指定地点'
@@ -526,4 +506,3 @@ export function validateEvents(events) {
   
   return { valid, invalid }
 }
-

@@ -62,6 +62,8 @@ DEEPSEEK_API_BASE=https://api.deepseek.com
 
 Do not commit the real key. The old `QWEN_API_KEY` and `QWEN_MODEL` variables are no longer used.
 
+Map SDK pickers and geocoding are currently disabled. Location UI falls back to copying the place name and opening provider search pages without embedded SDK keys. `AMAP_API_KEY` is only used by the weather and IP-location endpoints.
+
 Linux production deploys should install:
 
 ```bash
