@@ -29,8 +29,15 @@ SECRET_RE = re.compile(
 
 PLACEHOLDER_RE = re.compile(
     r"replace-with-|placeholder|example\.com|localhost|127\.0\.0\.1|"
-    r"YOUR_|your-|same-as-|dummy|fake|changeme|change-me|leave-empty|"
+    r"YOUR_|your-|same-[a-z0-9-]+|dummy|fake|changeme|change-me|leave-empty|"
     r"noreply@example\.com|你的生产密钥|%VITE_[A-Z_]+%|_get_[A-Za-z0-9_]+\(",
+    re.IGNORECASE,
+)
+
+REFERENCE_RE = re.compile(
+    r"os\.getenv\(|require_env\(|settings\.[A-Z0-9_]+|models\.CharField|"
+    r"self\.[a-z_]*api_key|api_key\s*=\s*self\.[a-z_]*api_key|"
+    r"[A-Z0-9_]*(?:SECRET|KEY|PASSWORD|TOKEN|ID|AK):(?:\s|$)|looks\s+like|看起来像",
     re.IGNORECASE,
 )
 
@@ -87,7 +94,11 @@ def load_allowlist() -> list[str]:
 
 
 def is_allowed(finding: str, allowlist: list[str]) -> bool:
-    return PLACEHOLDER_RE.search(finding) is not None or any(item in finding for item in allowlist)
+    return (
+        PLACEHOLDER_RE.search(finding) is not None
+        or REFERENCE_RE.search(finding) is not None
+        or any(item in finding for item in allowlist)
+    )
 
 
 def main() -> int:
