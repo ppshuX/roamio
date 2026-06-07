@@ -6,7 +6,7 @@
       id="dropdownWeather"
       data-bs-toggle="dropdown"
       aria-expanded="false"
-      @click.prevent
+      @click.prevent="ensureWeatherLoaded"
     >
       <i class="bi bi-cloud-sun me-1"></i>
       查看天气
@@ -15,8 +15,14 @@
     <!-- 详细天气信息下拉菜单 -->
     <ul class="dropdown-menu dropdown-menu-end weather-dropdown" aria-labelledby="dropdownWeather">
       <li>
+        <!-- 未查询状态 -->
+        <div v-if="!requested" class="weather-detail text-center">
+          <i class="bi bi-cloud-sun" style="font-size: 2rem; color: var(--roamio-primary);"></i>
+          <p class="mt-2 mb-2 text-muted">天气功能暂未开放</p>
+        </div>
+
         <!-- 加载中状态 -->
-        <div v-if="loading" class="weather-detail text-center">
+        <div v-else-if="loading" class="weather-detail text-center">
           <i class="bi bi-hourglass-split" style="font-size: 2rem; color: var(--roamio-primary);"></i>
           <p class="mt-2 mb-0 text-muted">加载中...</p>
         </div>
@@ -138,7 +144,9 @@
 import { ref, onMounted } from 'vue'
 import { getLocationByIP, getWeatherByCity } from '@/api/weather'
 
-const loading = ref(true)
+const weatherFeatureEnabled = import.meta.env.VITE_WEATHER_ENABLED === 'true'
+const requested = ref(false)
+const loading = ref(false)
 const error = ref(false)
 const errorMessage = ref('')
 const weatherDisabled = ref(false)
@@ -178,8 +186,33 @@ const getWeatherIcon = (weatherText) => {
   return 'bi bi-cloud'
 }
 
+const markWeatherDisabled = () => {
+  requested.value = true
+  loading.value = false
+  weatherDisabled.value = true
+  errorMessage.value = '天气功能暂未开放'
+  error.value = true
+}
+
+const ensureWeatherLoaded = () => {
+  if (requested.value) return
+
+  if (!weatherFeatureEnabled) {
+    markWeatherDisabled()
+    return
+  }
+
+  fetchWeather()
+}
+
 // 获取天气数据（调用后端API）
 const fetchWeather = async () => {
+  if (!weatherFeatureEnabled) {
+    markWeatherDisabled()
+    return
+  }
+
+  requested.value = true
   loading.value = true
   error.value = false
   errorMessage.value = ''
@@ -323,7 +356,10 @@ onMounted(() => {
     localStorage.removeItem('weatherCacheTime')
   }
   
-  fetchWeather()
+  if (!weatherFeatureEnabled) {
+    localStorage.removeItem('weatherCity')
+    localStorage.removeItem('weatherCacheTime')
+  }
 })
 </script>
 

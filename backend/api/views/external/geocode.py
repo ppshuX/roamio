@@ -16,5 +16,6 @@ def geocode(request):
 
     return Response({
         'success': False,
+        'code': 'MAP_DISABLED',
         'message': 'Map geocoding is temporarily unavailable'
-    }, status=503)
+    })

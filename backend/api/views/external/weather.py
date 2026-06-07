@@ -24,6 +24,14 @@ def _missing_amap_key_response():
     })
 
 
+def _weather_disabled_response(message='Weather service is temporarily unavailable'):
+    return Response({
+        'success': False,
+        'code': 'WEATHER_DISABLED',
+        'message': message
+    })
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])  # 公开API，无需登录
 def get_weather(request):
@@ -54,7 +62,11 @@ def get_weather(request):
             'success': False,
             'message': '请提供城市名称'
         }, status=400)
-    
+
+    api_key = _get_amap_api_key()
+    if not api_key:
+        return _missing_amap_key_response()
+
     # 1. IP限流：同一IP每分钟最多20次请求
     ip = request.META.get('REMOTE_ADDR', 'unknown')
     rate_limit_key = f'weather_rate_{ip}'
@@ -81,11 +93,6 @@ def get_weather(request):
             'cached': True
         })
     
-    # 2. 从环境变量读取API Key
-    api_key = _get_amap_api_key()
-    if not api_key:
-        return _missing_amap_key_response()
-    
     try:
         # 3. 调用高德地图天气API
         url = 'https://restapi.amap.com/v3/weather/weatherInfo'
@@ -101,10 +108,7 @@ def get_weather(request):
         # 4. 检查API返回状态
         if data.get('status') != '1':
             logger.warning(f'高德API返回错误: {data.get("info")}')
-            return Response({
-                'success': False,
-                'message': data.get('info', '获取天气失败')
-            }, status=400)
+            return _weather_disabled_response('Weather service is temporarily unavailable')
         
         if not data.get('lives') or len(data['lives']) == 0:
             logger.warning(f'未找到城市天气数据: {location}')
@@ -137,17 +141,11 @@ def get_weather(request):
         
     except requests.Timeout:
         logger.error(f'获取天气超时: {location}')
-        return Response({
-            'success': False,
-            'message': '获取天气信息超时，请稍后重试'
-        }, status=504)
-        
+        return _weather_disabled_response('Weather service is temporarily unavailable')
+
     except requests.RequestException as e:
         logger.error(f'请求高德API失败: {str(e)}')
-        return Response({
-            'success': False,
-            'message': '网络请求失败，请稍后重试'
-        }, status=503)
+        return _weather_disabled_response('Weather service is temporarily unavailable')
         
     except Exception as e:
         logger.error(f'获取天气异常: {str(e)}')
@@ -172,6 +170,10 @@ def get_location_by_ip(request):
             }
         }
     """
+    api_key = _get_amap_api_key()
+    if not api_key:
+        return _missing_amap_key_response()
+
     # IP限流：同一IP每分钟最多3次定位请求
     ip = request.META.get('REMOTE_ADDR', 'unknown')
     rate_limit_key = f'location_rate_{ip}'
@@ -198,10 +200,6 @@ def get_location_by_ip(request):
             'cached': True
         })
     
-    api_key = _get_amap_api_key()
-    if not api_key:
-        return _missing_amap_key_response()
-    
     try:
         # 高德IP定位API
         url = 'https://restapi.amap.com/v3/ip'
@@ -211,12 +209,10 @@ def get_location_by_ip(request):
         
         response = requests.get(url, params=params, timeout=10)
         data = response.json()
-        
+
         if data.get('status') != '1':
-            return Response({
-                'success': False,
-                'message': data.get('info', '定位失败')
-            }, status=400)
+            logger.warning(f'高德IP定位API返回错误: {data.get("info")}')
+            return _weather_disabled_response('Weather service is temporarily unavailable')
         
         location_data = {
             'city': data.get('city', ''),
@@ -234,8 +230,5 @@ def get_location_by_ip(request):
         
     except Exception as e:
         logger.error(f'IP定位失败: {str(e)}')
-        return Response({
-            'success': False,
-            'message': '定位失败'
-        }, status=500)
+        return _weather_disabled_response('Weather service is temporarily unavailable')
 

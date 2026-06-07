@@ -429,8 +429,44 @@ class ConfigurationHygieneTests(TestCase):
         client = APIClient()
         response = client.get('/api/v1/geocode/', {'address': 'Hangzhou'})
 
-        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['code'], 'MAP_DISABLED')
         self.assertEqual(response.data['message'], 'Map geocoding is temporarily unavailable')
+
+    def test_weather_is_temporarily_disabled_without_provider_key(self):
+        client = APIClient()
+
+        with patch.dict(os.environ, {'AMAP_API_KEY': ''}):
+            response = client.get('/api/v1/weather/', {'location': '北京'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['success'])
+        self.assertEqual(response.data['code'], 'WEATHER_DISABLED')
+
+    def test_ip_location_is_temporarily_disabled_without_provider_key(self):
+        client = APIClient()
+
+        with patch.dict(os.environ, {'AMAP_API_KEY': ''}):
+            response = client.get('/api/v1/location/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['success'])
+        self.assertEqual(response.data['code'], 'WEATHER_DISABLED')
+
+    def test_weather_is_temporarily_disabled_when_provider_rejects_key(self):
+        class DummyResponse:
+            def json(self):
+                return {'status': '0', 'info': 'INVALID_USER_KEY'}
+
+        client = APIClient()
+
+        with patch.dict(os.environ, {'AMAP_API_KEY': 'revoked-key'}):
+            with patch('backend.api.views.external.weather.requests.get', return_value=DummyResponse()):
+                response = client.get('/api/v1/weather/', {'location': '北京'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['success'])
+        self.assertEqual(response.data['code'], 'WEATHER_DISABLED')
 
     def test_known_exposed_map_keys_are_removed_from_source_entrypoints(self):
         exposed_values = [

@@ -3,5 +3,9 @@ export async function geocode(address) {
     throw new Error('Address is required')
   }
 
-  throw new Error('Map geocoding is temporarily unavailable')
+  return {
+    success: false,
+    code: 'MAP_DISABLED',
+    message: 'Map geocoding is temporarily unavailable'
+  }
 }

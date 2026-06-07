@@ -63,7 +63,7 @@ DEEPSEEK_API_TIMEOUT=90
 
 Do not commit the real key. The old `QWEN_API_KEY` and `QWEN_MODEL` variables are no longer used.
 
-Map SDK pickers and geocoding are currently disabled. Location UI falls back to copying the place name and opening provider search pages without embedded SDK keys. `AMAP_API_KEY` is only used by the weather and IP-location endpoints.
+Map SDK pickers and geocoding are currently disabled. Location UI falls back to copying the place name and opening provider search pages without embedded SDK keys. Weather/IP location is also disabled by default in production (`frontend/web/.env.production` sets `VITE_WEATHER_ENABLED=false`); only set it to `true` and provide `AMAP_API_KEY` if the weather feature is reopened.
 
 Linux production deploys should install:
 
