@@ -1,62 +1,70 @@
 <template>
   <div v-if="show" class="map-picker-overlay" @click.self="$emit('close')">
     <div class="map-picker-container">
-      <!-- 头部 -->
       <div class="map-header">
-        <h6>选择地点</h6>
-        <div class="map-type-selector">
-          <button 
-            :class="['map-type-btn', { active: mapType === 'baidu' }]"
-            @click="switchMapType('baidu')"
-          >
-            百度地图
-          </button>
-          <button 
-            :class="['map-type-btn', { active: mapType === 'amap' }]"
-            @click="switchMapType('amap')"
-          >
-            高德地图
-          </button>
-        </div>
-        <button @click="$emit('close')" class="btn-close">
+        <h6>地点操作</h6>
+        <button @click="$emit('close')" class="btn-close" aria-label="关闭">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+            <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
           </svg>
         </button>
       </div>
-      
-      <!-- 搜索框 -->
-      <div class="map-search">
-        <input 
-          v-model="searchKeyword" 
-          type="text" 
-          class="form-control" 
-          placeholder="搜索地点..."
-          @input="handleSearch"
+
+      <div class="map-body">
+        <div class="map-unavailable">
+          <div class="map-unavailable-icon">
+            <i class="bi bi-map"></i>
+          </div>
+          <h6>地图预览功能暂未开放</h6>
+          <p>可先复制地点名称，或跳转到地图应用查看位置与路线。</p>
+        </div>
+
+        <label class="form-label" for="locationKeyword">地点名称</label>
+        <input
+          id="locationKeyword"
+          v-model.trim="locationKeyword"
+          type="text"
+          class="form-control"
+          placeholder="输入地点、地址或景点名称"
+          @keyup.enter="handleConfirm"
         >
-      </div>
-      
-      <!-- 地图容器 -->
-      <div ref="mapContainer" class="map-container"></div>
-      
-      <!-- 已选位置信息 -->
-      <div v-if="selectedLocation" class="location-info">
-        <div class="location-name">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-          </svg>
-          {{ selectedLocation.name }}
+
+        <div class="map-actions">
+          <button class="btn btn-outline-secondary" type="button" :disabled="!locationKeyword" @click="copyLocation">
+            <i class="bi bi-clipboard"></i>
+            复制地点
+          </button>
+          <a
+            class="btn btn-outline-primary"
+            :class="{ disabled: !locationKeyword }"
+            :href="baiduMapUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            @click.prevent="openIfReady(baiduMapUrl)"
+          >
+            <i class="bi bi-box-arrow-up-right"></i>
+            打开百度地图
+          </a>
+          <a
+            class="btn btn-outline-primary"
+            :class="{ disabled: !locationKeyword }"
+            :href="amapUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            @click.prevent="openIfReady(amapUrl)"
+          >
+            <i class="bi bi-box-arrow-up-right"></i>
+            打开高德地图
+          </a>
         </div>
-        <div class="location-coords text-muted small">
-          坐标: {{ selectedLocation.lat.toFixed(6) }}, {{ selectedLocation.lng.toFixed(6) }}
-        </div>
+
+        <div v-if="copyMessage" class="copy-message">{{ copyMessage }}</div>
       </div>
-      
-      <!-- 操作按钮 -->
+
       <div class="map-footer">
         <button class="btn btn-secondary" @click="$emit('close')">取消</button>
-        <button class="btn btn-primary" @click="handleConfirm" :disabled="!selectedLocation">
-          确定
+        <button class="btn btn-primary" @click="handleConfirm" :disabled="!locationKeyword">
+          使用此地点
         </button>
       </div>
     </div>
@@ -64,11 +72,11 @@
 </template>
 
 <script>
-import { ref, watch, nextTick, defineComponent } from 'vue'
+import { computed, defineComponent, ref, watch } from 'vue'
 
 export default defineComponent({
   name: 'MapPicker',
-  
+
   props: {
     show: {
       type: Boolean,
@@ -79,349 +87,62 @@ export default defineComponent({
       default: ''
     }
   },
-  
+
   emits: ['close', 'select'],
-  
+
   setup(props, { emit }) {
-    const mapContainer = ref(null)
-    const searchKeyword = ref('')
-    const selectedLocation = ref(null)
-    const mapType = ref(localStorage.getItem('preferredMapType') || 'baidu') // 记住用户偏好
-    let map = null
-    let marker = null
-    let searchTimer = null
-    
-    // 切换地图类型
-    const switchMapType = (type) => {
-      mapType.value = type
-      localStorage.setItem('preferredMapType', type)
-      selectedLocation.value = null
-      // 销毁旧地图
-      if (map) {
-        if (mapType.value === 'baidu' && map.destroy) {
-          map.destroy()
-        } else if (mapType.value === 'amap' && map.destroy) {
-          map.destroy()
-        }
-        map = null
-        marker = null
-      }
-      // 重新初始化
-      nextTick(() => {
-        initMap()
-      })
-    }
-    
-    // 初始化地图
-    const initMap = () => {
-      if (!mapContainer.value) return
-      
-      if (mapType.value === 'baidu') {
-        initBaiduMap()
-      } else {
-        initAmapMap()
-      }
-    }
-    
-    // 初始化百度地图
-    const initBaiduMap = () => {
-      if (!window.BMap) {
-        console.error('百度地图 API 未加载')
-        return
-      }
-      
-      // 创建地图实例
-      map = new window.BMap.Map(mapContainer.value)
-      
-      // 设置中心点（默认北京）
-      const point = new window.BMap.Point(116.404, 39.915)
-      map.centerAndZoom(point, 12)
-      
-      // 启用滚轮缩放
-      map.enableScrollWheelZoom(true)
-      
-      // 添加控件
-      map.addControl(new window.BMap.NavigationControl())
-      map.addControl(new window.BMap.ScaleControl())
-      
-      // 点击地图选择位置
-      map.addEventListener('click', (e) => {
-        const point = e.point
-        setMarkerBaidu(point)
-        getLocationNameBaidu(point)
-      })
-    }
-    
-    // 初始化高德地图
-    const initAmapMap = () => {
-      if (!window.AMap) return
-      
-      // 创建地图实例
-      map = new window.AMap.Map(mapContainer.value, {
-        zoom: 12,
-        center: [116.404, 39.915], // 默认北京
-        viewMode: '2D'
-      })
-      
-      // 点击地图选择位置
-      map.on('click', (e) => {
-        const lnglat = e.lnglat
-        setMarkerAmap(lnglat)
-        getLocationNameAmap(lnglat)
-      })
-    }
-    
-    // 百度地图：设置标记
-    const setMarkerBaidu = (point) => {
-      // 确保地图实例有效
-      if (!map || typeof map.addOverlay !== 'function') {
-        console.error('百度地图实例无效，无法设置标记')
-        return
-      }
-      
-      // 移除旧标记
-      if (marker && typeof map.removeOverlay === 'function') {
-        try {
-          map.removeOverlay(marker)
-        } catch (error) {
-          console.warn('移除旧标记失败:', error)
-        }
-      }
-      
-      // 添加新标记
+    const locationKeyword = ref('')
+    const copyMessage = ref('')
+
+    const encodedLocation = computed(() => encodeURIComponent(locationKeyword.value || ''))
+    const baiduMapUrl = computed(() => `https://map.baidu.com/search/${encodedLocation.value}`)
+    const amapUrl = computed(() => `https://www.amap.com/search?query=${encodedLocation.value}`)
+
+    const copyLocation = async () => {
+      if (!locationKeyword.value) return
+
       try {
-        marker = new window.BMap.Marker(point)
-        map.addOverlay(marker)
-        
-        // 动画效果
-        if (marker.setAnimation) {
-          marker.setAnimation(window.BMAP_ANIMATION_BOUNCE)
-          setTimeout(() => {
-            if (marker && marker.setAnimation) {
-              marker.setAnimation(null)
-            }
-          }, 1000)
-        }
+        await navigator.clipboard.writeText(locationKeyword.value)
+        copyMessage.value = '已复制地点名称'
       } catch (error) {
-        console.error('设置标记失败:', error)
+        copyMessage.value = '复制失败，请手动复制'
       }
+
+      window.setTimeout(() => {
+        copyMessage.value = ''
+      }, 2000)
     }
-    
-    // 高德地图：设置标记
-    const setMarkerAmap = (lnglat) => {
-      // 移除旧标记
-      if (marker) {
-        map.remove(marker)
-      }
-      
-      // 添加新标记
-      marker = new window.AMap.Marker({
-        position: lnglat,
-        animation: 'AMAP_ANIMATION_DROP'
-      })
-      map.add(marker)
+
+    const openIfReady = (url) => {
+      if (!locationKeyword.value) return
+      window.open(url, '_blank', 'noopener,noreferrer')
     }
-    
-    // 百度地图：获取地点名称（反向地理编码）
-    let geocodeTimer = null
-    const getLocationNameBaidu = (point) => {
-      if (geocodeTimer) {
-        clearTimeout(geocodeTimer)
-      }
-      
-      geocodeTimer = setTimeout(() => {
-        const gc = new window.BMap.Geocoder()
-        gc.getLocation(point, (result) => {
-          if (result) {
-            selectedLocation.value = {
-              name: result.address,
-              lat: point.lat,
-              lng: point.lng
-            }
-          }
-        })
-      }, 500)
-    }
-    
-    // 高德地图：获取地点名称（反向地理编码）
-    const getLocationNameAmap = (lnglat) => {
-      if (geocodeTimer) {
-        clearTimeout(geocodeTimer)
-      }
-      
-      geocodeTimer = setTimeout(() => {
-        window.AMap.plugin('AMap.Geocoder', () => {
-          const geocoder = new window.AMap.Geocoder()
-          geocoder.getAddress(lnglat, (status, result) => {
-            if (status === 'complete' && result.info === 'OK') {
-              selectedLocation.value = {
-                name: result.regeocode.formattedAddress,
-                lat: lnglat.lat,
-                lng: lnglat.lng
-              }
-            } else {
-              console.error('高德地图地理编码失败:', status, result)
-            }
-          })
-        })
-      }, 500)
-    }
-    
-    // 搜索地点
-    const handleSearch = () => {
-      if (searchTimer) {
-        clearTimeout(searchTimer)
-      }
-      
-      searchTimer = setTimeout(() => {
-        if (!searchKeyword.value || !map) {
-          console.warn('搜索失败: 搜索关键词为空或地图未初始化')
-          return
-        }
-        
-        // 确保地图类型匹配
-        if (mapType.value === 'baidu') {
-          // 验证是百度地图实例
-          if (map && typeof map.centerAndZoom === 'function') {
-            handleSearchBaidu()
-          } else {
-            console.error('地图实例不是有效的百度地图实例')
-          }
-        } else {
-          // 验证是高德地图实例
-          if (map && typeof map.setZoomAndCenter === 'function') {
-            handleSearchAmap()
-          } else {
-            console.error('地图实例不是有效的高德地图实例')
-          }
-        }
-      }, 300) // 防抖 300ms
-    }
-    
-    // 百度地图搜索
-    const handleSearchBaidu = () => {
-      // 确保地图已初始化且是百度地图实例
-      if (!map || !map.centerAndZoom) {
-        console.error('百度地图未初始化或无效')
-        return
-      }
-      
-      // 使用闭包保存 map 实例，避免回调中上下文丢失
-      const currentMap = map
-      const localSearch = new window.BMap.LocalSearch(currentMap, {
-        onSearchComplete: (results) => {
-          // 再次检查地图实例是否有效
-          if (!currentMap || typeof currentMap.centerAndZoom !== 'function') {
-            console.error('地图实例无效，无法执行 centerAndZoom')
-            return
-          }
-          
-          if (results && results.getCurrentNumPois() > 0) {
-            const poi = results.getPoi(0)
-            const point = poi.point
-            
-            try {
-              currentMap.centerAndZoom(point, 15)
-              setMarkerBaidu(point)
-              
-              selectedLocation.value = {
-                name: poi.title,
-                lat: point.lat,
-                lng: point.lng
-              }
-            } catch (error) {
-              console.error('设置地图中心点失败:', error)
-            }
-          }
-        }
-      })
-      localSearch.search(searchKeyword.value)
-    }
-    
-    // 高德地图搜索
-    const handleSearchAmap = () => {
-      window.AMap.plugin('AMap.PlaceSearch', () => {
-        const placeSearch = new window.AMap.PlaceSearch({
-          map: map
-        })
-        
-        placeSearch.search(searchKeyword.value, (status, result) => {
-          if (status === 'complete' && result.poiList.pois.length > 0) {
-            const poi = result.poiList.pois[0]
-            const lnglat = poi.location
-            
-            map.setZoomAndCenter(15, lnglat)
-            setMarkerAmap(lnglat)
-            
-            selectedLocation.value = {
-              name: poi.name,
-              lat: lnglat.lat,
-              lng: lnglat.lng
-            }
-          }
-        })
-      })
-    }
-    
-    // 确认选择
+
     const handleConfirm = () => {
-      if (selectedLocation.value) {
-        emit('select', selectedLocation.value)
-        emit('close')
-      }
-    }
-    
-    // 等待百度地图 API 加载
-    const waitForBaiduMap = () => {
-      return new Promise((resolve) => {
-        if (window.BMap) {
-          resolve()
-          return
-        }
-        
-        // 最多等待 5 秒
-        let attempts = 0
-        const maxAttempts = 50
-        const checkInterval = setInterval(() => {
-          attempts++
-          if (window.BMap) {
-            clearInterval(checkInterval)
-            resolve()
-          } else if (attempts >= maxAttempts) {
-            clearInterval(checkInterval)
-            resolve()
-          }
-        }, 100)
+      if (!locationKeyword.value) return
+
+      emit('select', {
+        name: locationKeyword.value,
+        lat: null,
+        lng: null
       })
+      emit('close')
     }
-    
-    // 监听显示状态
-    watch(() => props.show, async (newVal) => {
+
+    watch(() => props.show, (newVal) => {
       if (newVal) {
-        await nextTick()
-        
-        // 如果是百度地图，等待 API 加载
-        if (mapType.value === 'baidu') {
-          await waitForBaiduMap()
-        }
-        
-        initMap()
-        
-        // 如果有默认地点，搜索它
-        if (props.defaultLocation) {
-          searchKeyword.value = props.defaultLocation
-          handleSearch()
-        }
+        locationKeyword.value = props.defaultLocation || ''
+        copyMessage.value = ''
       }
     })
-    
+
     return {
-      mapContainer,
-      searchKeyword,
-      selectedLocation,
-      mapType,
-      switchMapType,
-      handleSearch,
+      locationKeyword,
+      copyMessage,
+      baiduMapUrl,
+      amapUrl,
+      copyLocation,
+      openIfReady,
       handleConfirm
     }
   }
@@ -444,10 +165,10 @@ export default defineComponent({
 }
 
 .map-picker-container {
-  background: white;
-  border-radius: 12px;
+  background: #fff;
+  border-radius: 8px;
   width: 100%;
-  max-width: 800px;
+  max-width: 560px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -461,8 +182,8 @@ export default defineComponent({
   padding: 16px 20px;
   border-bottom: 1px solid #e0e0e0;
   background: var(--roamio-primary);
-  color: white;
-  border-radius: 12px 12px 0 0;
+  color: #fff;
+  border-radius: 8px 8px 0 0;
 }
 
 .map-header h6 {
@@ -471,38 +192,8 @@ export default defineComponent({
   font-weight: 600;
 }
 
-/* 地图类型选择器 */
-.map-type-selector {
-  display: flex;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 4px;
-  border-radius: 8px;
-}
-
-.map-type-btn {
-  padding: 6px 16px;
-  border: none;
-  background: transparent;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s ease;
-}
-
-.map-type-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.map-type-btn.active {
-  background: white;
-  color: var(--roamio-primary);
-  font-weight: 600;
-}
-
 .btn-close {
-  background: white;
+  background: #fff;
   border: none;
   color: var(--roamio-primary);
   width: 32px;
@@ -512,46 +203,64 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
-.btn-close:hover {
-  transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+.map-body {
+  padding: 20px;
 }
 
-.map-search {
-  padding: 16px 20px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.map-search .form-control {
+.map-unavailable {
+  border: 1px dashed #c8d1dc;
   border-radius: 8px;
+  background: #f8fafc;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 18px;
 }
 
-.map-container {
-  flex: 1;
-  min-height: 400px;
-  background: #f5f5f5;
-}
-
-.location-info {
-  padding: 16px 20px;
-  border-top: 1px solid #e0e0e0;
-  background: #f8f9fa;
-}
-
-.location-name {
-  font-weight: 600;
-  color: #2c3e50;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.location-name svg {
+.map-unavailable-icon {
   color: var(--roamio-primary);
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.map-unavailable h6 {
+  margin: 0 0 6px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.map-unavailable p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.map-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.map-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.map-actions .disabled {
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.copy-message {
+  margin-top: 12px;
+  color: #198754;
+  font-size: 14px;
 }
 
 .map-footer {
@@ -568,21 +277,13 @@ export default defineComponent({
   font-weight: 500;
 }
 
-/* 移动端适配 */
 @media (max-width: 768px) {
   .map-picker-container {
     max-width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
   }
-  
-  .map-header {
-    border-radius: 0;
-  }
-  
-  .map-container {
-    min-height: 300px;
+
+  .map-actions {
+    grid-template-columns: 1fr;
   }
 }
 </style>
-
