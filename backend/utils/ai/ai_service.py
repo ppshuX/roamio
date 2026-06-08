@@ -34,7 +34,7 @@ class TripPlannerAI:
         
         # 初始化客户端（使用 requests 而不是 openai SDK，兼容 Python 3.8）
         self.api_key = os.getenv('DEEPSEEK_API_KEY')
-        self.model = os.getenv('DEEPSEEK_MODEL', 'deepseek-v4-pro')
+        self.model = os.getenv('DEEPSEEK_MODEL', 'deepseek-v4-flash')
         self.api_base = os.getenv('DEEPSEEK_API_BASE', 'https://api.deepseek.com').rstrip('/')
         
         if not self.api_key:

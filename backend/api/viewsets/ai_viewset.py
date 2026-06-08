@@ -232,7 +232,7 @@ class AIAssistantViewSet(viewsets.ViewSet):
         }
 
         # 简化计算：假设输入输出各占一半
-        rate = pricing.get(model, pricing['deepseek-v4-pro'])
+        rate = pricing.get(model, pricing['deepseek-v4-flash'])
         avg_rate = (rate['input'] + rate['output']) / 2
         
         return (tokens / 1000000) * avg_rate
