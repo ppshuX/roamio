@@ -16,6 +16,7 @@ This directory is being slimmed down as part of the Roamio remediation work. His
 - `docs/remediation/07_SETTINGS_SPLIT.md` - Django settings split and environment boundary.
 - `docs/remediation/08_DEPENDENCY_TRIM.md` - dependency slimming notes.
 - `docs/remediation/09_SECOND_DOC_CLEANUP.md` - second sensitive/stale documentation cleanup pass.
+- `docs/DEPLOYMENT.md` - current production deployment runbook.
 
 ## Reference Docs Still Kept
 

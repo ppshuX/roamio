@@ -14,6 +14,7 @@ Active cleanup docs live in:
 - `docs/remediation/05_SECURITY_CLEANUP.md`
 - `docs/remediation/06_ROUTE_USAGE_AUDIT.md`
 - `docs/remediation/07_SETTINGS_SPLIT.md`
+- `docs/DEPLOYMENT.md`（生产部署手册）
 - `docs/guides/FRONTEND_THEME_SPEC.md`（前端主题规范）
 - `docs/guides/NGINX_GUNICORN_PROXY.md`（Nginx + Gunicorn HTTP 代理）
 
