@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from django.utils import timezone
 import os
+import requests
 from pathlib import Path
 from unittest.mock import patch
 from rest_framework import status
@@ -401,6 +402,19 @@ class AIServiceSanitizationTests(TestCase):
         cleaned = self.ai._validate_and_clean(plan, {"days": 1})
         self.assertIn("trip_title", cleaned)
         self.assertTrue(cleaned["trip_title"])
+
+    def test_generate_trip_plan_translates_read_timeout_to_timeout_error(self):
+        env = {
+            "AI_GENERATION_ENABLED": "True",
+            "DEEPSEEK_API_KEY": "test-key",
+            "DEEPSEEK_API_TIMEOUT": "1",
+        }
+        with patch.dict(os.environ, env):
+            ai = TripPlannerAI()
+
+        with patch("requests.post", side_effect=requests.ConnectionError("Read timed out.")):
+            with self.assertRaises(TimeoutError):
+                ai.generate_trip_plan("重庆三日游", {"days": 3})
 
 
 class CommentAssetUrlNormalizationTests(TestCase):

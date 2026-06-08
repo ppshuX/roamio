@@ -187,6 +187,12 @@ class AIAssistantViewSet(viewsets.ViewSet):
                 }
             })
             
+        except TimeoutError as e:
+            logger.error(f"Trip refinement timeout: {e}")
+            return Response({
+                'code': 504,
+                'message': str(e)
+            }, status=status.HTTP_504_GATEWAY_TIMEOUT)
         except Exception as e:
             logger.error(f"Trip refinement error: {e}")
             return Response({

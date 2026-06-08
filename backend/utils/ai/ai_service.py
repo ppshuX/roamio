@@ -129,6 +129,11 @@ class TripPlannerAI:
         except requests.Timeout as e:
             logger.error(f"AI API timeout after {self.timeout}s: {e}")
             raise TimeoutError("AI 生成超时，请稍后重试")
+        except requests.RequestException as e:
+            logger.error(f"AI API request failed: {e}")
+            if 'timed out' in str(e).lower():
+                raise TimeoutError("AI 生成超时，请稍后重试")
+            raise Exception("AI API 请求失败，请稍后重试")
         except json.JSONDecodeError as e:
             logger.error(f"JSON parsing error: {e}")
             raise ValueError("AI 返回格式错误，请重试")
@@ -252,9 +257,9 @@ class TripPlannerAI:
           "location_type": "景点/餐厅/住宿/交通",
           "address": "详细地址（省市区街道门牌号，必填）",
           "coordinates": {{"lat": 纬度, "lng": 经度}},
-          "description": "活动简要描述（80-150字）：简要介绍地点特色、主要看点和推荐游玩顺序。",
+          "description": "活动简要描述（40-80字）：介绍地点特色和游玩重点。",
           "estimated_cost": 预估费用,
-          "tips": "实用提示（2-4条，简短句子）：包含门票/交通/时间/注意事项中的若干要点即可。"
+          "tips": "1-2条简短实用提示"
         }}
       ],
       "accommodation": {{
@@ -295,7 +300,7 @@ class TripPlannerAI:
    - 顶层必须是一个对象（以 {{ 开始，以 }} 结束）；
    - 不输出任何 JSON 以外的文字（不要解释、不要前后加句子）；
    - 数字不加引号，日期用 YYYY-MM-DD，时间用 HH:MM。
-7. **字数控制**：在保证信息完整的前提下，尽量使用精炼的语句，避免过长段落，确保整个 JSON 能在一次回答中完整输出。
+7. **强制压缩内容**：每个活动描述不超过80字，tips不超过40字，确保整个 JSON 能一次完整输出。
 """
     
     def _build_user_prompt(self, user_prompt, preferences, user):
@@ -330,8 +335,8 @@ class TripPlannerAI:
                 Trip = apps.get_model('backend', 'Trip')
                 
                 past_trips = Trip.objects.filter(
-                    user=user, 
-                    is_public=True
+                    author=user,
+                    visibility='public'
                 ).order_by('-created_at')[:3]
                 
                 if past_trips.exists():
@@ -348,17 +353,11 @@ class TripPlannerAI:
 {user_context}
 
 【核心要求】
-1. 每天安排 2-4 个主要活动（景点/体验项目）
-2. 每个活动的描述必须达到 150-300 字，详细介绍地点特色、游玩路线、体验项目
-3. 每个活动的实用提示必须包含 3-5 条，涵盖门票、交通、时间、注意事项、美食
-4. 包含详细的交通和餐饮建议
-5. 所有地点提供准确的地址和坐标
-6. 返回完整、规范的 JSON 格式
-
-【描述示例】
-"故宫博物院是中国明清两代的皇家宫殿，位于北京市中心，是世界上现存规模最大、保存最完整的木质结构古建筑群。从午门进入后，依次游览太和殿、中和殿、保和殿三大殿，感受皇家建筑的宏伟壮观。推荐游览路线：午门→太和殿→养心殿→御花园→神武门，全程约需3-4小时。必看景点包括金水桥、乾清宫、坤宁宫等，不要错过珍宝馆和钟表馆的珍贵展品。建议租用语音导览（20元/次）深入了解历史文化。"
-
-请严格按照要求生成详细、实用、有价值的旅行攻略。
+1. 每天安排 2-3 个主要活动。
+2. 每个活动 description 控制在 40-80 字。
+3. 每个活动 tips 控制在 40 字以内。
+4. 地址写到区/街道或商圈即可，坐标可近似。
+5. 必须返回完整、可解析的 JSON，不要输出 JSON 以外文字。
 """
         return prompt
     
@@ -508,6 +507,14 @@ class TripPlannerAI:
             
             return json.loads(result_text)
             
+        except requests.Timeout as e:
+            logger.error(f"Trip refinement timeout after {self.timeout}s: {e}")
+            raise TimeoutError("AI 优化超时，请稍后重试")
+        except requests.RequestException as e:
+            logger.error(f"Trip refinement request failed: {e}")
+            if 'timed out' in str(e).lower():
+                raise TimeoutError("AI 优化超时，请稍后重试")
+            raise Exception("AI API 请求失败，请稍后重试")
         except Exception as e:
             logger.error(f"Trip refinement error: {e}")
             raise
